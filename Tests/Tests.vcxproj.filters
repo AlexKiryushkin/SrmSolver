@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="gas_dynamic_flux_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="float4_arithmetics_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="gas_state_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="get_extrapolated_ghost_value_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="gpu_grid_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="gpu_matrix_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="math_utilities_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+    <CudaCompile Include="propellant_properties_tests.cu">
+      <Filter>Test Cases</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dummy.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="comparators.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Test Cases">
+      <UniqueIdentifier>{a7b7e949-0499-456b-b49d-d11a2e0043fa}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
