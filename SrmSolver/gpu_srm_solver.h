@@ -20,6 +20,7 @@ public:
   void dynamicIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
   float staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder);
+  float staticIntegrate(float deltaT, ETimeDiscretizationOrder timeOrder);
 
   const GpuMatrix<GpuGridT, GasStateType> & currState() const { return m_currState; }
   const GpuMatrix<GpuGridT, float>        & currPhi()   const { return m_levelSetSolver.currState(); }
@@ -27,6 +28,7 @@ public:
 private:
 
   float staticIntegrateStep(ETimeDiscretizationOrder timeOrder);
+  float staticIntegrateStep(ETimeDiscretizationOrder timeOrder, float dt, float2 lambdas);
 
 private:
 

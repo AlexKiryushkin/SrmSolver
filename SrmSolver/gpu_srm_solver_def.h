@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/reduce.h>
 
@@ -112,25 +114,24 @@ template <class CallbackT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIntegrate(
   unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback)
 {
+  constexpr float deltaT{ 25.0f };
   float t{ 0.0f };
-  callback(m_currState, currPhi(), 0U, t, float4{});
-  for (unsigned i{ 1U }; i <= iterationCount; ++i)
+  for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    const float deltaTGasDynamic = staticIntegrate(80000U, timeOrder);
-    const float dt = m_levelSetSolver.template integrateInTime<PropellantPropertiesT>(
-      m_currState,
-      m_closestIndices,
-      2U,
-      ETimeDiscretizationOrder::eThree);
-
-    t += dt;
-
+    const float deltaTGasDynamic = staticIntegrate(deltaT, timeOrder);
     const auto maxDerivatives = detail::getMaxEquationDerivatives(
       m_prevState.values(),
       m_currState.values(),
       currPhi().values(),
       detail::getDeltaT<GpuGridT>(m_currState.values(), m_courant));
     callback(m_currState, currPhi(), i, t, maxDerivatives);
+
+    const float dt = m_levelSetSolver.template integrateInTime<PropellantPropertiesT>(
+      m_currState,
+      m_closestIndices,
+      deltaTGasDynamic,
+      ETimeDiscretizationOrder::eThree);
+    t += dt;
   }
 }
 
@@ -156,11 +157,44 @@ float GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIn
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+float GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrate(
+  float deltaT,
+  ETimeDiscretizationOrder timeOrder)
+{
+  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
+    getDevicePtr(currPhi()),
+    getDevicePtr(m_closestIndices),
+    getDevicePtr(m_boundaryConditions),
+    getDevicePtr(m_normals));
+
+  float t = 0.0f;
+  while (t < deltaT)
+  {
+    const float2 lambdas = detail::getMaxWaveSpeeds(m_currState.values());
+    const float maxDt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
+    const float remainingTime = deltaT - t;
+    float dt = std::min(maxDt, remainingTime);
+    dt = staticIntegrateStep(timeOrder, dt, lambdas);
+    t += dt;
+  }
+
+  return t;
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
 float GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(ETimeDiscretizationOrder timeOrder)
 {
   float2 lambdas = detail::getMaxWaveSpeeds(m_currState.values());
   float dt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
+  return staticIntegrateStep(timeOrder, dt, lambdas);
+}
 
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+float GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(
+  ETimeDiscretizationOrder timeOrder,
+  float dt,
+  float2 lambdas)
+{
   thrust::swap(m_prevState.values(), m_currState.values());
   switch (timeOrder)
   {

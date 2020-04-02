@@ -24,6 +24,7 @@
     <ClInclude Include="gpu_grid.h" />
     <ClInclude Include="gpu_integrate_kernel.h" />
     <ClInclude Include="gpu_level_set_solver.h" />
+    <ClInclude Include="gpu_level_set_solver_def.h" />
     <ClInclude Include="gpu_matrix.h" />
     <ClInclude Include="gpu_matrix_writer.h" />
     <ClInclude Include="gpu_reinitialize_kernel.h" />
