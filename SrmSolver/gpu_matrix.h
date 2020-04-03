@@ -32,6 +32,12 @@ private:
 };
 
 template <class GpuGridT, class T>
+thrust::device_ptr<const T> getConstDevicePtr(const GpuMatrix<GpuGridT, T> & matrix)
+{
+  return matrix.values().data();
+}
+
+template <class GpuGridT, class T>
 thrust::device_ptr<const T> getDevicePtr(const GpuMatrix<GpuGridT, T> & matrix)
 {
   return matrix.values().data();
@@ -43,8 +49,8 @@ thrust::device_ptr<T> getDevicePtr(GpuMatrix<GpuGridT, T> & matrix)
   return matrix.values().data();
 }
 
-template <class GpuGridT, class ShapeT>
-__global__ void initializeGpuMatrix(thrust::device_ptr<float> pValues, ShapeT shape)
+template <class GpuGridT, class ShapeT, class ElemT>
+__global__ void initializeGpuMatrix(thrust::device_ptr<ElemT> pValues, ShapeT shape)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j = threadIdx.y + blockDim.y * blockIdx.y;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boundary_condition.h"
+#include "cuda_float_types.h"
 #include "gpu_level_set_solver.h"
 #include "gpu_matrix.h"
 
@@ -14,34 +15,38 @@ public:
   using GasStateType             = GasStateT;
   using PropellantPropertiesType = PropellantPropertiesT;
 
-  GpuSrmSolver(ShapeT shape, GasStateT initialState, unsigned iterationCount = 0U, float courant = 0.8f);
+  using ElemType = typename GasStateType::ElemType;
+
+  static_assert(std::is_same<typename GasStateType::ElemType, typename GpuGridT::ElemType>::value, "Error! Precisions differ.");
+
+  GpuSrmSolver(ShapeT shape, GasStateT initialState, unsigned iterationCount = 0U, ElemType courant = static_cast<ElemType>(0.8));
 
   template <class CallbackT>
   void dynamicIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
-  float staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder);
-  float staticIntegrate(float deltaT, ETimeDiscretizationOrder timeOrder);
+  ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder);
+  ElemType staticIntegrate(ElemType deltaT, ETimeDiscretizationOrder timeOrder);
 
   const GpuMatrix<GpuGridT, GasStateType> & currState() const { return m_currState; }
-  const GpuMatrix<GpuGridT, float>        & currPhi()   const { return m_levelSetSolver.currState(); }
+  const GpuMatrix<GpuGridT, ElemType>     & currPhi()   const { return m_levelSetSolver.currState(); }
 
 private:
 
-  float staticIntegrateStep(ETimeDiscretizationOrder timeOrder);
-  float staticIntegrateStep(ETimeDiscretizationOrder timeOrder, float dt, float2 lambdas);
+  ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder);
+  ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloatT<2U, ElemType> lambdas);
 
 private:
 
-  GpuMatrix<GpuGridT, EBoundaryCondition> m_boundaryConditions;
-  GpuMatrix<GpuGridT, unsigned>           m_closestIndices;
-  GpuMatrix<GpuGridT, float2>             m_normals;
-  GpuMatrix<GpuGridT, GasStateType>       m_currState;
-  GpuMatrix<GpuGridT, GasStateType>       m_prevState;
-  GpuMatrix<GpuGridT, GasStateType>       m_firstState;
-  GpuMatrix<GpuGridT, GasStateType>       m_secondState;
-  GpuLevelSetSolver<GpuGridT, ShapeT>     m_levelSetSolver;
+  GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;
+  GpuMatrix<GpuGridT, unsigned>                 m_closestIndices;
+  GpuMatrix<GpuGridT, CudaFloatT<2U, ElemType>> m_normals;
+  GpuMatrix<GpuGridT, GasStateType>             m_currState;
+  GpuMatrix<GpuGridT, GasStateType>             m_prevState;
+  GpuMatrix<GpuGridT, GasStateType>             m_firstState;
+  GpuMatrix<GpuGridT, GasStateType>             m_secondState;
+  GpuLevelSetSolver<GpuGridT, ShapeT>           m_levelSetSolver;
 
-  float m_courant{ 0.8f };
+  ElemType m_courant{ static_cast<ElemType>(0.8) };
 };
 
 } // namespace kae

@@ -10,11 +10,11 @@ namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class ShapeT>
-__global__ void reinitializeTVDSubStep(thrust::device_ptr<const float> pPrevValue,
-                                       thrust::device_ptr<const float> pFirstValue,
-                                       thrust::device_ptr<float>       pCurrValue,
-                                       float dt, float prevWeight)
+template <class GpuGridT, class ShapeT, class ElemT>
+__global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValue,
+                                       thrust::device_ptr<const ElemT> pFirstValue,
+                                       thrust::device_ptr<ElemT>       pCurrValue,
+                                       ElemT dt, ElemT prevWeight)
 {
   const unsigned ti        = threadIdx.x;
   const unsigned ai        = ti + GpuGridT::smExtension;
@@ -32,7 +32,7 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const float> pPrevValu
   const unsigned sharedIdx = aj * GpuGridT::sharedMemory.x + ai;
   const unsigned globalIdx = j * GpuGridT::nx + i;
 
-  __shared__ float prevMatrix[GpuGridT::smSize];
+  __shared__ ElemT prevMatrix[GpuGridT::smSize];
 
   if ((ti < GpuGridT::smExtension) && (i >= GpuGridT::smExtension))
   {
@@ -66,14 +66,14 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const float> pPrevValu
 
   if (schemeShouldBeApplied)
   {
-    const float sgdValue = prevMatrix[sharedIdx];
-    const float grad     = getLevelSetGradient<GpuGridT, GpuGridT::sharedMemory.x>(prevMatrix, sharedIdx, (sgdValue > 0.0f));
-    const float sgn      = sgdValue / std::hypot(sgdValue, grad * GpuGridT::hx);
-    const float val      = sgdValue - dt * sgn * (grad - 1.0f);
+    const ElemT sgdValue = prevMatrix[sharedIdx];
+    const ElemT grad     = getLevelSetGradient<GpuGridT, GpuGridT::sharedMemory.x>(prevMatrix, sharedIdx, (sgdValue > 0));
+    const ElemT sgn      = sgdValue / std::hypot(sgdValue, grad * GpuGridT::hx);
+    const ElemT val      = sgdValue - dt * sgn * (grad - 1.0f);
 
     if (prevWeight != 1.0f)
     {
-      pCurrValue[globalIdx] = (1.0f - prevWeight) * pFirstValue[globalIdx] + prevWeight * val;
+      pCurrValue[globalIdx] = (1 - prevWeight) * pFirstValue[globalIdx] + prevWeight * val;
     }
     else
     {
@@ -82,11 +82,11 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const float> pPrevValu
   }
 }
 
-template <class GpuGridT, class ShapeT>
-void reinitializeTVDSubStepWrapper(thrust::device_ptr<const float> pPrevValue,
-                                   thrust::device_ptr<const float> pFirstValue,
-                                   thrust::device_ptr<float>       pCurrValue,
-                                   float dt, float prevWeight)
+template <class GpuGridT, class ShapeT, class ElemT>
+void reinitializeTVDSubStepWrapper(thrust::device_ptr<const ElemT> pPrevValue,
+                                   thrust::device_ptr<const ElemT> pFirstValue,
+                                   thrust::device_ptr<ElemT>       pCurrValue,
+                                   ElemT dt, ElemT prevWeight)
 {
   reinitializeTVDSubStep<GpuGridT, ShapeT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
   (pPrevValue, pFirstValue, pCurrValue, dt, prevWeight);

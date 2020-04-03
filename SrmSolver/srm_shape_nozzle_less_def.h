@@ -5,9 +5,9 @@
 namespace kae {
 
 template <class GpuGridT>
-EBoundaryCondition SrmShapeNozzleLess<GpuGridT>::getBoundaryCondition(float x, float y)
+EBoundaryCondition SrmShapeNozzleLess<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
 {
-  if (std::fabs(x - xRight) < 0.1f * GpuGridT::hx)
+  if (std::fabs(x - xRight) < static_cast<ElemType>(0.1) * GpuGridT::hx)
   {
     return EBoundaryCondition::ePressureOutlet;
   }
@@ -21,7 +21,7 @@ EBoundaryCondition SrmShapeNozzleLess<GpuGridT>::getBoundaryCondition(float x, f
 }
 
 template <class GpuGridT>
-float SrmShapeNozzleLess<GpuGridT>::getRadius(unsigned i, unsigned j)
+auto SrmShapeNozzleLess<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
 {
   return j * GpuGridT::hy - yBottom;
 }
@@ -31,8 +31,8 @@ SrmShapeNozzleLess<GpuGridT>::SrmShapeNozzleLess()
   : m_distances{ GpuGridT::nx * GpuGridT::ny }
 {
   namespace bg = boost::geometry;
-  using Point2d = bg::model::point<float, 2u, boost::geometry::cs::cartesian>;
-  using Polygon2d = bg::model::polygon<Point2d>;
+  using Point2d      = bg::model::point<ElemType, 2u, boost::geometry::cs::cartesian>;
+  using Polygon2d    = bg::model::polygon<Point2d>;
   using Linestring2d = bg::model::linestring<Point2d>;
 
   Linestring2d linestring{
@@ -53,15 +53,15 @@ SrmShapeNozzleLess<GpuGridT>::SrmShapeNozzleLess()
 
   for (unsigned i = 0U; i < GpuGridT::nx; ++i)
   {
-    float x = i * GpuGridT::hx;
+    const ElemType x = i * GpuGridT::hx;
     for (unsigned j = 0U; j < GpuGridT::ny; ++j)
     {
-      float y = j * GpuGridT::hy;
-      Point2d point{ x, y };
-      auto distance = bg::distance(point, linestring);
-      auto isInside = bg::covered_by(point, polygon);
+      const ElemType y = j * GpuGridT::hy;
+      const Point2d point{ x, y };
+      const auto distance = bg::distance(point, linestring);
+      const auto isInside = bg::covered_by(point, polygon);
 
-      int index = j * GpuGridT::nx + i;
+      const auto index = j * GpuGridT::nx + i;
       m_distances[index] = isInside ? -std::fabs(distance) : std::fabs(distance);
     }
   }
@@ -70,20 +70,21 @@ SrmShapeNozzleLess<GpuGridT>::SrmShapeNozzleLess()
 template <class GpuGridT>
 bool SrmShapeNozzleLess<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 {
-  return (j * GpuGridT::hy - yBottom >= 0.5f * rkr) && (i * GpuGridT::hx - xLeft >= 0.5f * delta);
+  return (j * GpuGridT::hy - yBottom >= static_cast<ElemType>(0.5) * rkr) &&
+         (i * GpuGridT::hx - xLeft   >= static_cast<ElemType>(0.5) * delta);
 }
 
 template <class GpuGridT>
-bool SrmShapeNozzleLess<GpuGridT>::isPointOnGrain(float x, float y)
+bool SrmShapeNozzleLess<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
-  return (xRight - x >= 0.1f * GpuGridT::hx) && 
-         (x - xStartPropellant >= 0.1f * GpuGridT::hx) &&
+  return (xRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
+         (x - xStartPropellant >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
          (y - yBottom >= GpuGridT::hx) && 
-         (y - yBottom) <= Rk;
+         (y - yBottom <= Rk);
 }
 
 template <class GpuGridT>
-const thrust::host_vector<float> & SrmShapeNozzleLess<GpuGridT>::values() const
+auto SrmShapeNozzleLess<GpuGridT>::values() const -> const thrust::host_vector<ElemType> &
 {
   return m_distances;
 }

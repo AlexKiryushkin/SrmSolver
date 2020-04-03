@@ -4,15 +4,30 @@
 
 inline __host__ __device__ float4 operator+(float4 lhs, float4 rhs)
 {
-  return float4{ lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
+  return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
 }
 
 inline __host__ __device__ float4 operator-(float4 lhs, float4 rhs)
 {
-  return float4{ lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
+  return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
 }
 
 inline __host__ __device__ float4 operator*(float lhs, float4 rhs)
 {
-  return float4{ lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w };
+  return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w };
+}
+
+inline __host__ __device__ double4 operator+(double4 lhs, double4 rhs)
+{
+  return { lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w };
+}
+
+inline __host__ __device__ double4 operator-(double4 lhs, double4 rhs)
+{
+  return { lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w };
+}
+
+inline __host__ __device__ double4 operator*(double lhs, double4 rhs)
+{
+  return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z, lhs * rhs.w };
 }

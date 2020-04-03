@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "cuda_float_types.h"
 #include "filesystem.h"
 #include "gpu_matrix.h"
 #include "gpu_matrix_writer.h"
@@ -18,10 +19,10 @@ public:
     kae::current_path(m_folderPath);
   }
 
-  template <class GpuGridType, class GasStateType>
+  template <class GpuGridType, class GasStateType, class ElemT = typename GasStateType::ElemType>
   void operator()(const GpuMatrix<GpuGridType, GasStateType> & gasValues,
-                  const GpuMatrix<GpuGridType, float> & currPhi,
-                  unsigned i, float t, float4 maxDerivatives)
+                  const GpuMatrix<GpuGridType, ElemT> & currPhi,
+                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
   {
     std::cout << "Iteration: " << i << ". Time: " << t << '\n';
     std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x

@@ -6,13 +6,11 @@
 #include "shape_solver_types.h"
 #include "solver_callbacks.h"
 
-#include <CL/cl.h>
-
 int main()
 {
   try
   {
-    using ShapeSolverType = kae::ShapeSolverTypes<kae::EShapeType::eNozzleLessShape>;
+    using ShapeSolverType = kae::ShapeSolverTypes<kae::EShapeType::eNozzleLessShape, float>;
     using SrmSolverType   = ShapeSolverType::SrmSolverType;
 
     const std::wstring writeFolder{ L"data" };

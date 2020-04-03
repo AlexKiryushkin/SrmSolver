@@ -8,19 +8,24 @@ namespace detail {
 
 constexpr unsigned derivativesCount = 5U;
 constexpr unsigned fluxesCount = 3U;
-constexpr float a[fluxesCount] = { 0.1f, 0.6f, 0.3f };
 
-constexpr float LC[fluxesCount][fluxesCount] = 
-  {  1.0f / 3.0f, -7.0f / 6.0f, 11.0f / 6.0f,
-    -1.0f / 6.0f,  5.0f / 6.0f,  1.0f / 3.0f,
-     1.0f / 3.0f,  5.0f / 6.0f, -1.0f / 6.0f };
+template <class ElemT>
+constexpr ElemT a[fluxesCount] = { 0.1, 0.6, 0.3 };
 
-constexpr float WC[2U] = { 13.0f / 12.0f, 0.25f };
+template <class ElemT>
+constexpr ElemT LC[fluxesCount][fluxesCount] =
+  {  1.0 / 3.0, -7.0 / 6.0, 11.0 / 6.0,
+    -1.0 / 6.0,  5.0 / 6.0,  1.0 / 3.0,
+     1.0 / 3.0,  5.0 / 6.0, -1.0 / 6.0 };
+
+template <class ElemT>
+constexpr ElemT WC[2U] = { 13.0 / 12.0, 0.25 };
 
 template <class GpuGridT, unsigned Step, bool IsPlus>
 struct Derivative
 {
-  __host__ __device__ static float get(const float * arr, const unsigned i, const int offset)
+  template <class ElemT>
+  __host__ __device__ static ElemT get(const ElemT * arr, const unsigned i, const int offset)
   {
     return (arr[i + (offset + 1) * Step] - arr[i + offset * Step]) * GpuGridT::hxReciprocal;
   }
@@ -29,64 +34,69 @@ struct Derivative
 template <class GpuGridT, unsigned Step>
 struct Derivative<GpuGridT, Step, false>
 {
-  __host__ __device__ static float get(const float * arr, const unsigned i, const int offset)
+  template <class ElemT>
+  __host__ __device__ static ElemT get(const ElemT * arr, const unsigned i, const int offset)
   {
     return (arr[i - offset * Step] - arr[i - (offset + 1) * Step]) * GpuGridT::hxReciprocal;
   }
 };
 
-template <class GpuGridT, unsigned Step, bool IsPlus>
-__host__ __device__ float getLevelSetDerivative(const float * arr, const unsigned i)
+template <class GpuGridT, unsigned Step, bool IsPlus, class ElemT>
+__host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, const unsigned i)
 {
   using Derivative = Derivative<GpuGridT, Step, IsPlus>;
 
-  const float v[derivativesCount] = { Derivative::get(arr, i, 2),
+  const ElemT v[derivativesCount] = { Derivative::get(arr, i, 2),
                                       Derivative::get(arr, i, 1),
                                       Derivative::get(arr, i, 0),
                                       Derivative::get(arr, i, -1),
                                       Derivative::get(arr, i, -2) };
 
-  const float flux[fluxesCount] = 
-  { LC[0][0] * v[0] + LC[0][1] * v[1] + LC[0][2] * v[2],
-    LC[1][0] * v[1] + LC[1][1] * v[2] + LC[1][2] * v[3],
-    LC[2][0] * v[2] + LC[2][1] * v[3] + LC[2][2] * v[4] };
+  const ElemT flux[fluxesCount] =
+  { LC<ElemT>[0][0] * v[0] + LC<ElemT>[0][1] * v[1] + LC<ElemT>[0][2] * v[2],
+    LC<ElemT>[1][0] * v[1] + LC<ElemT>[1][1] * v[2] + LC<ElemT>[1][2] * v[3],
+    LC<ElemT>[2][0] * v[2] + LC<ElemT>[2][1] * v[3] + LC<ElemT>[2][2] * v[4] };
 
-  const float s[fluxesCount] =
-  { WC[0] * sqr(v[0] - 2.0f * v[1] + v[2]) + WC[1] * sqr(v[0] - 4.0f * v[1] + 3.0f * v[2]),
-    WC[0] * sqr(v[1] - 2.0f * v[2] + v[3]) + WC[1] * sqr(v[1] - v[3]),
-    WC[0] * sqr(v[2] - 2.0f * v[3] + v[4]) + WC[1] * sqr(3.0f * v[2] - 4.0f * v[3] + v[4]) };
+  const ElemT s[fluxesCount] =
+  { WC<ElemT>[0] * sqr(v[0] - static_cast<ElemT>(2.0) * v[1] + v[2]) +
+    WC<ElemT>[1] * sqr(v[0] - static_cast<ElemT>(4.0) * v[1] + static_cast<ElemT>(3.0) * v[2]),
 
-  constexpr float epsilon = 1e-6f;
-  const float alpha[fluxesCount] = {
-    a[0] / sqr(s[0] + epsilon),
-    a[1] / sqr(s[1] + epsilon),
-    a[2] / sqr(s[2] + epsilon) };
+    WC<ElemT>[0] * sqr(v[1] - static_cast<ElemT>(2.0) * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
+
+    WC<ElemT>[0] * sqr(v[2] - static_cast<ElemT>(2.0) * v[3] + v[4]) + 
+    WC<ElemT>[1] * sqr(static_cast<ElemT>(3.0) * v[2] - static_cast<ElemT>(4.0) * v[3] + v[4]) };
+
+  constexpr ElemT epsilon = std::is_same<ElemT, float>::value ? 1e-6 : 1e-10;
+  const ElemT alpha[fluxesCount] = {
+    a<ElemT>[0] / sqr(s[0] + epsilon),
+    a<ElemT>[1] / sqr(s[1] + epsilon),
+    a<ElemT>[2] / sqr(s[2] + epsilon) };
 
   return (alpha[0] * flux[0] + alpha[1] * flux[1] + alpha[2] * flux[2]) / (alpha[0] + alpha[1] + alpha[2]);
 }
 
-template <class GpuGridT, unsigned Nx>
-__host__ __device__ float getLevelSetDerivative(const float * arr, unsigned i, bool isPositiveVelocity)
+template <class GpuGridT, unsigned Nx, class ElemT>
+__host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, unsigned i, bool isPositiveVelocity)
 {
   if (isPositiveVelocity)
   {
-    float val1 = thrust::max(getLevelSetDerivative<GpuGridT, Nx, false>(arr, i), 0.0f);
-    float val2 = thrust::min(getLevelSetDerivative<GpuGridT, Nx, true>(arr, i), 0.0f);
+    ElemT val1 = thrust::max(getLevelSetDerivative<GpuGridT, Nx, false>(arr, i), static_cast<ElemT>(0.0));
+    ElemT val2 = thrust::min(getLevelSetDerivative<GpuGridT, Nx, true>(arr, i), static_cast<ElemT>(0.0));
 
     return kae::absmax(val1, val2);
   }
 
-  float val1 = thrust::min(getLevelSetDerivative<GpuGridT, Nx, false>(arr, i), 0.0f);
-  float val2 = thrust::max(getLevelSetDerivative<GpuGridT, Nx, true>(arr, i), 0.0f);
+  ElemT val1 = thrust::min(getLevelSetDerivative<GpuGridT, Nx, false>(arr, i), static_cast<ElemT>(0.0));
+  ElemT val2 = thrust::max(getLevelSetDerivative<GpuGridT, Nx, true>(arr, i), static_cast<ElemT>(0.0));
 
   return kae::absmax(val1, val2);
 }
 
-template <class GpuGridT, unsigned Nx>
-__host__ __device__ float getLevelSetGradient(const float * arr, unsigned i, bool isPositiveVelocity)
+template <class GpuGridT, unsigned Nx, class ElemT>
+__host__ __device__ ElemT getLevelSetGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
 {
-  float derivativeX = getLevelSetDerivative<GpuGridT, 1>(arr, i, isPositiveVelocity);
-  float derivativeY = getLevelSetDerivative<GpuGridT, Nx>(arr, i, isPositiveVelocity);
+  ElemT derivativeX = getLevelSetDerivative<GpuGridT, 1>(arr, i, isPositiveVelocity);
+  ElemT derivativeY = getLevelSetDerivative<GpuGridT, Nx>(arr, i, isPositiveVelocity);
 
   return std::sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
 }

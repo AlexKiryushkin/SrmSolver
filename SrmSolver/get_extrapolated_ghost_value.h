@@ -12,43 +12,44 @@ namespace detail {
 template <class PropellantPropertiesT, class GasStateT>
 __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState)
 {
-  const float c = SonicSpeed::get(gasState);
+  using ElemType = typename GasStateT::ElemType;
+  const auto c = SonicSpeed::get(gasState);
 
-  const float coefficient1 = gasState.ux + c / GasStateT::kappa;
-  const float coefficient2 = -1.0f / gasState.rho / c;
-  const float coefficient3 = GasStateT::kappa / (GasStateT::kappa - 1.0f) / PropellantPropertiesT::mt;
+  const auto coefficient1 = gasState.ux + c / GasStateT::kappa;
+  const auto coefficient2 = static_cast<ElemType>(-1.0) / gasState.rho / c;
+  const auto coefficient3 = GasStateT::kappa / (GasStateT::kappa - static_cast<ElemType>(1.0)) / PropellantPropertiesT::mt;
 
-  float p1 = 10 * gasState.p;
+  ElemType p1 = 10 * gasState.p;
 
 #pragma unroll
   for (unsigned i{ 0u }; i < 10u; ++i)
   {
-    const float power = std::pow(p1, -PropellantPropertiesT::nu);
-    const float fOfP = 0.5f * coefficient2 * coefficient2 * p1 * p1 +
-                       coefficient2 * coefficient3 * p1 * p1 * power +
-                       coefficient1 * coefficient2 * p1 + coefficient1 * coefficient3 * p1 * power +
-                       0.5f * coefficient1 * coefficient1 - PropellantPropertiesT::template H0<GasStateT>;
-    const float fPrimeOfP = coefficient2 * coefficient2 * p1 +
-                           (2.0f - PropellantPropertiesT::nu) * coefficient2 * coefficient3 * p1 * power +
-                           (1.0f - PropellantPropertiesT::nu) * coefficient1 * coefficient3 * power +
+    const auto power = std::pow(p1, -PropellantPropertiesT::nu);
+    const auto fOfP = static_cast<ElemType>(0.5) * coefficient2 * coefficient2 * p1 * p1 +
+                      coefficient2 * coefficient3 * p1 * p1 * power +
+                      coefficient1 * coefficient2 * p1 + coefficient1 * coefficient3 * p1 * power +
+                      static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PropellantPropertiesT::template H0<GasStateT>;
+    const auto fPrimeOfP = coefficient2 * coefficient2 * p1 +
+                           (static_cast<ElemType>(2.0) - PropellantPropertiesT::nu) * coefficient2 * coefficient3 * p1 * power +
+                           (static_cast<ElemType>(1.0) - PropellantPropertiesT::nu) * coefficient1 * coefficient3 * power +
                             coefficient1 * coefficient2;
 
-    const float delta = fOfP / fPrimeOfP;
+    const auto delta = fOfP / fPrimeOfP;
     p1 = p1 - delta;
-    if (std::fabs(delta) <= 1e-6f * p1)
+    if (std::fabs(delta) <= static_cast<ElemType>(1e-6) * p1)
     {
       break;
     }
   }
 
-  const float un = coefficient1 + coefficient2 * p1;
-  return GasStateT{ PropellantPropertiesT::mt * std::pow(p1, PropellantPropertiesT::nu) / un, un, 0.0f, p1 };
+  const auto un = coefficient1 + coefficient2 * p1;
+  return GasStateT{ PropellantPropertiesT::mt * std::pow(p1, PropellantPropertiesT::nu) / un, un, static_cast<ElemType>(0.0), p1 };
 }
 
 template <class PropellantPropertiesT, class GasStateT>
 __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState)
 {
-  const float c = SonicSpeed::get(gasState);
+  const auto c = SonicSpeed::get(gasState);
   if (gasState.ux >= c)
   {
     return gasState;
@@ -63,9 +64,9 @@ __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(
 template <class GasStateT>
 __host__ __device__ GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasStateT & gasState)
 {
-  const float c = SonicSpeed::get(gasState);
+  const auto c = SonicSpeed::get(gasState);
   return GasStateT{ gasState.rho * (1 + gasState.ux / c),
-                    0.0f,
+                    0,
                     gasState.uy,
                     gasState.p * (1 + GasStateT::kappa * gasState.ux / c) };
 }

@@ -13,48 +13,58 @@ class SrmShapeWithUmbrella
 {
 public:
 
-  __host__ __device__ float operator()(unsigned i, unsigned j) const;
+  using ElemType = typename GpuGridT::ElemType;
+
+  __host__ __device__ ElemType operator()(unsigned i, unsigned j) const;
 
   __host__ __device__ static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  __host__ __device__ static bool isPointOnGrain(float x, float y);
+  __host__ __device__ static bool isPointOnGrain(ElemType x, ElemType y);
 
-  __host__ __device__ static EBoundaryCondition getBoundaryCondition(float x, float y);
+  __host__ __device__ static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
 
-  __host__ __device__ static float getRadius(unsigned i, unsigned j);
-
-private:
-
-  __host__ __device__ float F_prime(float x) const;
-  __host__ __device__ float F(float x) const;
+  __host__ __device__ static ElemType getRadius(unsigned i, unsigned j);
 
 private:
 
-  constexpr static float L = 2.4f;
-  constexpr static float R0 = 0.2f;
-  constexpr static float Rk = 0.9f;
-  constexpr static float H = 0.55f;
-  constexpr static float rkr = 0.1f;
-  constexpr static float l = 0.5f;
-  constexpr static float h = 0.08f;
-  constexpr static float l_nozzle = 0.4f;
-  constexpr static float alpha = 0.5f * static_cast<float>(M_PI);
+  __host__ __device__ ElemType F_prime(ElemType x) const;
+  __host__ __device__ ElemType F(ElemType x) const;
 
-  constexpr static float k_cos = 2.0f * static_cast<float>(M_PI) / l_nozzle;
-  __host__ __device__ static float k_line() { return -0.25f * R0 * k_cos * std::sin(0.55f * k_cos * l_nozzle); }
-  __host__ __device__ static float b_line() { return R0 * (0.75f + 0.25f * std::cos(0.55f*l_nozzle*k_cos)) - k_line() * (L + 0.55f * l_nozzle); }
+private:
 
-  constexpr static unsigned offsetPoints = 20;
+  constexpr static ElemType L        = static_cast<ElemType>(2.4);
+  constexpr static ElemType R0       = static_cast<ElemType>(0.2);
+  constexpr static ElemType Rk       = static_cast<ElemType>(0.9);
+  constexpr static ElemType H        = static_cast<ElemType>(0.55);
+  constexpr static ElemType rkr      = static_cast<ElemType>(0.1);
+  constexpr static ElemType l        = static_cast<ElemType>(0.5);
+  constexpr static ElemType h        = static_cast<ElemType>(0.08);
+  constexpr static ElemType l_nozzle = static_cast<ElemType>(0.4);
+  constexpr static ElemType alpha    = static_cast<ElemType>(M_PI_2);
 
-  constexpr static float x_left = (offsetPoints + 0.5f) * GpuGridT::hx;
-  constexpr static float x_junc = x_left + L;
-  constexpr static float x_right = x_left + L + 1.5f * l_nozzle + 0.5f * GpuGridT::hx;
-  constexpr static float y_bottom = (offsetPoints + 0.5f) * GpuGridT::hy;
+  constexpr static ElemType k_cos    = 2 * static_cast<ElemType>(M_PI) / l_nozzle;
+  __host__ __device__ static ElemType k_line()
+  {
+    return static_cast<ElemType>(-0.25) * R0 * k_cos * std::sin(static_cast<ElemType>(0.55) * k_cos * l_nozzle);
+  }
+  __host__ __device__ static ElemType b_line()
+  {
+    return R0 * (static_cast<ElemType>(0.75f) + 
+      static_cast<ElemType>(0.25) * std::cos(static_cast<ElemType>(0.55) * k_cos * l_nozzle)) -
+      k_line() * (L + static_cast<ElemType>(0.55) * l_nozzle);
+  }
 
-  __host__ __device__ static float k_normal_line() { return -1.0f / k_line(); }
-  __host__ __device__ static float b_normal_line() { return b_line() + (x_right - x_left)*(k_line() + 1.0f / k_line()); }
+  constexpr static unsigned offsetPoints = 20U;
 
-  constexpr static float nozzle_lengthening = 0.1f;
+  constexpr static ElemType x_left   = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hx;
+  constexpr static ElemType x_junc   = x_left + L;
+  constexpr static ElemType x_right  = x_junc + static_cast<ElemType>(1.5) * l_nozzle + static_cast<ElemType>(0.5) * GpuGridT::hx;
+  constexpr static ElemType y_bottom = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hy;
+
+  __host__ __device__ static ElemType k_normal_line() { return -1 / k_line(); }
+  __host__ __device__ static ElemType b_normal_line() { return b_line() + (x_right - x_left) * (k_line() + 1 / k_line()); }
+
+  constexpr static ElemType nozzle_lengthening = static_cast<ElemType>(0.1);
 };
 
 } // namespace kae

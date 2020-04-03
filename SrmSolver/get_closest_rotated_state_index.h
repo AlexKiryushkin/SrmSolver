@@ -6,23 +6,23 @@ namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class Shape>
-__host__ __device__ unsigned getClosestRotatedStateIndex(const float * pCurrPhi,
+template <class GpuGridT, class Shape, class ElemT>
+__host__ __device__ unsigned getClosestRotatedStateIndex(const ElemT * pCurrPhi,
                                                          unsigned      i,
                                                          unsigned      j,
-                                                         float         nx,
-                                                         float         ny)
+                                                         ElemT         nx,
+                                                         ElemT         ny)
 {
   const unsigned globalIdx = j * GpuGridT::nx + i;
-  const float level        = pCurrPhi[globalIdx];
+  const ElemT level        = pCurrPhi[globalIdx];
 
-  const float xSurface    = i * GpuGridT::hx - nx * level;
-  const float ySurface    = j * GpuGridT::hy - ny * level;
+  const ElemT xSurface    = i * GpuGridT::hx - nx * level;
+  const ElemT ySurface    = j * GpuGridT::hy - ny * level;
 
   const unsigned iSurface = std::round(xSurface * GpuGridT::hxReciprocal);
   const unsigned jSurface = std::round(ySurface * GpuGridT::hyReciprocal);
 
-  float minDistanceSquared = 100.0f * GpuGridT::hx * GpuGridT::hx;
+  ElemT minDistanceSquared = static_cast<ElemT>(100.0) * GpuGridT::hx * GpuGridT::hx;
   unsigned iClosest   = 0U;
   unsigned jClosest   = 0U;
   for (unsigned iCl = iSurface - 3; iCl <= iSurface + 3; ++iCl)
@@ -33,7 +33,7 @@ __host__ __device__ unsigned getClosestRotatedStateIndex(const float * pCurrPhi,
         continue;
       }
 
-      float distanceSquared = sqr(iCl * GpuGridT::hx - xSurface) + sqr(jCl * GpuGridT::hy - ySurface);
+      ElemT distanceSquared = sqr(iCl * GpuGridT::hx - xSurface) + sqr(jCl * GpuGridT::hy - ySurface);
       if (minDistanceSquared < distanceSquared)
       {
         continue;

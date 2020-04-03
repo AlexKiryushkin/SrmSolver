@@ -4,6 +4,7 @@
 #include <thrust/device_ptr.h>
 
 #include "boundary_condition.h"
+#include "cuda_float_types.h"
 #include "get_closest_rotated_state_index.h"
 #include "get_extrapolated_ghost_value.h"
 #include "level_set_derivatives.h"
@@ -12,11 +13,11 @@ namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class ShapeT>
-__global__ void findClosestIndices(thrust::device_ptr<const float>        pCurrPhi,
-                                   thrust::device_ptr<unsigned>           pClosestIndices,
-                                   thrust::device_ptr<EBoundaryCondition> pBoundaryConditions,
-                                   thrust::device_ptr<float2>             pNormals)
+template <class GpuGridT, class ShapeT, class ElemT>
+__global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCurrPhi,
+                                   thrust::device_ptr<unsigned>              pClosestIndices,
+                                   thrust::device_ptr<EBoundaryCondition>    pBoundaryConditions,
+                                   thrust::device_ptr<CudaFloatT<2U, ElemT>> pNormals)
 {
   const unsigned i         = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j         = threadIdx.y + blockDim.y * blockIdx.y;
@@ -26,16 +27,16 @@ __global__ void findClosestIndices(thrust::device_ptr<const float>        pCurrP
     return;
   }
 
-  const float level = pCurrPhi[globalIdx];
-  const bool pointIsGhost = (level >= 0.0f) && (std::fabs(level) < 4 * GpuGridT::hx);
+  const ElemT level = pCurrPhi[globalIdx];
+  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 4 * GpuGridT::hx);
   if (!pointIsGhost)
   {
     return;
   }
 
-  float nx = getLevelSetDerivative<GpuGridT, 1U>(pCurrPhi.get(), globalIdx, true);
-  float ny = getLevelSetDerivative<GpuGridT, GpuGridT::nx>(pCurrPhi.get(), globalIdx, true);
-  const float length = std::hypot(nx, ny);
+  ElemT nx = getLevelSetDerivative<GpuGridT, 1U>(pCurrPhi.get(), globalIdx, true);
+  ElemT ny = getLevelSetDerivative<GpuGridT, GpuGridT::nx>(pCurrPhi.get(), globalIdx, true);
+  const ElemT length = std::hypot(nx, ny);
   nx /= length;
   ny /= length;
   pNormals[globalIdx] = { nx, ny };
@@ -43,13 +44,13 @@ __global__ void findClosestIndices(thrust::device_ptr<const float>        pCurrP
   const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(i * GpuGridT::hx - nx * level, j * GpuGridT::hy - ny * level);
   if (boundaryCondition == EBoundaryCondition::eWall)
   {
-    const float iMirror  = i - 2 * nx * level * GpuGridT::hxReciprocal;
-    const float jMirror  = j - 2 * ny * level * GpuGridT::hxReciprocal;
+    const ElemT iMirror  = i - 2 * nx * level * GpuGridT::hxReciprocal;
+    const ElemT jMirror  = j - 2 * ny * level * GpuGridT::hxReciprocal;
 
     const int iMirrorInt = std::round(iMirror);
     const int jMirrorInt = std::round(jMirror);
 
-    const float sum      = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
+    const ElemT sum      = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
     if (sum < 0.01f * GpuGridT::hx)
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
@@ -64,11 +65,11 @@ __global__ void findClosestIndices(thrust::device_ptr<const float>        pCurrP
   pBoundaryConditions[globalIdx]  = boundaryCondition;
 }
 
-template <class GpuGridT, class ShapeT>
-void findClosestIndicesWrapper(thrust::device_ptr<const float> pCurrPhi,
-                               thrust::device_ptr<unsigned> pClosestIndices,
-                               thrust::device_ptr<EBoundaryCondition> pBoundaryConditions,
-                               thrust::device_ptr<float2> pNormals)
+template <class GpuGridT, class ShapeT, class ElemT>
+void findClosestIndicesWrapper(thrust::device_ptr<const ElemT>           pCurrPhi,
+                               thrust::device_ptr<unsigned>              pClosestIndices,
+                               thrust::device_ptr<EBoundaryCondition>    pBoundaryConditions,
+                               thrust::device_ptr<CudaFloatT<2U, ElemT>> pNormals)
 {
   findClosestIndices<GpuGridT, ShapeT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
     (pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals);

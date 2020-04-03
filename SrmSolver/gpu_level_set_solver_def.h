@@ -20,17 +20,17 @@ GpuLevelSetSolver<GpuGridT, ShapeT>::GpuLevelSetSolver(ShapeT shape, unsigned it
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTime(
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTime(
   const GpuMatrix<GpuGridT, GasStateT> & gasValues,
   const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
   unsigned                               iterationCount,
-  ETimeDiscretizationOrder               timeOrder)
+  ETimeDiscretizationOrder               timeOrder) -> ElemType
 {
-  float t{ 0.0f };
+  ElemType t{ 0 };
   constexpr unsigned numOfReinitializeIterations{ 10U };
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    const float dt = integrateInTimeStep<PropellantPropertiesT>(gasValues, closestIndices, timeOrder);
+    const auto dt = integrateInTimeStep<PropellantPropertiesT>(gasValues, closestIndices, timeOrder);
     t += dt;
 
     reinitialize(numOfReinitializeIterations, timeOrder);
@@ -41,22 +41,22 @@ float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTime(
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTime(
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTime(
   const GpuMatrix<GpuGridT, GasStateT> & gasValues,
   const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-  float                                  deltaT,
-  ETimeDiscretizationOrder               timeOrder)
+  ElemType                                  deltaT,
+  ETimeDiscretizationOrder               timeOrder) -> ElemType
 {
   constexpr unsigned numOfReinitializeIterations{ 10U };
 
-  float t{ 0.0f };
+  ElemType t{ 0 };
   while (t < deltaT)
   {
-    const float maxBurningSpeed = getMaxBurningRate<PropellantPropertiesT>(gasValues.values());
-    const float courant = 0.4f;
-    const float maxDt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) / maxBurningSpeed;
-    const float remainingTime = deltaT - t;
-    float dt = std::min(maxDt, remainingTime);
+    const auto maxBurningSpeed = getMaxBurningRate<PropellantPropertiesT>(gasValues.values());
+    const auto courant = static_cast<ElemType>(0.4);
+    const auto maxDt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) / maxBurningSpeed;
+    const auto remainingTime = deltaT - t;
+    auto dt = std::min(maxDt, remainingTime);
     dt = integrateInTimeStep<PropellantPropertiesT>(gasValues, closestIndices, timeOrder, dt);
     t += dt;
 
@@ -77,80 +77,79 @@ void GpuLevelSetSolver<GpuGridT, ShapeT>::reinitialize(unsigned iterationCount, 
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTimeStep(
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTimeStep(
   const GpuMatrix<GpuGridT, GasStateT> & gasValues,
   const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-  ETimeDiscretizationOrder               timeOrder)
+  ETimeDiscretizationOrder               timeOrder) -> ElemType
 {
-  const float maxBurningSpeed = getMaxBurningRate<PropellantPropertiesT>(gasValues.values());
-
-  const float courant = 0.4f;
-  const float dt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) / maxBurningSpeed;
+  const auto courant = static_cast<ElemType>(0.4);
+  const auto maxBurningSpeed = getMaxBurningRate<PropellantPropertiesT>(gasValues.values());
+  const auto dt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) / maxBurningSpeed;
   return integrateInTimeStep<PropellantPropertiesT>(gasValues, closestIndices, timeOrder, dt);
 }
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTimeStep(
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTimeStep(
   const GpuMatrix<GpuGridT, GasStateT> & gasValues,
   const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
   ETimeDiscretizationOrder               timeOrder,
-  float dt)
+  ElemType dt) -> ElemType
 {
   thrust::swap(m_prevState.values(), m_currState.values());
   switch (timeOrder)
   {
   case ETimeDiscretizationOrder::eOne:
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_currState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 1.0f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(1.0));
     break;
 
   case ETimeDiscretizationOrder::eTwo:
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_firstState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 1.0f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(1.0));
 
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_firstState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_firstState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_currState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 0.5f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(0.5));
     break;
   case ETimeDiscretizationOrder::eThree:
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_firstState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 1.0f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(1.0));
 
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_firstState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_firstState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_secondState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 0.25f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(0.25));
 
     detail::integrateEqTvdSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT>(
-      getDevicePtr(m_secondState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_secondState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_currState),
-      getDevicePtr(gasValues),
-      getDevicePtr(closestIndices),
-      dt, 2.0f / 3.0f);
+      getConstDevicePtr(gasValues),
+      getConstDevicePtr(closestIndices),
+      dt, static_cast<ElemType>(2.0 / 3.0));
     break;
   default:
     break;
@@ -162,50 +161,50 @@ float GpuLevelSetSolver<GpuGridT, ShapeT>::integrateInTimeStep(
 template <class GpuGridT, class ShapeT>
 void GpuLevelSetSolver<GpuGridT, ShapeT>::reinitializeStep(ETimeDiscretizationOrder timeOrder)
 {
-  const float courant = 0.8f;
-  const float dt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy);
+  const auto courant = static_cast<ElemType>(0.8);
+  const auto dt = courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy);
 
   thrust::swap(m_prevState.values(), m_currState.values());
   switch (timeOrder)
   {
   case ETimeDiscretizationOrder::eOne:
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_currState),
-      dt, 1.0f);
+      dt, static_cast<ElemType>(1.0));
     break;
   case ETimeDiscretizationOrder::eTwo:
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_firstState),
-      dt, 1.0f);
+      dt, static_cast<ElemType>(1.0));
 
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_firstState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_firstState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_currState),
-      dt, 0.5f);
+      dt, static_cast<ElemType>(0.5));
     break;
   case ETimeDiscretizationOrder::eThree:
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_prevState),
-      {},
+      getConstDevicePtr(m_prevState),
+      thrust::device_ptr<const ElemType>{},
       getDevicePtr(m_firstState),
-      dt, 1.0f);
+      dt, static_cast<ElemType>(1.0));
 
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_firstState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_firstState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_secondState),
-      dt, 0.25f);
+      dt, static_cast<ElemType>(0.25));
 
     detail::reinitializeTVDSubStepWrapper<GpuGridT, ShapeT>(
-      getDevicePtr(m_secondState),
-      getDevicePtr(m_prevState),
+      getConstDevicePtr(m_secondState),
+      getConstDevicePtr(m_prevState),
       getDevicePtr(m_currState),
-      dt, 2.0f / 3.0f);
+      dt, static_cast<ElemType>(2.0 / 3.0));
     break;
   default:
     break;
@@ -214,11 +213,11 @@ void GpuLevelSetSolver<GpuGridT, ShapeT>::reinitializeStep(ETimeDiscretizationOr
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-float GpuLevelSetSolver<GpuGridT, ShapeT>::getMaxBurningRate(const thrust::device_vector<GasStateT> & gasValues)
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::getMaxBurningRate(const thrust::device_vector<GasStateT> & gasValues) -> ElemType
 {
   auto first = thrust::make_transform_iterator(std::begin(gasValues), kae::BurningRate<PropellantPropertiesT>{});
   auto last = thrust::make_transform_iterator(std::end(gasValues), kae::BurningRate<PropellantPropertiesT>{});
-  return thrust::reduce(first, last, 0.0f, thrust::maximum<float>{});
+  return thrust::reduce(first, last, static_cast<ElemType>(0.0), thrust::maximum<ElemType>{});
 }
 
 } // namespace kae

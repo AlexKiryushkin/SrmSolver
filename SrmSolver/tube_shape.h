@@ -14,15 +14,17 @@ class TubeShape
 {
 public:
 
-  __host__ __device__ float operator()(unsigned i, unsigned j) const
-  {
-    auto x = GpuGridT::hx * i;
-    auto y = GpuGridT::hy * j;
+  using ElemType = typename GpuGridT::ElemType;
 
-    auto distanceToLeftWall = xLeft - x;
-    auto distanceToRightWall = x - (xLeft + length);
-    auto distanceToBottomWall = yBottom - y;
-    auto distanceToTopWall = y - (yBottom + height);
+  __host__ __device__ ElemType operator()(unsigned i, unsigned j) const
+  {
+    const auto x = GpuGridT::hx * i;
+    const auto y = GpuGridT::hy * j;
+
+    const auto distanceToLeftWall   = xLeft - x;
+    const auto distanceToRightWall  = x - (xLeft + length);
+    const auto distanceToBottomWall = yBottom - y;
+    const auto distanceToTopWall    = y - (yBottom + height);
 
     if (x < xLeft)
     {
@@ -64,16 +66,16 @@ public:
 
   __host__ __device__ static bool shouldApplyScheme(unsigned i, unsigned j) { return false; }
 
-  __host__ __device__ static bool isPointOnGrain(float x, float y) { return false; }
+  __host__ __device__ static bool isPointOnGrain(ElemType x, ElemType y) { return false; }
 
-  __host__ __device__ static EBoundaryCondition getBoundaryCondition(float x, float y)
+  __host__ __device__ static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y)
   {
-    if (std::fabs(x - xLeft) < 1e-6f)
+    if (std::fabs(x - xLeft) < static_cast<ElemType>(1e-6))
     {
       return EBoundaryCondition::eMassFlowInlet;
     }
 
-    if (std::fabs(x - xRight) < 1e-5f)
+    if (std::fabs(x - xRight) < static_cast<ElemType>(1e-5))
     {
       return EBoundaryCondition::ePressureOutlet;
     }
@@ -81,17 +83,17 @@ public:
     return EBoundaryCondition::eWall;
   }
 
-  __host__ __device__ static float getRadius(unsigned i, unsigned j) { return j * GpuGridT::hy - yBottom; }
+  __host__ __device__ static ElemType getRadius(unsigned i, unsigned j) { return j * GpuGridT::hy - yBottom; }
 
 private:
 
-  constexpr static float height{ 1.0f };
-  constexpr static float yBottom{ 0.5f };
-  constexpr static float yTop{ yBottom + height };
+  constexpr static ElemType height{ static_cast<ElemType>(1.0) };
+  constexpr static ElemType yBottom{ static_cast<ElemType>(0.5) };
+  constexpr static ElemType yTop{ yBottom + height };
 
-  constexpr static float length{ 2.0f };
-  constexpr static float xLeft{ 0.5f };
-  constexpr static float xRight{ xLeft + length };
+  constexpr static ElemType length{ static_cast<ElemType>(2.0) };
+  constexpr static ElemType xLeft{ static_cast<ElemType>(0.5) };
+  constexpr static ElemType xRight{ xLeft + length };
 };
 
 } // namespace kae

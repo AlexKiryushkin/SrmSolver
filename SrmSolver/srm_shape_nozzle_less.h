@@ -13,32 +13,34 @@ class SrmShapeNozzleLess
 {
 public:
 
+  using ElemType = typename GpuGridT::ElemType;
+
   SrmShapeNozzleLess();
 
   __host__ __device__ static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  __host__ __device__ static bool isPointOnGrain(float x, float y);
+  __host__ __device__ static bool isPointOnGrain(ElemType x, ElemType y);
 
-  __host__ __device__ static EBoundaryCondition getBoundaryCondition(float x, float y);
+  __host__ __device__ static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
 
-  __host__ __device__ static float getRadius(unsigned i, unsigned j);
+  __host__ __device__ static ElemType getRadius(unsigned i, unsigned j);
 
-  const thrust::host_vector<float> & values() const;
+  const thrust::host_vector<ElemType> & values() const;
 
 private:
 
   constexpr static unsigned offsetPoints = 20;
 
-  constexpr static float xLeft = (offsetPoints + 0.5f) * GpuGridT::hx;
-  constexpr static float delta = 0.01f;
-  constexpr static float xStartPropellant = xLeft + delta;
-  constexpr static float xRight = xLeft + 1.274f;
-  constexpr static float yBottom = (offsetPoints + 0.5f) * GpuGridT::hy;
-  constexpr static float Rk = 0.1f;
-  constexpr static float rkr = 0.0245f;
+  constexpr static ElemType xLeft            = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hx;
+  constexpr static ElemType delta            = static_cast<ElemType>(0.01);
+  constexpr static ElemType xStartPropellant = xLeft + delta;
+  constexpr static ElemType xRight           = xLeft + static_cast<ElemType>(1.274);
+  constexpr static ElemType yBottom          = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hy;
+  constexpr static ElemType Rk               = static_cast<ElemType>(0.1);
+  constexpr static ElemType rkr              = static_cast<ElemType>(0.0245);
 private:
 
-  thrust::host_vector<float> m_distances;
+  thrust::host_vector<ElemType> m_distances;
 };
 
 } // namespace kae
