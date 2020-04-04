@@ -1,13 +1,13 @@
 #pragma once
 
-#include <cuda_runtime_api.h>
+#include "cuda_includes.h"
 
 #include "cuda_float_types.h"
 #include "to_float.h"
 
 namespace kae {
 
-template <class KappaType, class CpType, class ElemT = float>
+template <class KappaType, class CpType, class ElemT>
 struct alignas(16) GasState
 {
   using ElemType = ElemT;

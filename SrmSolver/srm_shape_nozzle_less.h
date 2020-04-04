@@ -1,8 +1,6 @@
 #pragma once
 
-#include <thrust/host_vector.h>
-
-#include <cuda_runtime_api.h>
+#include "cuda_includes.h"
 
 #include "boundary_condition.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include "std_includes.h"
 
 #include "boundary_condition.h"
 #include "gas_state.h"
@@ -55,7 +55,7 @@ __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(
     return gasState;
   }
 
-  return GasStateT{ PropellantPropertiesT::P0 / c / c - (1.0f - GasStateT::kappa) / GasStateT::kappa * gasState.rho,
+  return GasStateT{ PropellantPropertiesT::P0 / c / c - (1 - GasStateT::kappa) / GasStateT::kappa * gasState.rho,
                     gasState.ux + c / GasStateT::kappa - PropellantPropertiesT::P0 / gasState.rho / c,
                     gasState.uy,
                     PropellantPropertiesT::P0 };

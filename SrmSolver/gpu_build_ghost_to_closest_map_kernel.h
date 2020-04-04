@@ -1,11 +1,10 @@
 #pragma once
 
-#include <device_launch_parameters.h>
-#include <thrust/device_ptr.h>
+#include "cuda_includes.h"
 
 #include "boundary_condition.h"
 #include "cuda_float_types.h"
-#include "get_closest_rotated_state_index.h"
+#include "get_closest_index.h"
 #include "get_extrapolated_ghost_value.h"
 #include "level_set_derivatives.h"
 
@@ -51,7 +50,7 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     const int jMirrorInt = std::round(jMirror);
 
     const ElemT sum      = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
-    if (sum < 0.01f * GpuGridT::hx)
+    if (sum < static_cast<ElemT>(0.01) * GpuGridT::hx)
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
       pClosestIndices[globalIdx]     = mirrorGlobalIdx;
@@ -60,7 +59,7 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     }
   }
 
-  const unsigned closestGlobalIdx = getClosestRotatedStateIndex<GpuGridT, ShapeT>(pCurrPhi.get(), i, j, nx, ny);
+  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT, ShapeT>(pCurrPhi.get(), i, j, nx, ny);
   pClosestIndices[globalIdx]      = closestGlobalIdx;
   pBoundaryConditions[globalIdx]  = boundaryCondition;
 }

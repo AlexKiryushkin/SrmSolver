@@ -1,8 +1,6 @@
 #pragma once
 
-#include <thrust/extrema.h>
-
-#include "cuda_float_types.h"
+#include "cuda_includes.h"
 
 namespace kae {
 

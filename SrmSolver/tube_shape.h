@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cmath>
-
-#include <cuda_runtime_api.h>
+#include "std_includes.h"
+#include "cuda_includes.h"
 
 #include "boundary_condition.h"
 #include "math_utilities.h"

@@ -7,36 +7,51 @@
 
 namespace tests {
 
-TEST(float4_arithmetics, float4_arithmetics_operator_plus)
-{
-  constexpr float4 lhs{ 1.0f, 2.0f, 3.0f, 4.0f };
-  constexpr float4 rhs{ 5.0f, -6.0f, 8.0f, -7.0f };
-  const float4 res{ lhs + rhs };
+template <class T>
+class float4_arithmetics : public ::testing::Test {};
 
-  constexpr float4 goldRes{ 6.0f, -4.0f, 11.0f, -3.0f };
-  constexpr float threshold{ 1e-6f };
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(float4_arithmetics, TypeParams);
+
+TYPED_TEST(float4_arithmetics, float4_arithmetics_operator_plus)
+{
+  using ElemType = std::conditional_t<std::is_same<TypeParam, float>::value, float4, double4>;
+
+  constexpr ElemType lhs{ 1.0, 2.0, 3.0, 4.0 };
+  constexpr ElemType rhs{ 5.0, -6.0, 8.0, -7.0 };
+  const ElemType res{ lhs + rhs };
+
+  constexpr ElemType goldRes{ 6.0, -4.0, 11.0, -3.0 };
+  constexpr TypeParam threshold{ std::is_same<TypeParam, float>::value ? static_cast<TypeParam>(1e-6) :
+                                                                         static_cast<TypeParam>(1e-14) };
   EXPECT_FLOAT4_NEAR(res, goldRes, threshold);
 }
 
-TEST(float4_arithmetics, float4_arithmetics_operator_minus)
+TYPED_TEST(float4_arithmetics, float4_arithmetics_operator_minus)
 {
-  constexpr float4 lhs{ 1.0f, 2.0f, 3.0f, 4.0f };
-  constexpr float4 rhs{ 5.0f, -6.0f, 8.0f, -7.0f };
-  const float4 res{ lhs - rhs };
+  using ElemType = std::conditional_t<std::is_same<TypeParam, float>::value, float4, double4>;
 
-  constexpr float4 goldRes{ -4.0f, 8.0f, -5.0f, 11.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType lhs{ 1.0, 2.0, 3.0, 4.0 };
+  constexpr ElemType rhs{ 5.0, -6.0, 8.0, -7.0 };
+  const ElemType res{ lhs - rhs };
+
+  constexpr ElemType goldRes{ -4.0, 8.0, -5.0, 11.0 };
+  constexpr TypeParam threshold{ std::is_same<TypeParam, float>::value ? static_cast<TypeParam>(1e-6) :
+                                                                         static_cast<TypeParam>(1e-14) };
   EXPECT_FLOAT4_NEAR(res, goldRes, threshold);
 }
 
-TEST(float4_arithmetics, float4_arithmetics_operator_multiply)
+TYPED_TEST(float4_arithmetics, float4_arithmetics_operator_multiply)
 {
-  constexpr float lhs{ 2.0f };
-  constexpr float4 rhs{ 5.0f, -6.0f, 8.0f, -7.0f };
-  const float4 res{ lhs * rhs };
+  using ElemType = std::conditional_t<std::is_same<TypeParam, float>::value, float4, double4>;
 
-  constexpr float4 goldRes{ 10.0f, -12.0f, 16.0f, -14.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr TypeParam lhs{ 2.0 };
+  constexpr ElemType rhs{ 5.0, -6.0, 8.0, -7.0 };
+  const ElemType res{ lhs * rhs };
+
+  constexpr ElemType goldRes{ 10.0, -12.0, 16.0, -14.0 };
+  constexpr TypeParam threshold{ std::is_same<TypeParam, float>::value ? static_cast<TypeParam>(1e-6) :
+                                                                         static_cast<TypeParam>(1e-14) };
   EXPECT_FLOAT4_NEAR(res, goldRes, threshold);
 }
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cmath>
-
 #include "math_utilities.h"
 
 namespace kae {

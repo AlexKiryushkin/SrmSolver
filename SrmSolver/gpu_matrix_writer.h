@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cassert>
-#include <fstream>
-#include <string>
+#include "std_includes.h"
 
 #include "gas_state.h"
 #include "gpu_matrix.h"

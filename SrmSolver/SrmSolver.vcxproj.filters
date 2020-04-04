@@ -19,9 +19,6 @@
     <ClInclude Include="gas_state.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="get_closest_rotated_state_index.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="get_extrapolated_ghost_value.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -103,6 +100,21 @@
     <ClInclude Include="cuda_float_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gpu_calculate_ghost_point_data_kernel.h">
+      <Filter>Header Files\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="ghost_point_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="get_closest_index.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="std_includes.h">
+      <Filter>Header Files\Third Party Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="cuda_includes.h">
+      <Filter>Header Files\Third Party Includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -119,6 +131,9 @@
     </Filter>
     <Filter Include="Header Files\Kernels">
       <UniqueIdentifier>{cfe86df0-cd91-4a8a-85f2-1995d1f5e652}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Third Party Includes">
+      <UniqueIdentifier>{bb39842e-eda9-4d62-9dfb-622761569f30}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

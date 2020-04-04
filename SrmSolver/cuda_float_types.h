@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cstddef>
-
-#include <cuda_runtime_api.h>
+#include "std_includes.h"
+#include "cuda_includes.h"
 
 namespace kae {
 

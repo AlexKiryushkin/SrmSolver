@@ -7,11 +7,11 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class Shape, class ElemT>
-__host__ __device__ unsigned getClosestRotatedStateIndex(const ElemT * pCurrPhi,
-                                                         unsigned      i,
-                                                         unsigned      j,
-                                                         ElemT         nx,
-                                                         ElemT         ny)
+__host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
+                                             unsigned      i,
+                                             unsigned      j,
+                                             ElemT         nx,
+                                             ElemT         ny)
 {
   const unsigned globalIdx = j * GpuGridT::nx + i;
   const ElemT level        = pCurrPhi[globalIdx];

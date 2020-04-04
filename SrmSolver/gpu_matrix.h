@@ -1,10 +1,7 @@
 #pragma once
 
-#include <type_traits>
-
-#include <thrust/device_vector.h>
-
-#include "cuda_runtime.h"
+#include "std_includes.h"
+#include "cuda_includes.h"
 
 namespace kae
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cuda_runtime_api.h>
+#include "cuda_includes.h"
 
 inline __host__ __device__ float4 operator+(float4 lhs, float4 rhs)
 {

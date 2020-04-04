@@ -5,7 +5,7 @@
 
 namespace kae {
 
-template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class ElemT = float>
+template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class ElemT>
 struct PropellantProperties
 {
   constexpr static ElemT nu    = detail::ToFloatV<NuT, ElemT>;

@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cmath>
-
-#include <cuda_runtime_api.h>
+#include "std_includes.h"
 
 #include "boundary_condition.h"
 
@@ -49,7 +47,7 @@ private:
   }
   __host__ __device__ static ElemType b_line()
   {
-    return R0 * (static_cast<ElemType>(0.75f) + 
+    return R0 * (static_cast<ElemType>(0.75) + 
       static_cast<ElemType>(0.25) * std::cos(static_cast<ElemType>(0.55) * k_cos * l_nozzle)) -
       k_line() * (L + static_cast<ElemType>(0.55) * l_nozzle);
   }

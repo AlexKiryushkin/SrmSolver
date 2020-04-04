@@ -11,31 +11,33 @@
 
 namespace tests {
 
+template <class T>
 class gas_dynamic_flux : public ::testing::Test
 {
 public:
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = T;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
   constexpr static unsigned bias{ 5U };
-  constexpr static unsigned startPoint{ 0U };
-  constexpr static unsigned endPoint{ 1U };
-  constexpr static unsigned pointsCount{ 101U };
-  constexpr static float step{ static_cast<float>(endPoint - startPoint) / static_cast<float>(pointsCount - 1U) };
-  constexpr static float lambda{ 2.5f };
+  constexpr static ElemType startPoint{ static_cast<ElemType>(0.99) };
+  constexpr static ElemType endPoint{ static_cast<ElemType>(1.0) };
+  constexpr static unsigned pointsCount{ 201U };
+  constexpr static ElemType step{ (endPoint - startPoint) / static_cast<ElemType>(pointsCount - 1U) };
+  constexpr static ElemType lambda{ static_cast<ElemType>(2.5) };
 
-  static float xCoordinate(unsigned pointNumber) { return step * pointNumber; }
-  static float xCoordinatePlus(unsigned pointNumber) { return step * (static_cast<float>(pointNumber) + 0.5f); }
-  static float yCoordinate(unsigned pointNumber) { return step * pointNumber; }
-  static float yCoordinatePlus(unsigned pointNumber) { return step * (static_cast<float>(pointNumber) + 0.5f); }
+  static ElemType xCoordinate(unsigned pointNumber) { return startPoint + step * pointNumber; }
+  static ElemType xCoordinatePlus(unsigned pointNumber) { return startPoint + step * (static_cast<ElemType>(pointNumber) + static_cast<ElemType>(0.5)); }
+  static ElemType yCoordinate(unsigned pointNumber) { return startPoint + step * pointNumber; }
+  static ElemType yCoordinatePlus(unsigned pointNumber) { return startPoint + step * (static_cast<ElemType>(pointNumber) + static_cast<ElemType>(0.5)); }
 
-  static float rho(float x, float y) { return 0.1f + 0.1f * (x + y); }
-  static float ux(float x, float y) { return 0.2f * (x + y); }
-  static float uy(float x, float y) { return -0.2f * (x + y); }
-  static float p(float x, float y) { return 0.2f + 0.1f * (x + y); }
+  static ElemType rho(ElemType x, ElemType y) { return static_cast<ElemType>(0.1) + static_cast<ElemType>(0.1) * (x + y); }
+  static ElemType ux(ElemType x, ElemType y) { return static_cast<ElemType>(0.2) * (x + y); }
+  static ElemType uy(ElemType x, ElemType y) { return static_cast<ElemType>(-0.2) * (x + y); }
+  static ElemType p(ElemType x, ElemType y) { return static_cast<ElemType>(0.2) + static_cast<ElemType>(0.1) * (x + y); }
 
-  static GasStateT gasState(float x, float y) { return GasStateT{ rho(x, y), ux(x, y), uy(x, y), p(x, y) }; }
+  static GasStateT gasState(ElemType x, ElemType y) { return GasStateT{ rho(x, y), ux(x, y), uy(x, y), p(x, y) }; }
 
   gas_dynamic_flux()
   {
@@ -53,23 +55,29 @@ public:
   std::vector<GasStateT> gasStates;
 };
 
-TEST_F(gas_dynamic_flux, gas_dynamic_flux_mass_flux)
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(gas_dynamic_flux, TypeParams);
+
+TYPED_TEST(gas_dynamic_flux, gas_dynamic_flux_mass_flux)
 {
-  auto pGasState = gasStates.data();
-  for (unsigned i{ bias }; i < pointsCount - bias; ++i)
+  using tf = TestFixture;
+  using ElemType = typename tf::ElemType;
+
+  auto pGasState = tf::gasStates.data();
+  for (unsigned i{ tf::bias }; i < tf::pointsCount - tf::bias; ++i)
   {
-    for (unsigned j{ bias }; j < pointsCount - bias; ++j)
+    for (unsigned j{ tf::bias }; j < tf::pointsCount - tf::bias; ++j)
     {
-      auto index = j * pointsCount + i;
+      auto index = j * tf::pointsCount + i;
 
-      const auto calculatedFluxX = kae::getXFluxes<1U>(pGasState, index, lambda);
-      const auto calculatedFluxY = kae::getYFluxes<pointsCount>(pGasState, index, lambda);
+      const auto calculatedFluxX = kae::getXFluxes<1U>(pGasState, index, tf::lambda);
+      const auto calculatedFluxY = kae::getYFluxes<tf::pointsCount>(pGasState, index, tf::lambda);
 
+      const auto goldFluxX = kae::XFluxes::get(tf::gasState(tf::xCoordinatePlus(i), tf::yCoordinate(j)));
+      const auto goldFluxY = kae::YFluxes::get(tf::gasState(tf::xCoordinate(i), tf::yCoordinatePlus(j)));
 
-      const auto goldFluxX = kae::XFluxes::get(gasState(xCoordinatePlus(i), yCoordinate(j)));
-      const auto goldFluxY = kae::YFluxes::get(gasState(xCoordinate(i), yCoordinatePlus(j)));
-
-      constexpr float threshold{ 1e-5f };
+      constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(4e-7) :
+                                                                           static_cast<ElemType>(4e-11) };
       EXPECT_FLOAT4_NEAR(calculatedFluxX, goldFluxX, threshold);
       EXPECT_FLOAT4_NEAR(calculatedFluxY, goldFluxY, threshold);
     }

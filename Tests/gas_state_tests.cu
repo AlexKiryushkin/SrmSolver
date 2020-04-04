@@ -3,29 +3,41 @@
 
 #include <gtest/gtest.h>
 
+#include <SrmSolver/cuda_float_types.h>
 #include <SrmSolver/gas_state.h>
 
 #include "comparators.h"
 
 namespace tests {
 
-TEST(gas_state, gas_state_fields)
+template <class T>
+class gas_state : public ::testing::Test {};
+
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(gas_state, TypeParams);
+
+TYPED_TEST(gas_state, gas_state_fields)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 1.0f, 2.0f, 3.0f, 4.0f };
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0) };
 
-  constexpr float goldKappa{ 1.2f };
-  constexpr float goldCp{ 6.0f };
-  constexpr float goldR{ 1.0f };
-  constexpr float goldRho{ 1.0f };
-  constexpr float goldUx{ 2.0f };
-  constexpr float goldUy{ 3.0f };
-  constexpr float goldP{ 4.0f };
+  constexpr ElemType goldKappa{ static_cast<ElemType>(1.2) };
+  constexpr ElemType goldCp{    static_cast<ElemType>(6.0) };
+  constexpr ElemType goldR{     static_cast<ElemType>(1.0) };
+  constexpr ElemType goldRho{   static_cast<ElemType>(1.0) };
+  constexpr ElemType goldUx{    static_cast<ElemType>(2.0) };
+  constexpr ElemType goldUy{    static_cast<ElemType>(3.0) };
+  constexpr ElemType goldP{     static_cast<ElemType>(4.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(GasStateT::kappa, goldKappa, threshold);
   EXPECT_NEAR(GasStateT::Cp, goldCp, threshold);
   EXPECT_NEAR(GasStateT::R, goldR, threshold);
@@ -35,504 +47,715 @@ TEST(gas_state, gas_state_fields)
   EXPECT_EQ(gasState.p, goldP);
 }
 
-TEST(gas_state, gas_state_rho)
+TYPED_TEST(gas_state, gas_state_rho)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 1.0f, 3.0f, 4.0f, 2.0f };
-  const float rho = kae::Rho::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType rho = kae::Rho::get(gasState);
 
-  constexpr float goldRho{ 1.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType goldRho{ static_cast<ElemType>(1.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(rho, goldRho, threshold);
 }
 
-TEST(gas_state, gas_state_p)
+TYPED_TEST(gas_state, gas_state_p)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 1.0f, 3.0f, 4.0f, 2.0f };
-  const float p = kae::P::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType p = kae::P::get(gasState);
 
-  constexpr float goldP{ 2.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType goldP{ static_cast<ElemType>(2.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(p, goldP, threshold);
 }
 
-TEST(gas_state, gas_state_velocity_squared)
+TYPED_TEST(gas_state, gas_state_velocity_squared)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 1.0f, 3.0f, 4.0f, 2.0f };
-  const float velocitySquared = kae::VelocitySquared::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType velocitySquared = kae::VelocitySquared::get(gasState);
 
-  constexpr float goldVelocitySquared{ 25.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType goldVelocitySquared{ static_cast<ElemType>(25.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(velocitySquared, goldVelocitySquared, threshold);
 }
 
-TEST(gas_state, gas_state_velocity)
+TYPED_TEST(gas_state, gas_state_velocity)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 1.0f, 3.0f, 4.0f, 2.0f };
-  const float velocity = kae::Velocity::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType velocity = kae::Velocity::get(gasState);
 
-  constexpr float goldVelocity{ 5.0f };
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType goldVelocity{ static_cast<ElemType>(5.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(velocity, goldVelocity, threshold);
 }
 
-TEST(gas_state, gas_state_mass_flux_x)
+TYPED_TEST(gas_state, gas_state_mass_flux_x)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float massFluxX = kae::MassFluxX::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType massFluxX = kae::MassFluxX::get(gasState);
 
-  const float goldMassFluxX{ 15.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMassFluxX{ static_cast<ElemType>(15.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(massFluxX, goldMassFluxX, threshold);
 }
 
-TEST(gas_state, gas_state_mass_flux_y)
+TYPED_TEST(gas_state, gas_state_mass_flux_y)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float massFluxY = kae::MassFluxY::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType massFluxY = kae::MassFluxY::get(gasState);
 
-  const float goldMassFluxY{ 20.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMassFluxY{ static_cast<ElemType>(20.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(massFluxY, goldMassFluxY, threshold);
 }
 
-TEST(gas_state, gas_state_momentum_flux_xx)
+TYPED_TEST(gas_state, gas_state_momentum_flux_xx)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float momentumFluxXx = kae::MomentumFluxXx::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0), 
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType momentumFluxXx = kae::MomentumFluxXx::get(gasState);
 
-  const float goldMomentumFluxXx{ 47.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMomentumFluxXx{ static_cast<ElemType>(47.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(momentumFluxXx, goldMomentumFluxXx, threshold);
 }
 
-TEST(gas_state, gas_state_momentum_flux_xy)
+TYPED_TEST(gas_state, gas_state_momentum_flux_xy)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float momentumFluxXy = kae::MomentumFluxXy::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType momentumFluxXy = kae::MomentumFluxXy::get(gasState);
 
-  const float goldMomentumFluxXy{ 60.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMomentumFluxXy{ static_cast<ElemType>(60.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(momentumFluxXy, goldMomentumFluxXy, threshold);
 }
 
-TEST(gas_state, gas_state_momentum_flux_yy)
+TYPED_TEST(gas_state, gas_state_momentum_flux_yy)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float momentumFluxYy = kae::MomentumFluxYy::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType momentumFluxYy = kae::MomentumFluxYy::get(gasState);
 
-  const float goldMomentumFluxYy{ 82.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMomentumFluxYy{ static_cast<ElemType>(82.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(momentumFluxYy, goldMomentumFluxYy, threshold);
 }
 
-TEST(gas_state, gas_state_rho_energy)
+TYPED_TEST(gas_state, gas_state_rho_energy)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float rhoEnergy = kae::RhoEnergy::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType rhoEnergy = kae::RhoEnergy::get(gasState);
 
-  const float goldRhoEnergy{ 72.5f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldRhoEnergy{ static_cast<ElemType>(72.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(rhoEnergy, goldRhoEnergy, threshold);
 }
 
-TEST(gas_state, gas_state_energy)
+TYPED_TEST(gas_state, gas_state_energy)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float energy = kae::Energy::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType energy = kae::Energy::get(gasState);
 
-  const float goldEnergy{ 14.5f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldEnergy{ static_cast<ElemType>(14.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(energy, goldEnergy, threshold);
 }
 
-TEST(gas_state, gas_state_enthalpy_flux_x)
+TYPED_TEST(gas_state, gas_state_enthalpy_flux_x)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float enthalpyFluxX = kae::EnthalpyFluxX::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType enthalpyFluxX = kae::EnthalpyFluxX::get(gasState);
 
-  const float goldEnthalpyFluxX{ 223.5f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldEnthalpyFluxX{ static_cast<ElemType>(223.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(enthalpyFluxX, goldEnthalpyFluxX, threshold);
 }
 
-TEST(gas_state, gas_state_enthalpy_flux_y)
+TYPED_TEST(gas_state, gas_state_enthalpy_flux_y)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float enthalpyFluxY = kae::EnthalpyFluxY::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const ElemType enthalpyFluxY = kae::EnthalpyFluxY::get(gasState);
 
-  const float goldEnthalpyFluxY{ 298.0f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldEnthalpyFluxY{ static_cast<ElemType>(298.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(enthalpyFluxY, goldEnthalpyFluxY, threshold);
 }
 
-TEST(gas_state, gas_state_sonic_speed_squared)
+TYPED_TEST(gas_state, gas_state_sonic_speed_squared)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float sonicSpeedSquared = kae::SonicSpeedSquared::get(gasState);
+  GasStateT gasState{ static_cast<ElemType>(2.0),
+                      static_cast<ElemType>(3.0),
+                      static_cast<ElemType>(4.0),
+                      static_cast<ElemType>(2.4) };
+  const ElemType sonicSpeedSquared = kae::SonicSpeedSquared::get(gasState);
 
-  const float goldSonicSpeedSquared{ 1.44f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldSonicSpeedSquared{ static_cast<ElemType>(1.44) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(sonicSpeedSquared, goldSonicSpeedSquared, threshold);
 }
 
-TEST(gas_state, gas_state_sonic_speed)
+TYPED_TEST(gas_state, gas_state_sonic_speed)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float sonicSpeed = kae::SonicSpeed::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const ElemType sonicSpeed = kae::SonicSpeed::get(gasState);
 
-  const float goldSonicSpeed{ 1.2f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldSonicSpeed{ static_cast<ElemType>(1.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(sonicSpeed, goldSonicSpeed, threshold);
 }
 
-TEST(gas_state, gas_state_mach)
+TYPED_TEST(gas_state, gas_state_mach)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float mach = kae::Mach::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const ElemType mach = kae::Mach::get(gasState);
 
-  const float goldMach{ 5.0f / 1.2f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldMach{ static_cast<ElemType>(5.0 / 1.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) : static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(mach, goldMach, threshold);
 }
 
-TEST(gas_state, gas_state_temperature)
+TYPED_TEST(gas_state, gas_state_temperature)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<12, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<12, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 6.0f };
-  const float temperature = kae::Temperature::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(6.0) };
+  const ElemType temperature = kae::Temperature::get(gasState);
 
-  const float goldTemperature{ 1.5f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldTemperature{ static_cast<ElemType>(1.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(temperature, goldTemperature, threshold);
 }
 
-TEST(gas_state, gas_state_rotate_1_quadrant)
+TYPED_TEST(gas_state, gas_state_rotate_1_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 5.0f, 12.0f, 2.0f };
-  constexpr float nx{ 0.8f };
-  constexpr float ny{ 0.6f };
-  GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(12.0),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(0.6) };
+  const GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 11.2f, 6.6f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(11.2),
+                                       static_cast<ElemType>(6.6),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_rotate_2_quadrant)
+TYPED_TEST(gas_state, gas_state_rotate_2_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 5.0f, 12.0f, 2.0f };
-  constexpr float nx{ -0.8f };
-  constexpr float ny{ 0.6f };
-  GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(12.0),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(-0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(0.6)};
+  const GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 3.2f, -12.6f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(3.2),
+                                       static_cast<ElemType>(-12.6),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_rotate_3_quadrant)
+TYPED_TEST(gas_state, gas_state_rotate_3_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 5.0f, 12.0f, 2.0f };
-  constexpr float nx{ -0.8f };
-  constexpr float ny{ -0.6f };
-  GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(12.0),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(-0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(-0.6) };
+  const GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, -11.2f, -6.6f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(-11.2),
+                                       static_cast<ElemType>(-6.6),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_rotate_4_quadrant)
+TYPED_TEST(gas_state, gas_state_rotate_4_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 5.0f, 12.0f, 2.0f };
-  constexpr float nx{ 0.8f };
-  constexpr float ny{ -0.6f };
-  GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(12.0),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(-0.6) };
+  const GasStateT rotatedGasState = kae::Rotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, -3.2f, 12.6f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(-3.2),
+                                       static_cast<ElemType>(12.6),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_reverse_rotate_1_quadrant)
+TYPED_TEST(gas_state, gas_state_reverse_rotate_1_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 11.2f, 6.6f, 2.0f };
-  constexpr float nx{ 0.8f };
-  constexpr float ny{ 0.6f };
-  GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(11.2),
+                            static_cast<ElemType>(6.6),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(0.6) };
+  const GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 5.0f, 12.0f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(12.0), 
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_reverse_rotate_2_quadrant)
+TYPED_TEST(gas_state, gas_state_reverse_rotate_2_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.2f, -12.6f, 2.0f };
-  constexpr float nx{ -0.8f };
-  constexpr float ny{ 0.6f };
-  GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.2),
+                            static_cast<ElemType>(-12.6),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(-0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(0.6) };
+  const GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 5.0f, 12.0f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(12.0),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_reverse_rotate_3_quadrant)
+TYPED_TEST(gas_state, gas_state_reverse_rotate_3_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, -11.2f, -6.6f, 2.0f };
-  constexpr float nx{ -0.8f };
-  constexpr float ny{ -0.6f };
-  GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(-11.2),
+                            static_cast<ElemType>(-6.6),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(-0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(-0.6) };
+  const GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 5.0f, 12.0f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(12.0),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_reverse_rotate_4_quadrant)
+TYPED_TEST(gas_state, gas_state_reverse_rotate_4_quadrant)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, -3.2f, 12.6f, 2.0f };
-  constexpr float nx{ 0.8f };
-  constexpr float ny{ -0.6f };
-  GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(-3.2),
+                            static_cast<ElemType>(12.6),
+                            static_cast<ElemType>(2.0) };
+  constexpr ElemType nx{ static_cast<ElemType>(0.8) };
+  constexpr ElemType ny{ static_cast<ElemType>(-0.6) };
+  const GasStateT rotatedGasState = kae::ReverseRotate::get(gasState, nx, ny);
 
-  GasStateT goldRotatedGasState{ 5.0f, 5.0f, 12.0f, 2.0f };
+  const GasStateT goldRotatedGasState{ static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(5.0),
+                                       static_cast<ElemType>(12.0),
+                                       static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(rotatedGasState, goldRotatedGasState, threshold);
 }
 
-TEST(gas_state, gas_state_wave_speed_x)
+TYPED_TEST(gas_state, gas_state_wave_speed_x)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float sonicSpeed = kae::WaveSpeedX::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const ElemType sonicSpeed = kae::WaveSpeedX::get(gasState);
 
-  const float goldSonicSpeed{ 4.2f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldSonicSpeed{ static_cast<ElemType>(4.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(sonicSpeed, goldSonicSpeed, threshold);
 }
 
-TEST(gas_state, gas_state_wave_speed_y)
+TYPED_TEST(gas_state, gas_state_wave_speed_y)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float sonicSpeed = kae::WaveSpeedY::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const ElemType sonicSpeed = kae::WaveSpeedY::get(gasState);
 
-  const float goldSonicSpeed{ 5.2f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldSonicSpeed{ static_cast<ElemType>(5.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(sonicSpeed, goldSonicSpeed, threshold);
 }
 
-TEST(gas_state, gas_state_wave_speed)
+TYPED_TEST(gas_state, gas_state_wave_speed)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 2.0f, 3.0f, 4.0f, 2.4f };
-  const float sonicSpeed = kae::WaveSpeed::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const ElemType sonicSpeed = kae::WaveSpeed::get(gasState);
 
-  const float goldSonicSpeed{ 6.2f };
-  const float threshold{ 1e-6f };
+  constexpr ElemType goldSonicSpeed{ static_cast<ElemType>(6.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(sonicSpeed, goldSonicSpeed, threshold);
 }
 
-TEST(gas_state, gas_state_mirror_state)
+TYPED_TEST(gas_state, gas_state_mirror_state)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  const GasStateT gasState{ 5.0f, 5.0f, 12.0f, 2.0f };
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(5.0), 
+                            static_cast<ElemType>(12.0),
+                            static_cast<ElemType>(2.0) };
   const GasStateT mirrorGasState = kae::MirrorState::get(gasState);
 
-  const GasStateT goldMirrorGasState{ 5.0f, -5.0f, 12.0f, 2.0f };
+  const GasStateT goldMirrorGasState{ static_cast<ElemType>(5.0),
+                                      static_cast<ElemType>(-5.0),
+                                      static_cast<ElemType>(12.0),
+                                      static_cast<ElemType>(2.0) };
 
-  constexpr float threshold{ 1e-6f };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(mirrorGasState, goldMirrorGasState, threshold);
 }
 
-TEST(gas_state, gas_state_conservative_variables)
+TYPED_TEST(gas_state, gas_state_conservative_variables)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float4 conservativeVariables = kae::ConservativeVariables::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const kae::CudaFloatT<4U, ElemType> conservativeVariables = kae::ConservativeVariables::get(gasState);
 
-  const float4 goldConservativeVariables{ 5.0f, 15.0f, 20.0f, 72.5f };
-  const float threshold{ 1e-6f };
+  constexpr kae::CudaFloatT<4U, ElemType> goldConservativeVariables{ static_cast<ElemType>(5.0),
+                                                                     static_cast<ElemType>(15.0),
+                                                                     static_cast<ElemType>(20.0),
+                                                                     static_cast<ElemType>(72.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(conservativeVariables, goldConservativeVariables, threshold);
 }
 
-TEST(gas_state, gas_state_x_fluxes)
+TYPED_TEST(gas_state, gas_state_x_fluxes)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float4 xFluxes = kae::XFluxes::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const kae::CudaFloatT<4U, ElemType> xFluxes = kae::XFluxes::get(gasState);
 
-  const float4 goldXFluxes{ 15.0f, 47.0f, 60.0f, 223.5f };
-  const float threshold{ 1e-6f };
+  constexpr kae::CudaFloatT<4U, ElemType> goldXFluxes{ static_cast<ElemType>(15.0),
+                                                       static_cast<ElemType>(47.0),
+                                                       static_cast<ElemType>(60.0),
+                                                       static_cast<ElemType>(223.5) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(xFluxes, goldXFluxes, threshold);
 }
 
-TEST(gas_state, gas_state_y_fluxes)
+TYPED_TEST(gas_state, gas_state_y_fluxes)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float4 yFluxes = kae::YFluxes::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const kae::CudaFloatT<4U, ElemType> yFluxes = kae::YFluxes::get(gasState);
 
-  const float4 goldYFluxes{ 20.0f, 60.0f, 82.0f, 298.0f };
-  const float threshold{ 1e-6f };
+  constexpr kae::CudaFloatT<4U, ElemType> goldYFluxes{ static_cast<ElemType>(20.0),
+                                                       static_cast<ElemType>(60.0),
+                                                       static_cast<ElemType>(82.0),
+                                                       static_cast<ElemType>(298.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(yFluxes, goldYFluxes, threshold);
 }
 
-TEST(gas_state, gas_state_source_term)
+TYPED_TEST(gas_state, gas_state_source_term)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  GasStateT gasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float4 sourceTerm = kae::SourceTerm::get(gasState);
+  const GasStateT gasState{ static_cast<ElemType>(5.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const kae::CudaFloatT<4U, ElemType> sourceTerm = kae::SourceTerm::get(gasState);
 
-  const float4 goldSourceTerm{ 20.0f, 60.0f, 80.0f, 298.0f };
-  const float threshold{ 1e-6f };
+  constexpr kae::CudaFloatT<4U, ElemType> goldSourceTerm{ static_cast<ElemType>(20.0),
+                                                          static_cast<ElemType>(60.0),
+                                                          static_cast<ElemType>(80.0),
+                                                          static_cast<ElemType>(298.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(sourceTerm, goldSourceTerm, threshold);
 }
 
-TEST(gas_state, gas_state_conservative_to_gas_state)
+TYPED_TEST(gas_state, gas_state_conservative_to_gas_state)
 {
-  using KappaT = std::ratio<12, 10>;
-  using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT>;
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
 
-  constexpr float4 conservativeVariables{ 5.0f, 15.0f, 20.0f, 72.5f };
+  constexpr kae::CudaFloatT<4U, ElemType> conservativeVariables{ static_cast<ElemType>(5.0),
+                                                                 static_cast<ElemType>(15.0),
+                                                                 static_cast<ElemType>(20.0),
+                                                                 static_cast<ElemType>(72.5) };
   const GasStateT gasState = kae::ConservativeToGasState::get<GasStateT>(conservativeVariables);
 
-  const GasStateT goldGasState{ 5.0f, 3.0f, 4.0f, 2.0f };
-  const float threshold{ 1e-6f };
+  const GasStateT goldGasState{ static_cast<ElemType>(5.0),
+                                static_cast<ElemType>(3.0),
+                                static_cast<ElemType>(4.0),
+                                static_cast<ElemType>(2.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(gasState, goldGasState, threshold);
 }
 

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstdint>
-#include <ratio>
+#include "std_includes.h"
 
 namespace kae {
 
@@ -10,7 +9,7 @@ namespace detail {
 template <class T, class ElemT>
 struct ToFloat;
 
-template <class T, class ElemT = float>
+template <class T, class ElemT>
 constexpr ElemT ToFloatV = ToFloat<T, ElemT>::value;
 
 template <std::intmax_t Num, std::intmax_t Denom, class ElemT>

@@ -8,8 +8,15 @@
 
 namespace tests {
 
-TEST(propellant_properties, propellant_properties_fields)
+template <class T>
+class propellant_properties : public ::testing::Test {};
+
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(propellant_properties, TypeParams);
+
+TYPED_TEST(propellant_properties, propellant_properties_fields)
 {
+  using ElemType                 = TypeParam;
   using NuType                   = std::ratio<5, 10>;
   using MtType                   = std::ratio<3, 1000>;
   using TBurnType                = std::ratio<1, 1>;
@@ -17,23 +24,24 @@ TEST(propellant_properties, propellant_properties_fields)
   using KappaType                = std::ratio<12, 10>;
   using CpType                   = std::ratio<6, 1>;
   using P0Type                   = std::ratio<1, 1000>;
-  using PropellantPropertiesType = kae::PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type>;
-  using GasStateType             = kae::GasState<KappaType, CpType>;
+  using PropellantPropertiesType = kae::PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, ElemType>;
+  using GasStateType             = kae::GasState<KappaType, CpType, ElemType>;
 
-  constexpr float goldNu{ 0.5f };
-  constexpr float goldMt{ 0.003f };
-  constexpr float goldTBurn{ 1.0f };
-  constexpr float goldRhoP{ 300.0f };
-  constexpr float goldH0{ 6.0f };
-  constexpr float goldP0{ 0.001f };
+  constexpr ElemType goldNu{ static_cast<ElemType>(0.5) };
+  constexpr ElemType goldMt{ static_cast<ElemType>(0.003) };
+  constexpr ElemType goldTBurn{ static_cast<ElemType>(1.0) };
+  constexpr ElemType goldRhoP{ static_cast<ElemType>(300.0) };
+  constexpr ElemType goldH0{ static_cast<ElemType>(6.0) };
+  constexpr ElemType goldP0{ static_cast<ElemType>(0.001) };
 
-  constexpr float threshold{ 1e-6f };
-  EXPECT_NEAR(PropellantPropertiesType::nu,               goldNu,    threshold);
-  EXPECT_NEAR(PropellantPropertiesType::mt,               goldMt,    threshold);
-  EXPECT_NEAR(PropellantPropertiesType::TBurn,            goldTBurn, threshold);
-  EXPECT_NEAR(PropellantPropertiesType::rhoP,             goldRhoP,  threshold);
-  EXPECT_NEAR(PropellantPropertiesType::H0<GasStateType>, goldH0,    threshold);
-  EXPECT_NEAR(PropellantPropertiesType::P0,               goldP0,    threshold);
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  EXPECT_NEAR(PropellantPropertiesType::nu,                        goldNu,    threshold);
+  EXPECT_NEAR(PropellantPropertiesType::mt,                        goldMt,    threshold);
+  EXPECT_NEAR(PropellantPropertiesType::TBurn,                     goldTBurn, threshold);
+  EXPECT_NEAR(PropellantPropertiesType::rhoP,                      goldRhoP,  threshold);
+  EXPECT_NEAR(PropellantPropertiesType::template H0<GasStateType>, goldH0,    threshold);
+  EXPECT_NEAR(PropellantPropertiesType::P0,                        goldP0,    threshold);
 }
 
 } // namespace tests

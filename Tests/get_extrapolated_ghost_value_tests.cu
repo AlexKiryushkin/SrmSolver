@@ -11,58 +11,107 @@
 
 namespace tests {
 
+template <class T>
 class get_extrapolated_ghost_value : public ::testing::Test
 {
 public:
-  using KappaType = std::ratio<12, 10>;
-  using CpType = std::ratio<6045, 1000>;
-  using GasStateType = kae::GasState<KappaType, CpType>;
+  using ElemType     = T;
+  using KappaType    = std::ratio<12, 10>;
+  using CpType       = std::ratio<6045, 1000>;
+  using GasStateType = kae::GasState<KappaType, CpType, ElemType>;
 
-  using NuType = std::ratio<5, 10>;
-  using MtType = std::ratio<-3, 10>;
-  using TBurnType = std::ratio<1, 1>;
-  using RhoPType = std::ratio<300, 1>;
-  using P0Type = std::ratio<144, 1000>;
-  using PropellantPropertiesType = kae::PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type>;
+  using NuType                   = std::ratio<5, 10>;
+  using MtType                   = std::ratio<-3, 10>;
+  using TBurnType                = std::ratio<1, 1>;
+  using RhoPType                 = std::ratio<300, 1>;
+  using P0Type                   = std::ratio<144, 1000>;
+  using PropellantPropertiesType = kae::PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, ElemType>;
 };
 
-TEST_F(get_extrapolated_ghost_value, get_extrapolated_ghost_value_wall)
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(get_extrapolated_ghost_value, TypeParams);
+
+TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_wall)
 {
-  const GasStateType gasState{ 1.0f, 1.5f, 0.5f, 1.2f };
+  using ElemType                 = typename TestFixture::ElemType;
+  using GasStateType             = typename TestFixture::GasStateType;
+  using PropellantPropertiesType = typename TestFixture::PropellantPropertiesType;
+
+  const GasStateType gasState{ static_cast<ElemType>(1.0),
+                               static_cast<ElemType>(1.5),
+                               static_cast<ElemType>(0.5),
+                               static_cast<ElemType>(1.2) };
   const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PropellantPropertiesType>(gasState, kae::EBoundaryCondition::eWall);
 
-  const GasStateType goldExtrapolatedState{ 2.25f, 0.0f, 0.5f, 3.0f };
-  constexpr float threshold{ 1e-6f };
+  const GasStateType goldExtrapolatedState{ static_cast<ElemType>(2.25),
+                                            static_cast<ElemType>(0.0),
+                                            static_cast<ElemType>(0.5),
+                                            static_cast<ElemType>(3.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(extrapolatedState, goldExtrapolatedState, threshold);
 }
 
-TEST_F(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_outlet_supersonic)
+TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_outlet_supersonic)
 {
-  const GasStateType gasState{ 1.0f, 1.5f, 0.5f, 1.2f };
+  using ElemType                 = typename TestFixture::ElemType;
+  using GasStateType             = typename TestFixture::GasStateType;
+  using PropellantPropertiesType = typename TestFixture::PropellantPropertiesType;
+
+  const GasStateType gasState{ static_cast<ElemType>(1.0),
+                               static_cast<ElemType>(1.5),
+                               static_cast<ElemType>(0.5),
+                               static_cast<ElemType>(1.2) };
   const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PropellantPropertiesType>(gasState, kae::EBoundaryCondition::ePressureOutlet);
 
-  const GasStateType goldExtrapolatedState{ 1.0f, 1.5f, 0.5f, 1.2f };
-  constexpr float threshold{ 1e-6f };
+  const GasStateType goldExtrapolatedState{ static_cast<ElemType>(1.0),
+                                            static_cast<ElemType>(1.5),
+                                            static_cast<ElemType>(0.5),
+                                            static_cast<ElemType>(1.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(extrapolatedState, goldExtrapolatedState, threshold);
 }
 
-TEST_F(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_outlet_subsonic)
+TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_outlet_subsonic)
 {
-  const GasStateType gasState{ 1.2f, 0.2f, 0.5f, 1.44f };
+  using ElemType                 = typename TestFixture::ElemType;
+  using GasStateType             = typename TestFixture::GasStateType;
+  using PropellantPropertiesType = typename TestFixture::PropellantPropertiesType;
+
+  const GasStateType gasState{ static_cast<ElemType>(1.2),
+                               static_cast<ElemType>(0.2),
+                               static_cast<ElemType>(0.5),
+                               static_cast<ElemType>(1.44) };
   const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PropellantPropertiesType>(gasState, kae::EBoundaryCondition::ePressureOutlet);
 
-  const GasStateType goldExtrapolatedState{ 0.3f, 1.1f, 0.5f, PropellantPropertiesType::P0 };
-  constexpr float threshold{ 1e-6f };
+  const GasStateType goldExtrapolatedState{ static_cast<ElemType>(0.3),
+                                            static_cast<ElemType>(1.1),
+                                            static_cast<ElemType>(0.5),
+                                            PropellantPropertiesType::P0 };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(extrapolatedState, goldExtrapolatedState, threshold);
 }
 
-TEST_F(get_extrapolated_ghost_value, get_extrapolated_ghost_value_massflow_inlet)
+TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_massflow_inlet)
 {
-  const GasStateType gasState{ 1.0f, -0.3f, 0.1f, 1.0f };
+  using ElemType = typename TestFixture::ElemType;
+  using GasStateType = typename TestFixture::GasStateType;
+  using PropellantPropertiesType = typename TestFixture::PropellantPropertiesType;
+
+  const GasStateType gasState{ static_cast<ElemType>(1.0),
+                               static_cast<ElemType>(-0.3),
+                               static_cast<ElemType>(0.1),
+                               static_cast<ElemType>(1.0) };
   const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PropellantPropertiesType>(gasState, kae::EBoundaryCondition::eMassFlowInlet);
 
-  const GasStateType goldExtrapolatedState{ 1.0f, -0.3f, 0.0f, 1.0f };
-  constexpr float threshold{ 1e-6f };
+  const GasStateType goldExtrapolatedState{ static_cast<ElemType>(1.0),
+                                            static_cast<ElemType>(-0.3),
+                                            static_cast<ElemType>(0.0),
+                                            static_cast<ElemType>(1.0) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
   EXPECT_GAS_STATE_NEAR(extrapolatedState, goldExtrapolatedState, threshold);
 }
 

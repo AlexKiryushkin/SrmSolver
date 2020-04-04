@@ -1,17 +1,11 @@
 #pragma once
 
-#include <cstdio>
-
-#include <device_launch_parameters.h>
-#include <thrust/device_ptr.h>
+#include "cuda_includes.h"
 
 #include "boundary_condition.h"
 #include "cuda_float_types.h"
 #include "gas_state.h"
-#include "get_closest_rotated_state_index.h"
 #include "get_extrapolated_ghost_value.h"
-#include "level_set_derivatives.h"
-#include "math_utilities.h"
 
 namespace kae {
 

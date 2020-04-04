@@ -1,13 +1,11 @@
 #pragma once
 
-#include <cstddef>
-
 #include "to_float.h"
 
 namespace kae
 {
 
-template <unsigned Nx, unsigned Ny, class LxToType, class LyToType, unsigned SmExtension = 3U, class ElemT = float>
+template <unsigned Nx, unsigned Ny, class LxToType, class LyToType, unsigned SmExtension, class ElemT>
 struct GpuGrid
 {
   using ElemType = ElemT;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cuda_float_types.h"
 #include "math_utilities.h"
 
 namespace kae {
@@ -58,15 +59,13 @@ __host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, const unsigne
     LC<ElemT>[2][0] * v[2] + LC<ElemT>[2][1] * v[3] + LC<ElemT>[2][2] * v[4] };
 
   const ElemT s[fluxesCount] =
-  { WC<ElemT>[0] * sqr(v[0] - static_cast<ElemT>(2.0) * v[1] + v[2]) +
-    WC<ElemT>[1] * sqr(v[0] - static_cast<ElemT>(4.0) * v[1] + static_cast<ElemT>(3.0) * v[2]),
+  { WC<ElemT>[0] * sqr(v[0] - 2 * v[1] + v[2]) + WC<ElemT>[1] * sqr(v[0] - 4 * v[1] + 3 * v[2]),
+    WC<ElemT>[0] * sqr(v[1] - 2 * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
 
-    WC<ElemT>[0] * sqr(v[1] - static_cast<ElemT>(2.0) * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
+    WC<ElemT>[0] * sqr(v[2] - 2 * v[3] + v[4]) + 
+    WC<ElemT>[1] * sqr(3 * v[2] - 4 * v[3] + v[4]) };
 
-    WC<ElemT>[0] * sqr(v[2] - static_cast<ElemT>(2.0) * v[3] + v[4]) + 
-    WC<ElemT>[1] * sqr(static_cast<ElemT>(3.0) * v[2] - static_cast<ElemT>(4.0) * v[3] + v[4]) };
-
-  constexpr ElemT epsilon = std::is_same<ElemT, float>::value ? 1e-6 : 1e-10;
+  constexpr ElemT epsilon = std::is_same<ElemT, float>::value ? static_cast<ElemT>(1e-12) : static_cast<ElemT>(1e-24);
   const ElemT alpha[fluxesCount] = {
     a<ElemT>[0] / sqr(s[0] + epsilon),
     a<ElemT>[1] / sqr(s[1] + epsilon),
@@ -93,12 +92,21 @@ __host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, unsigned i, b
 }
 
 template <class GpuGridT, unsigned Nx, class ElemT>
-__host__ __device__ ElemT getLevelSetGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
+__host__ __device__ CudaFloatT<2U, ElemT> getLevelSetGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
 {
   ElemT derivativeX = getLevelSetDerivative<GpuGridT, 1>(arr, i, isPositiveVelocity);
   ElemT derivativeY = getLevelSetDerivative<GpuGridT, Nx>(arr, i, isPositiveVelocity);
 
-  return std::sqrt(derivativeX * derivativeX + derivativeY * derivativeY);
+  return { derivativeX, derivativeY };
+}
+
+template <class GpuGridT, unsigned Nx, class ElemT>
+__host__ __device__ ElemT getLevelSetAbsGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
+{
+  ElemT derivativeX = getLevelSetDerivative<GpuGridT, 1>(arr, i, isPositiveVelocity);
+  ElemT derivativeY = getLevelSetDerivative<GpuGridT, Nx>(arr, i, isPositiveVelocity);
+
+  return std::hypot(derivativeX, derivativeY);
 }
 
 } // namespace detail

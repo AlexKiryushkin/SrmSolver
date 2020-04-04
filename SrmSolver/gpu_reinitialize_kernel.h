@@ -1,8 +1,6 @@
 #pragma once
 
-#include <thrust/device_ptr.h>
-
-#include <device_launch_parameters.h>
+#include "cuda_includes.h"
 
 #include "level_set_derivatives.h"
 
@@ -67,11 +65,11 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
   if (schemeShouldBeApplied)
   {
     const ElemT sgdValue = prevMatrix[sharedIdx];
-    const ElemT grad     = getLevelSetGradient<GpuGridT, GpuGridT::sharedMemory.x>(prevMatrix, sharedIdx, (sgdValue > 0));
+    const ElemT grad     = getLevelSetAbsGradient<GpuGridT, GpuGridT::sharedMemory.x>(prevMatrix, sharedIdx, (sgdValue > 0));
     const ElemT sgn      = sgdValue / std::hypot(sgdValue, grad * GpuGridT::hx);
-    const ElemT val      = sgdValue - dt * sgn * (grad - 1.0f);
+    const ElemT val      = sgdValue - dt * sgn * (grad - static_cast<ElemT>(1.0));
 
-    if (prevWeight != 1.0f)
+    if (prevWeight != static_cast<ElemT>(1.0))
     {
       pCurrValue[globalIdx] = (1 - prevWeight) * pFirstValue[globalIdx] + prevWeight * val;
     }

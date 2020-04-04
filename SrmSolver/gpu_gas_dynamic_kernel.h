@@ -1,8 +1,6 @@
 #pragma once
 
-#include <thrust/device_ptr.h>
-
-#include <device_launch_parameters.h>
+#include "cuda_includes.h"
 
 #include "cuda_float_types.h"
 #include "float4_arithmetics.h"

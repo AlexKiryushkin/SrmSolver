@@ -1,9 +1,6 @@
 #pragma once
 
-#include <algorithm>
-
-#include <thrust/iterator/transform_iterator.h>
-#include <thrust/reduce.h>
+#include "cuda_includes.h"
 
 #include "gas_state.h"
 #include "gpu_build_ghost_to_closest_map_kernel.h"

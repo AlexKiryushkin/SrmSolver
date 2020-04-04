@@ -13,13 +13,15 @@
   <ItemGroup>
     <ClInclude Include="boundary_condition.h" />
     <ClInclude Include="cuda_float_types.h" />
+    <ClInclude Include="cuda_includes.h" />
     <ClInclude Include="discretization_order.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="float4_arithmetics.h" />
     <ClInclude Include="gas_dynamic_flux.h" />
     <ClInclude Include="gas_state.h" />
-    <ClInclude Include="get_closest_rotated_state_index.h" />
+    <ClInclude Include="get_closest_index.h" />
     <ClInclude Include="get_extrapolated_ghost_value.h" />
+    <ClInclude Include="ghost_point_data.h" />
     <ClInclude Include="gpu_build_ghost_to_closest_map_kernel.h" />
     <ClInclude Include="gpu_gas_dynamic_kernel.h" />
     <ClInclude Include="gpu_grid.h" />
@@ -32,6 +34,7 @@
     <ClInclude Include="gpu_set_ghost_points_kernel.h" />
     <ClInclude Include="gpu_srm_solver.h" />
     <ClInclude Include="gpu_srm_solver_def.h" />
+    <ClInclude Include="gpu_calculate_ghost_point_data_kernel.h" />
     <ClInclude Include="level_set_derivatives.h" />
     <ClInclude Include="math_utilities.h" />
     <ClInclude Include="propellant_properties.h" />
@@ -43,6 +46,7 @@
     <ClInclude Include="srm_shape_nozzle_less_def.h" />
     <ClInclude Include="srm_shape_with_umbrella.h" />
     <ClInclude Include="srm_shape_with_umbrella_def.h" />
+    <ClInclude Include="std_includes.h" />
     <ClInclude Include="to_float.h" />
     <ClInclude Include="tube_shape.h" />
   </ItemGroup>
@@ -87,12 +91,13 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_USE_MATH_DEFINES;WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EIGEN_GPUCC;_USE_MATH_DEFINES;WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(EIGEN_INCLUDE_DIR);$(BOOST_ROOT);$(CudaToolkitIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -102,19 +107,21 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration />
-      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalCompilerOptions>/wd"4714" /wd"4068"</AdditionalCompilerOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_USE_MATH_DEFINES;WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EIGEN_GPUCC;_USE_MATH_DEFINES;WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(EIGEN_INCLUDE_DIR);$(BOOST_ROOT);%(AdditionalIncludeDirectories);$(CudaToolkitIncludeDir)</AdditionalIncludeDirectories>
       <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -126,7 +133,8 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration />
-      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalCompilerOptions>/wd"4714" /wd"4068"</AdditionalCompilerOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

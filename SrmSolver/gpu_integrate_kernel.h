@@ -1,9 +1,6 @@
 #pragma once
 
-#include <thrust/device_ptr.h>
-#include <thrust/extrema.h>
-
-#include <device_launch_parameters.h>
+#include "cuda_includes.h"
 
 #include "level_set_derivatives.h"
 #include "propellant_properties.h"
@@ -73,7 +70,7 @@ __global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>     pPrevV
     const ElemT ySurface = j * GpuGridT::hy - normalY * sgdValue;
 
     const bool pointIsOnGrain       = ShapeT::isPointOnGrain(xSurface, ySurface);
-    const unsigned closestGlobalIdx = ((sgdValue < 0.0f) ? globalIdx : pClosestIndices[globalIdx]);
+    const unsigned closestGlobalIdx = ((sgdValue < 0) ? globalIdx : pClosestIndices[globalIdx]);
     const ElemT un                  = (pointIsOnGrain ?
                                          kae::BurningRate<PropellantPropertiesT>{}(pGasStates.get()[closestGlobalIdx]) :
                                          0);

@@ -1,6 +1,5 @@
 
 #include <iostream>
-#include <string>
 
 #include "filesystem.h"
 #include "shape_solver_types.h"

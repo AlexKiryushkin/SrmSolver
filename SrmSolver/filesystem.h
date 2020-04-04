@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "std_includes.h"
 
 namespace kae {
 

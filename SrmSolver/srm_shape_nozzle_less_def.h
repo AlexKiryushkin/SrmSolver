@@ -1,6 +1,8 @@
 #pragma once
 
+#pragma warning(push, 0)
 #include <boost/geometry.hpp>
+#pragma warning(pop)
 
 namespace kae {
 
@@ -31,15 +33,27 @@ SrmShapeNozzleLess<GpuGridT>::SrmShapeNozzleLess()
   : m_distances{ GpuGridT::nx * GpuGridT::ny }
 {
   namespace bg = boost::geometry;
-  using Point2d      = bg::model::point<ElemType, 2u, boost::geometry::cs::cartesian>;
+  using Point2d      = bg::model::d2::point_xy<ElemType>;
   using Polygon2d    = bg::model::polygon<Point2d>;
   using Linestring2d = bg::model::linestring<Point2d>;
 
   Linestring2d linestring{
-    { 0.0f, 0.0f },   { 0.0f, Rk },  { delta, Rk },   { delta, 0.04f },
-    { delta + 0.01f, 0.031f },   { 0.102f, 0.031f },  { 0.105f, rkr }, { 0.145f, rkr },
-    { 0.691f, 0.026f },  { 1.049f, 0.03f }, { 1.087f, 0.03f }, { 1.149f, 0.03f }, { 1.194f, 0.044f },
-    { 1.274f, 0.069f }, { 1.274f, 0.0f }, { 0.0f, 0.0f }
+    { static_cast<ElemType>(0.0),          static_cast<ElemType>(0.0) },
+    { static_cast<ElemType>(0.0),          Rk },
+    { delta,                               Rk },
+    { delta,                               static_cast<ElemType>(0.04) },
+    { delta + static_cast<ElemType>(0.01), static_cast<ElemType>(0.031) },
+    { static_cast<ElemType>(0.102),        static_cast<ElemType>(0.031) },
+    { static_cast<ElemType>(0.105),        rkr },
+    { static_cast<ElemType>(0.145),        rkr },
+    { static_cast<ElemType>(0.691),        static_cast<ElemType>(0.026) },
+    { static_cast<ElemType>(1.049),        static_cast<ElemType>(0.03) },
+    { static_cast<ElemType>(1.087),        static_cast<ElemType>(0.03) },
+    { static_cast<ElemType>(1.149),        static_cast<ElemType>(0.03) },
+    { static_cast<ElemType>(1.194),        static_cast<ElemType>(0.044) },
+    { static_cast<ElemType>(1.274),        static_cast<ElemType>(0.069) },
+    { static_cast<ElemType>(1.274),        static_cast<ElemType>(0.0) },
+    { static_cast<ElemType>(0.0),          static_cast<ElemType>(0.0) }
   };
 
   std::for_each(std::begin(linestring), std::end(linestring), [](auto & point)
@@ -53,12 +67,12 @@ SrmShapeNozzleLess<GpuGridT>::SrmShapeNozzleLess()
 
   for (unsigned i = 0U; i < GpuGridT::nx; ++i)
   {
-    const ElemType x = i * GpuGridT::hx;
+    const auto x = i * GpuGridT::hx;
     for (unsigned j = 0U; j < GpuGridT::ny; ++j)
     {
-      const ElemType y = j * GpuGridT::hy;
+      const auto y = j * GpuGridT::hy;
       const Point2d point{ x, y };
-      const auto distance = bg::distance(point, linestring);
+      const auto distance = static_cast<ElemType>(bg::distance(point, linestring));
       const auto isInside = bg::covered_by(point, polygon);
 
       const auto index = j * GpuGridT::nx + i;

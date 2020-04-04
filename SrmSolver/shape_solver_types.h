@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ratio>
+#include "std_includes.h"
 
 #include "gas_state.h"
 #include "gpu_grid.h"
@@ -11,7 +11,7 @@
 
 namespace kae {
 
-template <EShapeType ShapeType, class ElemT = float>
+template <EShapeType ShapeType, class ElemT>
 struct ShapeSolverTypes;
 
 template<class ElemT>
@@ -42,7 +42,10 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
   using SrmSolverType      = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
 
-  constexpr static GasStateType initialGasState{ 1.0f, 0.0f, 0.0f, detail::ToFloatV<P0Type, ElemT> };
+  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 detail::ToFloatV<P0Type, ElemT> };
 };
 
 template<class ElemT>
@@ -73,7 +76,10 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
   using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
 
-  constexpr static GasStateType initialGasState{ 1.0f, 0.0f, 0.0f, detail::ToFloatV<P0Type, ElemT> };
+  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 detail::ToFloatV<P0Type, ElemT> };
 };
 
 } // namespace kae
