@@ -476,4 +476,20 @@ struct ConservativeToGasState
   }
 };
 
+struct EigenValuesX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  {
+    const auto c = SonicSpeed::get(state);
+    return { state.ux - c, state.ux, state.ux, state.ux + c };
+  }
+};
+
 } // namespace kae

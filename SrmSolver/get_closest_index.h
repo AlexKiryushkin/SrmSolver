@@ -6,7 +6,7 @@ namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class Shape, class ElemT>
+template <class GpuGridT, class ElemT>
 __host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
                                              unsigned      i,
                                              unsigned      j,
@@ -26,6 +26,7 @@ __host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
   unsigned iClosest   = 0U;
   unsigned jClosest   = 0U;
   for (unsigned iCl = iSurface - 3; iCl <= iSurface + 3; ++iCl)
+  {
     for (unsigned jCl = jSurface - 3; jCl <= jSurface + 3; ++jCl)
     {
       if (pCurrPhi[jCl * GpuGridT::nx + iCl] >= 0)
@@ -43,7 +44,7 @@ __host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
       jClosest = jCl;
       minDistanceSquared = distanceSquared;
     }
-
+  }
   return jClosest * GpuGridT::nx + iClosest;
 }
 

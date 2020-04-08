@@ -13,17 +13,37 @@ namespace kae {
 namespace detail {
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT> & values)
+CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT> & values,
+                                       const thrust::device_vector<ElemT> & currPhi)
 {
   const auto first = thrust::make_transform_iterator(std::begin(values), kae::WaveSpeedXY{});
   const auto last  = thrust::make_transform_iterator(std::end(values), kae::WaveSpeedXY{});
+
+  const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(first, std::begin(currPhi)));
+  const auto zipLast = thrust::make_zip_iterator(thrust::make_tuple(last, std::end(currPhi)));
+
+  const auto takeInner = [] __host__ __device__(
+    const thrust::tuple<CudaFloatT<2U, ElemT>, ElemT> & conservativeVariables)
+  {
+    const auto level = thrust::get<1U>(conservativeVariables);
+    if (level >= 0)
+      return CudaFloatT<2U, ElemT>{};
+
+    return thrust::get<0U>(conservativeVariables);
+  };
+
+  const auto transformFirst = thrust::make_transform_iterator(zipFirst, takeInner);
+  const auto transformLast = thrust::make_transform_iterator(zipLast, takeInner);
+
   return thrust::reduce(first, last, CudaFloatT<2U, ElemT>{ 0, 0 }, kae::ElemwiseMax{});
 }
 
 template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
-ElemT getDeltaT(const thrust::device_vector<GasStateT> & values, ElemT courant)
+ElemT getDeltaT(const thrust::device_vector<GasStateT> & values,
+                const thrust::device_vector<ElemT> & currPhi, 
+                ElemT courant)
 {
-  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values);
+  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values, currPhi);
   return courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
 }
 
@@ -110,25 +130,15 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::GpuSrmSolver(
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
 template <class CallbackT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIntegrate(
-  unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback)
+  unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback)
 {
-  constexpr auto deltaT{ static_cast<ElemType>(25.0) };
   auto t{ static_cast<ElemType>(0.0) };
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    const auto deltaTGasDynamic = staticIntegrate(deltaT, timeOrder);
-    const auto maxDerivatives = detail::getMaxEquationDerivatives(
-      m_prevState.values(),
-      m_currState.values(),
-      currPhi().values(),
-      detail::getDeltaT<GpuGridT>(m_currState.values(), m_courant));
+    const auto deltaTGasDynamic = staticIntegrate(deltaT, timeOrder, callback);
+    const auto maxDerivatives = getMaxEquationDerivatives();
     callback(m_currState, currPhi(), i, t, maxDerivatives);
-
-    const auto dt = m_levelSetSolver.template integrateInTime<PropellantPropertiesT>(
-      m_currState,
-      m_closestIndices,
-      deltaTGasDynamic,
-      ETimeDiscretizationOrder::eThree);
+    const auto dt = integrateInTime(deltaTGasDynamic);
     t += dt;
   }
 }
@@ -155,9 +165,11 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class CallbackT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrate(
   ElemType deltaT,
-  ETimeDiscretizationOrder timeOrder) -> ElemType
+  ETimeDiscretizationOrder timeOrder, 
+  CallbackT callback) -> ElemType
 {
   detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
     getDevicePtr(currPhi()),
@@ -165,15 +177,22 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     getDevicePtr(m_boundaryConditions),
     getDevicePtr(m_normals));
 
+  unsigned i{ 0U };
   auto t{ static_cast<ElemType>(0.0) };
   while (t < deltaT)
   {
-    const CudaFloatT<2U, ElemType> lambdas = detail::getMaxWaveSpeeds(m_currState.values());
+    const CudaFloatT<2U, ElemType> lambdas = detail::getMaxWaveSpeeds(m_currState.values(), currPhi().values());
+    const CudaFloatT<2U, ElemType> multipliedLambdas{ static_cast<ElemType>(1.2) * lambdas.x, static_cast<ElemType>(1.2) * lambdas.y };
     const auto maxDt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
     const auto remainingTime = deltaT - t;
     auto dt = std::min(maxDt, remainingTime);
-    dt = staticIntegrateStep(timeOrder, dt, lambdas);
+    dt = staticIntegrateStep(timeOrder, dt, multipliedLambdas);
     t += dt;
+    ++i;
+    if (i % 100U == 0U)
+    {
+      callback(m_currState);
+    }
   }
 
   return t;
@@ -185,6 +204,26 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   const auto lambdas = detail::getMaxWaveSpeeds(m_currState.values());
   const auto dt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
   return staticIntegrateStep(timeOrder, dt, lambdas);
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::integrateInTime(ElemType deltaT) -> ElemType
+{
+  return m_levelSetSolver.template integrateInTime<PropellantPropertiesT>(
+    m_currState,
+    m_closestIndices,
+    deltaT,
+    ETimeDiscretizationOrder::eThree);
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEquationDerivatives() const -> CudaFloatT<4U, ElemType>
+{
+  return detail::getMaxEquationDerivatives(
+    m_prevState.values(),
+    m_currState.values(),
+    currPhi().values(),
+    detail::getDeltaT<GpuGridT>(m_currState.values(), currPhi().values(), m_courant));
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>

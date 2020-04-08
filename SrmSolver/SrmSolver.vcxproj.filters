@@ -1,28 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="boundary_condition.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="discretization_order.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="filesystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="float4_arithmetics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gas_dynamic_flux.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="gas_state.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="get_extrapolated_ghost_value.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gpu_grid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="gpu_matrix.h">
@@ -31,25 +13,7 @@
     <ClInclude Include="gpu_matrix_writer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="level_set_derivatives.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="math_utilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="propellant_properties.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shape_solver_types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shape_types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="solver_callbacks.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="to_float.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="srm_shape_with_umbrella_def.h">
@@ -103,17 +67,59 @@
     <ClInclude Include="gpu_calculate_ghost_point_data_kernel.h">
       <Filter>Header Files\Kernels</Filter>
     </ClInclude>
-    <ClInclude Include="ghost_point_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="get_closest_index.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="std_includes.h">
       <Filter>Header Files\Third Party Includes</Filter>
     </ClInclude>
     <ClInclude Include="cuda_includes.h">
       <Filter>Header Files\Third Party Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="boundary_condition.h">
+      <Filter>Header Files\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="discretization_order.h">
+      <Filter>Header Files\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="shape_types.h">
+      <Filter>Header Files\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="propellant_properties.h">
+      <Filter>Header Files\Property Types</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_grid.h">
+      <Filter>Header Files\Property Types</Filter>
+    </ClInclude>
+    <ClInclude Include="shape_solver_types.h">
+      <Filter>Header Files\Property Types</Filter>
+    </ClInclude>
+    <ClInclude Include="to_float.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="math_utilities.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="level_set_derivatives.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="gas_dynamic_flux.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="float4_arithmetics.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="get_closest_index.h">
+      <Filter>Header Files\Ghost Values Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="get_extrapolated_ghost_value.h">
+      <Filter>Header Files\Ghost Values Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="get_coordinates_matrix.h">
+      <Filter>Header Files\Ghost Values Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="gnuplot-iostream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gnu_plot_wrapper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -135,6 +141,18 @@
     <Filter Include="Header Files\Third Party Includes">
       <UniqueIdentifier>{bb39842e-eda9-4d62-9dfb-622761569f30}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Enums">
+      <UniqueIdentifier>{fa29a50c-db42-4a62-bef0-d790f1217a05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Property Types">
+      <UniqueIdentifier>{97fb69ba-6818-454d-9835-864b7675fc98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Math">
+      <UniqueIdentifier>{15e8441c-aee2-4a5e-a53e-a9b9f2128eaf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Ghost Values Utilities">
+      <UniqueIdentifier>{aaab9cc7-d0ef-4a0a-8e4d-d6a3f93bbad0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="main.cu">
@@ -143,6 +161,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="filesystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gnu_plot_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

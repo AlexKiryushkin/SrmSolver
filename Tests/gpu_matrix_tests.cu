@@ -28,9 +28,15 @@ struct EqualToValue
   }
 };
 
-TEST(gpu_matrix, gpu_matrix_constructor_a)
+template <class T>
+class gpu_matrix : public ::testing::Test {};
+
+using TypeParams = ::testing::Types<float, double>;
+TYPED_TEST_CASE(gpu_matrix, TypeParams);
+
+TYPED_TEST(gpu_matrix, gpu_matrix_constructor_a)
 {
-  using ElemType = float;
+  using ElemType = TypeParam;
   constexpr unsigned nx{ 70U };
   constexpr unsigned ny{ 30U };
   constexpr unsigned smExtension{ 3U };
@@ -53,9 +59,9 @@ struct Initializer
   }
 };
 
-TEST(gpu_matrix, gpu_matrix_constructor_b)
+TYPED_TEST(gpu_matrix, gpu_matrix_constructor_b)
 {
-  using ElemType = float;
+  using ElemType = TypeParam;
   constexpr unsigned nx{ 70U };
   constexpr unsigned ny{ 30U };
   constexpr unsigned smExtension{ 3U };
@@ -81,9 +87,9 @@ TEST(gpu_matrix, gpu_matrix_constructor_b)
   }
 }
 
-TEST(gpu_matrix, gpu_matrix_values_non_const)
+TYPED_TEST(gpu_matrix, gpu_matrix_values_non_const)
 {
-  using ElemType = float;
+  using ElemType = TypeParam;
   constexpr unsigned nx{ 45U };
   constexpr unsigned ny{ 20U };
   constexpr unsigned smExtension{ 3U };
@@ -97,9 +103,9 @@ TEST(gpu_matrix, gpu_matrix_values_non_const)
   EXPECT_EQ(matrixSize, nx * ny);
 }
 
-TEST(gpu_matrix, gpu_matrix_values_const)
+TYPED_TEST(gpu_matrix, gpu_matrix_values_const)
 {
-  using ElemType = float;
+  using ElemType = TypeParam;
   constexpr unsigned nx{ 45U };
   constexpr unsigned ny{ 20U };
   constexpr unsigned smExtension{ 3U };

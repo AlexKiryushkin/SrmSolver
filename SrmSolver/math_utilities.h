@@ -89,4 +89,17 @@ struct ElemwiseAbsMax
   }
 };
 
+struct TransformCoordinates
+{
+  __host__ __device__ float2 operator()(float2 coordinates, float2 n) const
+  {
+    return { coordinates.x * n.x + coordinates.y * n.y, -coordinates.x * n.y + coordinates.y * n.x };
+  }
+
+  __host__ __device__ double2 operator()(double2 coordinates, double2 n) const
+  {
+    return { coordinates.x * n.x + coordinates.y * n.y, -coordinates.x * n.y + coordinates.y * n.x };
+  }
+};
+
 } // namespace kae

@@ -759,4 +759,26 @@ TYPED_TEST(gas_state, gas_state_conservative_to_gas_state)
   EXPECT_GAS_STATE_NEAR(gasState, goldGasState, threshold);
 }
 
+TYPED_TEST(gas_state, gas_state_eigen_values_x)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const kae::CudaFloatT<4U, ElemType> eigenValuesX = kae::EigenValuesX::get(gasState);
+
+  constexpr kae::CudaFloatT<4U, ElemType> goldEigenValuesX{ static_cast<ElemType>(1.8),
+                                                            static_cast<ElemType>(3.0),
+                                                            static_cast<ElemType>(3.0),
+                                                            static_cast<ElemType>(4.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  EXPECT_FLOAT4_NEAR(eigenValuesX, goldEigenValuesX, threshold);
+}
+
 } // namespace tests

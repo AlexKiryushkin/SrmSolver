@@ -9,15 +9,17 @@ int main()
 {
   try
   {
-    using ShapeSolverType = kae::ShapeSolverTypes<kae::EShapeType::eNozzleLessShape, float>;
+    using ElemType        = float;
+    using ShapeSolverType = kae::ShapeSolverTypes<kae::EShapeType::eWithUmbrellaShape, ElemType>;
     using SrmSolverType   = ShapeSolverType::SrmSolverType;
 
     const std::wstring writeFolder{ L"data" };
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
     kae::WriteToFolderCallback callback{ currentPath };
 
-    SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U };
-    srmSolver.dynamicIntegrate(800U, kae::ETimeDiscretizationOrder::eTwo, callback);
+    constexpr ElemType deltaT{ static_cast<ElemType>(300.0) };
+    SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U, 0.7f };
+    srmSolver.dynamicIntegrate(800U, deltaT, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)
   {

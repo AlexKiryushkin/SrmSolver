@@ -59,7 +59,7 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     }
   }
 
-  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT, ShapeT>(pCurrPhi.get(), i, j, nx, ny);
+  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT>(pCurrPhi.get(), i, j, nx, ny);
   pClosestIndices[globalIdx]      = closestGlobalIdx;
   pBoundaryConditions[globalIdx]  = boundaryCondition;
 }

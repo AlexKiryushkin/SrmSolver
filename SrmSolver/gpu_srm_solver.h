@@ -14,18 +14,19 @@ public:
 
   using GasStateType             = GasStateT;
   using PropellantPropertiesType = PropellantPropertiesT;
-
-  using ElemType = typename GasStateType::ElemType;
+  using ElemType                 = typename GasStateType::ElemType;
 
   static_assert(std::is_same<typename GasStateType::ElemType, typename GpuGridT::ElemType>::value, "Error! Precisions differ.");
 
   GpuSrmSolver(ShapeT shape, GasStateT initialState, unsigned iterationCount = 0U, ElemType courant = static_cast<ElemType>(0.8));
 
   template <class CallbackT>
-  void dynamicIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);
+  void dynamicIntegrate(unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
   ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder);
-  ElemType staticIntegrate(ElemType deltaT, ETimeDiscretizationOrder timeOrder);
+
+  template <class CallbackT>
+  ElemType staticIntegrate(ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
   const GpuMatrix<GpuGridT, GasStateType> & currState() const { return m_currState; }
   const GpuMatrix<GpuGridT, ElemType>     & currPhi()   const { return m_levelSetSolver.currState(); }
@@ -34,6 +35,8 @@ private:
 
   ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder);
   ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloatT<2U, ElemType> lambdas);
+  ElemType integrateInTime(ElemType deltaT);
+  CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
 
 private:
 

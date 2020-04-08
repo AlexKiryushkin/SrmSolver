@@ -33,12 +33,12 @@ private:
   constexpr static ElemType L        = static_cast<ElemType>(2.4);
   constexpr static ElemType R0       = static_cast<ElemType>(0.2);
   constexpr static ElemType Rk       = static_cast<ElemType>(0.9);
-  constexpr static ElemType H        = static_cast<ElemType>(0.55);
+  constexpr static ElemType H        = static_cast<ElemType>(0.6);
   constexpr static ElemType rkr      = static_cast<ElemType>(0.1);
-  constexpr static ElemType l        = static_cast<ElemType>(0.5);
+  constexpr static ElemType l        = static_cast<ElemType>(0.7);
   constexpr static ElemType h        = static_cast<ElemType>(0.08);
   constexpr static ElemType l_nozzle = static_cast<ElemType>(0.4);
-  constexpr static ElemType alpha    = static_cast<ElemType>(M_PI_2);
+  constexpr static ElemType alpha    = static_cast<ElemType>(M_PI / 3.0);
 
   constexpr static ElemType k_cos    = 2 * static_cast<ElemType>(M_PI) / l_nozzle;
   __host__ __device__ static ElemType k_line()

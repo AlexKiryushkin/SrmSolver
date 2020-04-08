@@ -9,6 +9,7 @@
 #include "get_closest_index.h"
 #include "get_extrapolated_ghost_value.h"
 #include "level_set_derivatives.h"
+#include "math_utilities.h"
 
 namespace kae {
 
@@ -17,7 +18,7 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
                                         thrust::device_ptr<unsigned>                     pClosestIndices,
                                         thrust::device_ptr<EBoundaryCondition>           pBoundaryConditions,
                                         thrust::device_ptr<CudaFloatT<2U, ElemT>>        pNormals,
-                                        thrust::device_ptr<Eigen::Matrix<ElemT, 9U, 9U>> pLhsMatrices)
+                                        thrust::device_ptr<Eigen::Matrix<ElemT, 9U, 3U>> pLhsMatrices)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j = threadIdx.y + blockDim.y * blockIdx.y;
@@ -62,7 +63,26 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
     }
   }
 
-  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT, ShapeT>(pCurrPhi.get(), i, j, nx, ny);
+  unsigned counter{ 0U };
+  Eigen::Matrix<ElemT, 9U, 3U> coordinateMatrix{};
+  for (unsigned  iIdx{ i - 1 }; iIdx <= i + 1; ++iIdx)
+  {
+    for (unsigned jIdx{ j - 1 }; jIdx <= j + 1; ++jIdx)
+    {
+      const auto currentGlobalIdx{ jIdx * GpuGridT::nx + iIdx };
+      if (pCurrPhi[currentGlobalIdx] < 0)
+      {
+        const CudaFloatT<2U, ElemT> globalDeltas{ iIdx * GpuGridT::hx - xSurface, jIdx * GpuGridT::hy - ySurface };
+        const CudaFloatT<2U, ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, { nx, ny }) };
+        coordinateMatrix(counter, 0) = static_cast<ElemT>(1.0);
+        coordinateMatrix(counter, 1) = localDeltas.x;
+        coordinateMatrix(counter, 2) = localDeltas.y;
+        ++counter;
+      }
+    }
+  }
+
+  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT>(pCurrPhi.get(), i, j, nx, ny);
   pClosestIndices[globalIdx] = closestGlobalIdx;
   pBoundaryConditions[globalIdx] = boundaryCondition;
 }

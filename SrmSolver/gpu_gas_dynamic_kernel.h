@@ -84,7 +84,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
 
   __syncthreads();
 
-  ElemT levelValue = prevSgdMatrix[sharedIdx];
+  const ElemT levelValue = prevSgdMatrix[sharedIdx];
   bool fluxShouldBeCalculated = levelValue <= GpuGridT::hx + static_cast<ElemT>(1e-6);
   if (fluxShouldBeCalculated)
   {

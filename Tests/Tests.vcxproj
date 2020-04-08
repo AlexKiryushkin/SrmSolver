@@ -79,6 +79,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
       <AdditionalCompilerOptions>/wd"4714" /wd"4068"</AdditionalCompilerOptions>
+      <CodeGeneration />
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -104,6 +105,7 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
       <AdditionalCompilerOptions>/wd"4714" /wd"4068"</AdditionalCompilerOptions>
+      <CodeGeneration />
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
