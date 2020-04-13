@@ -4,6 +4,7 @@
 #include <cuda_runtime_api.h>
 #include <device_launch_parameters.h>
 
+#include <thrust/logical.h>
 #include <thrust/device_ptr.h>
 #include <thrust/device_vector.h>
 #include <thrust/extrema.h>

@@ -22,9 +22,9 @@ __host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
   const unsigned iSurface = std::round(xSurface * GpuGridT::hxReciprocal);
   const unsigned jSurface = std::round(ySurface * GpuGridT::hyReciprocal);
 
-  ElemT minDistanceSquared = static_cast<ElemT>(100.0) * GpuGridT::hx * GpuGridT::hx;
-  unsigned iClosest   = 0U;
-  unsigned jClosest   = 0U;
+  ElemT minDistanceSquared = GpuGridT::lx * GpuGridT::lx + GpuGridT::ly * GpuGridT::ly;
+  unsigned iClosest   = GpuGridT::n;
+  unsigned jClosest   = GpuGridT::n;
   for (unsigned iCl = iSurface - 3; iCl <= iSurface + 3; ++iCl)
   {
     for (unsigned jCl = jSurface - 3; jCl <= jSurface + 3; ++jCl)

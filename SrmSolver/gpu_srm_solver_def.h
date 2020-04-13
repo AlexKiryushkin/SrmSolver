@@ -5,6 +5,7 @@
 #include "gas_state.h"
 #include "gpu_build_ghost_to_closest_map_kernel.h"
 #include "gpu_gas_dynamic_kernel.h"
+#include "gpu_matrix_writer.h"
 #include "gpu_set_ghost_points_kernel.h"
 #include "math_utilities.h"
 
@@ -144,9 +145,11 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIn
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class CallbackT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrate(
   unsigned iterationCount,
-  ETimeDiscretizationOrder timeOrder) -> ElemType
+  ETimeDiscretizationOrder timeOrder,
+  CallbackT callback) -> ElemType
 {
   detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
     getDevicePtr(currPhi()),
@@ -159,6 +162,14 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   {
     const auto dt = staticIntegrateStep(timeOrder);
     t += dt;
+    if (i % 100U == 0U)
+    {
+      callback(m_currState);
+    }
+    if (i % 5000U == 0U)
+    {
+      std::cout << i << ": " << t << '\n';
+    }
   }
 
   return t;
@@ -182,7 +193,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   while (t < deltaT)
   {
     const CudaFloatT<2U, ElemType> lambdas = detail::getMaxWaveSpeeds(m_currState.values(), currPhi().values());
-    const CudaFloatT<2U, ElemType> multipliedLambdas{ static_cast<ElemType>(1.2) * lambdas.x, static_cast<ElemType>(1.2) * lambdas.y };
+    const CudaFloatT<2U, ElemType> multipliedLambdas{ static_cast<ElemType>(1.1) * lambdas.x, static_cast<ElemType>(1.1) * lambdas.y };
     const auto maxDt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
     const auto remainingTime = deltaT - t;
     auto dt = std::min(maxDt, remainingTime);
@@ -193,9 +204,34 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     {
       callback(m_currState);
     }
+    if (i % 5000U == 0U)
+    {
+      std::cout << i << ": " << t << '\n';
+    }
+    writeIfNotValid();
   }
 
   return t;
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+bool GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::isCurrentStateValid() const
+{
+  return thrust::all_of(std::begin(m_currState.values()), std::end(m_currState.values()), kae::IsValid{});
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNotValid() const
+{
+  if (isCurrentStateValid())
+  {
+    return;
+  }
+
+  writeMatrixToFile(m_prevState, "prev_error_p.dat", "prev_error_ux.dat", "prev_error_uy.dat", "prev_error_mach.dat", "prev_error_t.dat");
+  writeMatrixToFile(m_currState, "curr_error_p.dat", "curr_error_ux.dat", "curr_error_uy.dat", "curr_error_mach.dat", "curr_error_t.dat");
+  writeMatrixToFile(currPhi(), "sgd.dat");
+  throw std::runtime_error("Gas state has become invalid");
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>

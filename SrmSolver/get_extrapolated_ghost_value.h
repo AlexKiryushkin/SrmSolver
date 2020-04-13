@@ -28,7 +28,7 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
     const auto fOfP = static_cast<ElemType>(0.5) * coefficient2 * coefficient2 * p1 * p1 +
                       coefficient2 * coefficient3 * p1 * p1 * power +
                       coefficient1 * coefficient2 * p1 + coefficient1 * coefficient3 * p1 * power +
-                      static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PropellantPropertiesT::template H0<GasStateT>;
+                      static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PropellantPropertiesT::H0;
     const auto fPrimeOfP = coefficient2 * coefficient2 * p1 +
                            (static_cast<ElemType>(2.0) - PropellantPropertiesT::nu) * coefficient2 * coefficient3 * p1 * power +
                            (static_cast<ElemType>(1.0) - PropellantPropertiesT::nu) * coefficient1 * coefficient3 * power +

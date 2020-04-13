@@ -121,6 +121,9 @@
     <ClInclude Include="gnu_plot_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="eigen_includes.h">
+      <Filter>Header Files\Third Party Includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

@@ -1,25 +1,49 @@
 #pragma once
 
 #include "cuda_includes.h"
+#include "eigen_includes.h"
+#pragma warning(push, 0)
+#include <gcem.hpp>
+#pragma warning(pop)
 
 #include "cuda_float_types.h"
 #include "to_float.h"
 
 namespace kae {
 
-template <class KappaType, class CpType, class ElemT>
+template <class PhysicalPropertiesT, class ElemT>
 struct alignas(16) GasState
 {
   using ElemType = ElemT;
 
-  constexpr static ElemT kappa = detail::ToFloatV<KappaType, ElemT>;
-  constexpr static ElemT Cp    = detail::ToFloatV<CpType, ElemT>;
-  constexpr static ElemT R     = (kappa - static_cast<ElemT>(1.0)) / kappa * Cp;
-
+  constexpr static ElemT kappa = PhysicalPropertiesT::kappa;
+  constexpr static ElemT R     = PhysicalPropertiesT::R;
   ElemT rho;
   ElemT ux;
   ElemT uy;
   ElemT p;
+};
+
+struct IsValid
+{
+  template <class GasStateT>
+  __host__ __device__ bool operator()(const GasStateT & state)
+  {
+    return get(state);
+  }
+
+  template <class GasStateT>
+  __host__ __device__ static bool get(const GasStateT & state)
+  {
+    return isValidFloat(state.rho) && isValidFloat(state.ux) && isValidFloat(state.uy) && isValidFloat(state.p) &&
+          (state.rho > 0) && (state.p > 0);
+  }
+private:
+  template <class ElemT>
+  __host__ __device__ static bool isValidFloat(ElemT value)
+  {
+    return isfinite(value);
+  }
 };
 
 struct Rho
@@ -489,6 +513,99 @@ struct EigenValuesX
   {
     const auto c = SonicSpeed::get(state);
     return { state.ux - c, state.ux, state.ux, state.ux + c };
+  }
+};
+
+struct EigenValuesMatrixX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    const auto c = SonicSpeed::get(state);
+
+    Eigen::Matrix4<ElemT> resultMatrix = Eigen::Matrix4<ElemT>::Zero();
+    resultMatrix.diagonal() << state.ux - c, state.ux, state.ux, state.ux + c;
+    return resultMatrix;
+  }
+};
+
+struct LeftEigenVectorsX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    constexpr auto zero = static_cast<ElemT>(0.0);
+    constexpr auto half = static_cast<ElemT>(0.5);
+
+    const auto cReciprocal = 1 / SonicSpeed::get(state);
+    const auto rhoReciprocal = 1 / state.rho;
+
+    Eigen::Matrix4<ElemT> resultMatrix;
+    resultMatrix
+      << zero,                          -half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal,
+        -half * state.uy *rhoReciprocal, zero,               half,  half * state.uy * rhoReciprocal * cReciprocal * cReciprocal,
+         half * state.uy *rhoReciprocal, zero,               half, -half * state.uy * rhoReciprocal * cReciprocal * cReciprocal,
+         zero,                           half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal;
+    return resultMatrix;
+  }
+};
+
+struct RightEigenVectorsX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    constexpr auto zero = static_cast<ElemT>(0.0);
+    constexpr auto one = static_cast<ElemT>(1.0);
+
+    const auto c = SonicSpeed::get(state);
+    Eigen::Matrix4<ElemT> resultMatrix;
+    resultMatrix << state.rho,        -state.rho / state.uy, state.rho / state.uy, state.rho,
+                   -c,                 zero,                 zero,                  c,
+                    zero,              one,                  one,                   zero,
+                    state.rho * c * c, zero,                 zero,                  state.rho * c * c;
+    return resultMatrix;
+  }
+};
+
+struct PrimitiveJacobianMatrixX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  {
+    constexpr auto zero = static_cast<ElemT>(0.0);
+
+    const auto c = SonicSpeed::get(state);
+    Eigen::Matrix4<ElemT> resultMatrix;
+    resultMatrix << state.ux, state.rho,         zero,     zero,
+                    zero,     state.ux,          zero,     1 / state.rho,
+                    zero,     zero,              state.ux, zero,
+                    zero,     state.rho * c * c, zero,     state.ux;
+    return resultMatrix;
   }
 };
 

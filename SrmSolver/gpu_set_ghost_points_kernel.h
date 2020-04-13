@@ -34,6 +34,10 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   }
 
   const unsigned closestGlobalIdx            = pClosestIndices[globalIdx];
+  if (closestGlobalIdx >= GpuGridT::n)
+  {
+    return;
+  }
   const EBoundaryCondition boundaryCondition = pBoundaryConditions[globalIdx];
   const CudaFloatT<2U, ElemT> normal         = pNormals[globalIdx];
   const GasStateT rotatedState               = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);

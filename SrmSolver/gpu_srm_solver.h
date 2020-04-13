@@ -23,7 +23,8 @@ public:
   template <class CallbackT>
   void dynamicIntegrate(unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
-  ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder);
+  template <class CallbackT>
+  ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);
 
   template <class CallbackT>
   ElemType staticIntegrate(ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
@@ -37,7 +38,8 @@ private:
   ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloatT<2U, ElemType> lambdas);
   ElemType integrateInTime(ElemType deltaT);
   CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
-
+  bool isCurrentStateValid() const;
+  void writeIfNotValid() const;
 private:
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;

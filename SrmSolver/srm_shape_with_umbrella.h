@@ -23,10 +23,14 @@ public:
 
   __host__ __device__ static ElemType getRadius(unsigned i, unsigned j);
 
+  __host__ __device__ constexpr static ElemType getInitialSBurn();
+
+  __host__ __device__ constexpr static ElemType getFCritical();
+
 private:
 
-  __host__ __device__ ElemType F_prime(ElemType x) const;
-  __host__ __device__ ElemType F(ElemType x) const;
+  __host__ __device__ static ElemType F_prime(ElemType x);
+  __host__ __device__ static ElemType F(ElemType x);
 
 private:
 
@@ -56,11 +60,11 @@ private:
 
   constexpr static ElemType x_left   = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hx;
   constexpr static ElemType x_junc   = x_left + L;
-  constexpr static ElemType x_right  = x_junc + static_cast<ElemType>(1.5) * l_nozzle + static_cast<ElemType>(0.5) * GpuGridT::hx;
+  constexpr static ElemType x_right = x_junc + static_cast<ElemType>(1.5) * l_nozzle + static_cast<ElemType>(0.5) * GpuGridT::hx;
   constexpr static ElemType y_bottom = (offsetPoints + static_cast<ElemType>(0.5)) * GpuGridT::hy;
 
   __host__ __device__ static ElemType k_normal_line() { return -1 / k_line(); }
-  __host__ __device__ static ElemType b_normal_line() { return b_line() + (x_right - x_left) * (k_line() + 1 / k_line()); }
+  __host__ __device__ static ElemType b_normal_line() { return F(x_right - x_left) + (x_right - x_left) / k_line(); }
 
   constexpr static ElemType nozzle_lengthening = static_cast<ElemType>(0.1);
 };

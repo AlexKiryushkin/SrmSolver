@@ -11,6 +11,11 @@
 
 namespace tests {
 
+struct TestShape
+{
+  
+};
+
 template <class T>
 class get_extrapolated_ghost_value : public ::testing::Test
 {

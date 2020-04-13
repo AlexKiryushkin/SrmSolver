@@ -1,11 +1,13 @@
 #pragma once
 
+#include <gcem.hpp>
+
 #include "math_utilities.h"
 
 namespace kae {
 
 template <class GpuGridT>
-__host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F(ElemType x) const -> ElemType
+__host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F(ElemType x) -> ElemType
 {
   if (x < l)
   {
@@ -26,7 +28,7 @@ __host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F(ElemType x) const -> 
 }
 
 template <class GpuGridT>
-__host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F_prime(ElemType x) const -> ElemType
+__host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F_prime(ElemType x) -> ElemType
 {
   if (x < l)
   {
@@ -72,6 +74,23 @@ template <class GpuGridT>
 __host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
 {
   return j * GpuGridT::hy - y_bottom;
+}
+
+template <class GpuGridT>
+__host__ __device__ constexpr auto SrmShapeWithUmbrella<GpuGridT>::getInitialSBurn() -> ElemType
+{
+  return 2 * static_cast<ElemType>(M_PI) * 
+    (R0 * L +
+      H * h + 
+      R0 * R0 +
+      (1 + gcem::sin(alpha)) / gcem::sin(alpha) * R0 * H + 
+      static_cast<ElemType>(0.5) * (1 + gcem::sin(alpha)) / gcem::sin(alpha) * H * H);
+}
+
+template <class GpuGridT>
+__host__ __device__ constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical() -> ElemType
+{
+  return static_cast<ElemType>(M_PI) * rkr * rkr;
 }
 
 template <class GpuGridT>

@@ -36,15 +36,183 @@ TYPED_TEST(gas_state, gas_state_fields)
   constexpr ElemType goldUy{    static_cast<ElemType>(3.0) };
   constexpr ElemType goldP{     static_cast<ElemType>(4.0) };
 
+  const     ElemType goldGammaComplex{ std::sqrt(goldKappa * std::pow(2 / (goldKappa + 1), (goldKappa + 1) / (goldKappa - 1))) };
+
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
-  EXPECT_NEAR(GasStateT::kappa, goldKappa, threshold);
-  EXPECT_NEAR(GasStateT::Cp, goldCp, threshold);
-  EXPECT_NEAR(GasStateT::R, goldR, threshold);
+  EXPECT_NEAR(GasStateT::kappa,        goldKappa,        threshold);
+  EXPECT_NEAR(GasStateT::Cp,           goldCp,           threshold);
+  EXPECT_NEAR(GasStateT::R,            goldR,            threshold);
+  EXPECT_NEAR(GasStateT::gammaComplex, goldGammaComplex, threshold);
   EXPECT_EQ(gasState.rho, goldRho);
   EXPECT_EQ(gasState.ux, goldUx);
   EXPECT_EQ(gasState.uy, goldUy);
   EXPECT_EQ(gasState.p, goldP);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_1)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid =kae::IsValid::get(gasState);
+  EXPECT_TRUE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_2)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ std::numeric_limits<ElemType>::infinity(),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid =kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_3)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ std::numeric_limits<ElemType>::quiet_NaN(),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid =kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_4)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(-1.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_5)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            std::numeric_limits<ElemType>::infinity(),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid =kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_6)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            std::numeric_limits<ElemType>::quiet_NaN(),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid =kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_7)
+{
+  using ElemType = TypeParam;
+  using KappaT = std::ratio<12, 10>;
+  using CpT = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            std::numeric_limits<ElemType>::infinity(),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_8)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            std::numeric_limits<ElemType>::quiet_NaN(),
+                            static_cast<ElemType>(2.0) };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_9)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0),
+                            std::numeric_limits<ElemType>::infinity() };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_10)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0),
+                            std::numeric_limits<ElemType>::quiet_NaN() };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
+}
+
+TYPED_TEST(gas_state, gas_state_is_valid_11)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(-1.0) };
+  const auto isValid = kae::IsValid::get(gasState);
+  EXPECT_FALSE(isValid);
 }
 
 TYPED_TEST(gas_state, gas_state_rho)
@@ -779,6 +947,100 @@ TYPED_TEST(gas_state, gas_state_eigen_values_x)
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(eigenValuesX, goldEigenValuesX, threshold);
+}
+
+TYPED_TEST(gas_state, gas_state_eigen_values_matrix_x)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+
+  const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
+
+  const Eigen::Vector4<ElemType> goldEigenValuesX{ static_cast<ElemType>(1.8),
+                                                   static_cast<ElemType>(3.0),
+                                                   static_cast<ElemType>(3.0),
+                                                   static_cast<ElemType>(4.2) };
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  const auto thresholdVector = eigenValuesMatrixX.diagonal() - goldEigenValuesX;
+  EXPECT_TRUE(eigenValuesMatrixX.isDiagonal());
+  EXPECT_LE(thresholdVector.cwiseAbs().maxCoeff(), threshold);
+}
+
+TYPED_TEST(gas_state, gas_state_primitive_jacobian_matrix_x)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+
+  const auto primitiveJacobianMatrixX = kae::PrimitiveJacobianMatrixX::get(gasState);
+
+  Eigen::Matrix4<ElemType> goldPrimitiveJacobianMatrixX;
+  goldPrimitiveJacobianMatrixX << gasState.ux, gasState.rho,                  0,           0,
+                                  0,           gasState.ux,                   0,           1 / gasState.rho,
+                                  0,           0,                             gasState.ux, 0,
+                                  0,           GasStateT::kappa * gasState.p, 0,           gasState.ux;
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  const auto thresholdMatrix = primitiveJacobianMatrixX - goldPrimitiveJacobianMatrixX;
+  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+}
+
+TYPED_TEST(gas_state, gas_state_eigen_vectors_x_1)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+
+  const auto leftEigenVectorsX  = kae::LeftEigenVectorsX::get(gasState);
+  const auto rightEigenVectorsX = kae::RightEigenVectorsX::get(gasState);
+  const auto multiplyMatrix     = leftEigenVectorsX * rightEigenVectorsX;
+
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
+  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+}
+
+TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
+{
+  using ElemType = TypeParam;
+  using KappaT = std::ratio<12, 10>;
+  using CpT = std::ratio<6, 1>;
+  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+
+  const auto leftEigenVectorsX  = kae::LeftEigenVectorsX::get(gasState);
+  const auto rightEigenVectorsX = kae::RightEigenVectorsX::get(gasState);
+  const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
+  const auto multiplyMatrix     = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
+
+  const auto goldMatrix         = kae::PrimitiveJacobianMatrixX::get(gasState);
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  const auto thresholdMatrix = multiplyMatrix - goldMatrix;
+  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
 }
 
 } // namespace tests

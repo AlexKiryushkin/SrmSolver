@@ -32,12 +32,12 @@ TYPED_TEST(gpu_grid, gpu_grid_fields)
   constexpr ElemType goldLy{ static_cast<ElemType>(0.26) };
   constexpr ElemType goldHx{ goldLx / (goldNx - 1) };
   constexpr ElemType goldHy{ goldLy / (goldNy - 1) };
-  constexpr dim3 goldBlockSize{ 32U, 16U };
-  constexpr dim3 goldGridSize{ 3, 2 };
-  constexpr dim3 goldSharedMemory{ 38U, 22U };
+  constexpr dim3 goldBlockSize{ 32U * sizeof(float) / sizeof(ElemType), 16U * sizeof(float) / sizeof(ElemType) };
+  constexpr dim3 goldGridSize{ (goldNx + goldBlockSize.x - 1) / goldBlockSize.x, (goldNy + goldBlockSize.y - 1) / goldBlockSize.y };
+  constexpr dim3 goldSharedMemory{ goldBlockSize.x + 2 * smExtension, goldBlockSize.y + 2 * smExtension };
   constexpr unsigned goldSmExtension = 3U;
-  constexpr unsigned goldSmSize = 836U;
-  constexpr unsigned goldSmSizeBytes = 836U * sizeof(ElemType);
+  constexpr unsigned goldSmSize = goldSharedMemory.x * goldSharedMemory.y;
+  constexpr unsigned goldSmSizeBytes = goldSmSize * sizeof(ElemType);
 
   EXPECT_EQ(GpuGridType::nx, goldNx);
   EXPECT_EQ(GpuGridType::ny, goldNy);

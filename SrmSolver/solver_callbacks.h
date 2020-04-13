@@ -15,7 +15,7 @@ class WriteToFolderCallback
 {
 public:
   WriteToFolderCallback(std::wstring folderPath)
-    : m_gnuPlotWrapper("\"C:\\Program Files\\gnuplot\\bin\\gnuplot.exe\""),
+    : m_gnuPlotTemperature("\"C:\\Program Files\\gnuplot\\bin\\gnuplot.exe\""),
       m_folderPath(std::move(folderPath))
   {
     kae::remove_all(m_folderPath);
@@ -42,8 +42,8 @@ public:
     writeMatrixToFile(currPhi, "sgd.dat");
   }
 
-  template <class GpuGridType, class GasStateType, class ElemT = typename GasStateType::ElemType>
-  void operator()(const GpuMatrix<GpuGridType, GasStateType> & gasValues)
+  template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+  void operator()(const GpuMatrix<GpuGridT, GasStateT> & gasValues)
   {
     static std::future<void> future;
     if (future.valid())
@@ -54,28 +54,28 @@ public:
         return;
       }
     }
-    auto drawTemperature = [this](thrust::host_vector<GasStateType> hostGasStateValues)
+    auto drawTemperature = [this](thrust::host_vector<GasStateT> hostGasStateValues)
     {
       std::vector<std::vector<ElemT>> gridTemperatureValues;
-      for (unsigned j{ 0U }; j < GpuGridType::ny; ++j)
+      for (unsigned j{ 0U }; j < GpuGridT::ny; ++j)
       {
-        const auto offset = j * GpuGridType::nx;
-        std::vector<ElemT> rowTemperatureValues(GpuGridType::nx);
+        const auto offset = j * GpuGridT::nx;
+        std::vector<ElemT> rowTemperatureValues(GpuGridT::nx);
         std::transform(std::next(std::begin(hostGasStateValues), offset),
-          std::next(std::begin(hostGasStateValues), offset + GpuGridType::nx),
+          std::next(std::begin(hostGasStateValues), offset + GpuGridT::nx),
           std::begin(rowTemperatureValues),
           Temperature{});
         gridTemperatureValues.push_back(std::move(rowTemperatureValues));
       }
-      m_gnuPlotWrapper.display2dPlot(gridTemperatureValues);
+      m_gnuPlotTemperature.display2dPlot(gridTemperatureValues);
     };
     auto && values = gasValues.values();
-    thrust::host_vector<GasStateType> hostGasStateValues( values );
+    thrust::host_vector<GasStateT> hostGasStateValues( values );
     future = std::async(std::launch::async, drawTemperature, std::move(hostGasStateValues));
   }
 
 private:
-  GnuPlotWrapper m_gnuPlotWrapper;
+  GnuPlotWrapper m_gnuPlotTemperature;
   std::wstring m_folderPath;
 };
 

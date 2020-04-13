@@ -27,8 +27,8 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, ElemT> & matrix, const std::str
     }
 }
 
-template <class GpuGridT, class KappaT, class CpT, class ElemT>
-void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, CpT, ElemT>> & matrix,
+template <class GpuGridT, class KappaT, class ElemT>
+void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, ElemT>> & matrix,
                        const std::string & pPath,
                        const std::string & uxPath,
                        const std::string & uyPath,
@@ -42,7 +42,7 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, CpT, ElemT>> &
   std::ofstream tFile(tPath);
   assert(pFile && uxFile && uyFile && machFile && tFile);
 
-  std::vector<GasState<KappaT, CpT, ElemT>> hostValues(GpuGridT::n);
+  std::vector<GasState<KappaT, ElemT>> hostValues(GpuGridT::n);
   auto && deviceValues = matrix.values();
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
@@ -57,7 +57,7 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, CpT, ElemT>> &
       uxFile   << x << ';' << y << ';' << gasState.ux                << '\n';
       uyFile   << x << ';' << y << ';' << gasState.uy                << '\n';
       machFile << x << ';' << y << ';' << Mach::get(gasState)        << '\n';
-      tFile    << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
+     // tFile    << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
     }
 }
 

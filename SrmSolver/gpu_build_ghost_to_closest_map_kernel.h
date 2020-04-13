@@ -50,7 +50,7 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     const int jMirrorInt = std::round(jMirror);
 
     const ElemT sum      = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
-    if (sum < static_cast<ElemT>(0.01) * GpuGridT::hx)
+    if ((sum < static_cast<ElemT>(0.01) * GpuGridT::hx) && (pCurrPhi[jMirrorInt * GpuGridT::nx + iMirrorInt] < 0))
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
       pClosestIndices[globalIdx]     = mirrorGlobalIdx;

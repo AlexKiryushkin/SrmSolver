@@ -28,16 +28,16 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
-  using KappaType    = std::ratio<123, 100>;
-  using CpType       = std::ratio<411, 100>;
-  using GasStateType = GasState<KappaType, CpType, ElemT>;
-
   using NuType                   = std::ratio<41, 100>;
   using MtType                   = std::ratio<-3137331, 100000000>;
   using TBurnType                = std::ratio<1, 1>;
   using RhoPType                 = std::ratio<2167846, 1000>;
   using P0Type                   = std::ratio<1, 10>;
-  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, ElemT>;
+  using KappaType                = std::ratio<123, 100>;
+  using CpType                   = std::ratio<411, 100>;
+  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
+
+  using GasStateType = GasState<PropellantPropertiesType, ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
   using SrmSolverType      = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
@@ -51,8 +51,8 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
 template<class ElemT>
 struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
 {
-  constexpr static unsigned nx{ 410U + 1U };
-  constexpr static unsigned ny{ 150U + 1U };
+  constexpr static unsigned nx{ 3280U + 1U };
+  constexpr static unsigned ny{ 1200U + 1U };
   using LxToType = std::ratio<3280, 1000>;
   using LyToType = std::ratio<1200, 1000>;
   using GpuGridType = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
@@ -62,24 +62,24 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
+  using NuType    = std::ratio<5, 10>;
+  using MtType    = std::ratio<-534, 100000>;
+  using TBurnType = std::ratio<3900, 1>;
+  using RhoPType  = std::ratio<1700, 1>;
+  using P0Type    = std::ratio<101325, 1>;
   using KappaType = std::ratio<118, 100>;
-  using CpType = std::ratio<59, 9>;
-  using GasStateType = GasState<KappaType, CpType, ElemT>;
+  using CpType    = std::ratio<2628, 1>;
+  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using NuType = std::ratio<5, 10>;
-  using MtType = std::ratio<-307988, 100000000>;
-  using TBurnType = std::ratio<1, 1>;
-  using RhoPType = std::ratio<308916, 1000>;
-  using P0Type = std::ratio<117768, 10000000>;
-  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, ElemT>;
+  using GasStateType = GasState<PropellantPropertiesType, ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
   using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
 
-  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
+  constexpr static GasStateType initialGasState{ static_cast<ElemT>(0.5),
                                                  static_cast<ElemT>(0.0),
                                                  static_cast<ElemT>(0.0),
-                                                 detail::ToFloatV<P0Type, ElemT> };
+                                                 PropellantPropertiesType::P0 };
 };
 
 } // namespace kae
