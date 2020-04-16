@@ -18,13 +18,15 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, ElemT> & matrix, const std::str
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
   for (unsigned i = 0; i < GpuGridT::nx; ++i)
+  {
     for (unsigned j = 0; j < GpuGridT::ny; ++j)
     {
       ElemT x = i * GpuGridT::hx;
       ElemT y = j * GpuGridT::hy;
 
-      fOut << x << ';' << y << ';' << hostValues[j*GpuGridT::nx + i] << '\n';
+      fOut << x << ';' << y << ';' << hostValues[j * GpuGridT::nx + i] << '\n';
     }
+  }
 }
 
 template <class GpuGridT, class KappaT, class ElemT>
@@ -47,18 +49,20 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, ElemT>> & matr
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
   for (unsigned i = 0; i < GpuGridT::nx; ++i)
+  {
     for (unsigned j = 0; j < GpuGridT::ny; ++j)
     {
       ElemT x = i * GpuGridT::hx;
       ElemT y = j * GpuGridT::hy;
 
-      auto && gasState = hostValues[j*GpuGridT::nx + i];
-      pFile    << x << ';' << y << ';' << gasState.p                 << '\n';
-      uxFile   << x << ';' << y << ';' << gasState.ux                << '\n';
-      uyFile   << x << ';' << y << ';' << gasState.uy                << '\n';
-      machFile << x << ';' << y << ';' << Mach::get(gasState)        << '\n';
-     // tFile    << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
+      auto&& gasState = hostValues[j * GpuGridT::nx + i];
+      pFile << x << ';' << y << ';' << gasState.p << '\n';
+      uxFile << x << ';' << y << ';' << gasState.ux << '\n';
+      uyFile << x << ';' << y << ';' << gasState.uy << '\n';
+      machFile << x << ';' << y << ';' << Mach::get(gasState) << '\n';
+      tFile << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
     }
+  }
 }
 
 } // namespace kae

@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="filesystem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="gnu_plot_wrapper.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="gpu_build_ghost_to_closest_map_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_calculate_ghost_point_data_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_gas_dynamic_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_reinitialize_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_level_set_solver.h">
+      <Filter>Headers\Solvers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_level_set_solver_def.h">
+      <Filter>Headers\Solvers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_srm_solver.h">
+      <Filter>Headers\Solvers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_srm_solver_def.h">
+      <Filter>Headers\Solvers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_integrate_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="cuda_includes.h">
+      <Filter>Headers\Third Party Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="eigen_includes.h">
+      <Filter>Headers\Third Party Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="std_includes.h">
+      <Filter>Headers\Third Party Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_set_ghost_points_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_shape_nozzle_less.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_shape_nozzle_less_def.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_shape_with_umbrella.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_shape_with_umbrella_def.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="tube_shape.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="float4_arithmetics.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="gas_dynamic_flux.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="math_utilities.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="level_set_derivatives.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="boundary_condition.h">
+      <Filter>Headers\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="shape_types.h">
+      <Filter>Headers\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="shapes.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="discretization_order.h">
+      <Filter>Headers\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_grid.h">
+      <Filter>Headers\Traits Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="propellant_properties.h">
+      <Filter>Headers\Traits Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="get_closest_index.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="get_coordinates_matrix.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="get_extrapolated_ghost_value.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="cuda_float_types.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="gas_state.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="gnu_plot_wrapper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="gnuplot-iostream.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_matrix.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_matrix_writer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="shape_solver_types.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="solver_callbacks.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="to_float.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="solver_reduction_functions.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{730bb2d7-96fd-44bd-bc93-68acbf7b1498}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{b88bb6c6-37a6-4006-92d6-45f2c7e37b9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Enums">
+      <UniqueIdentifier>{14f010a7-0b2e-41cd-8b42-575b7b0afa3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Ghost Points Utils">
+      <UniqueIdentifier>{630c7e2f-ba52-4f92-b852-c29b8f87cbf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Kernels">
+      <UniqueIdentifier>{c63541b0-ac03-4ee1-896a-afa3d10e3157}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Math Utils">
+      <UniqueIdentifier>{91cdb283-5cf3-4324-963b-82ac4be9862c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Shapes">
+      <UniqueIdentifier>{baa3127a-d836-4206-aa9a-3bcfc932be2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Solvers">
+      <UniqueIdentifier>{79f1d0d3-9105-4975-967b-5138801a9f48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Third Party Includes">
+      <UniqueIdentifier>{e81bfa1a-df61-489b-8ff7-c2878e99de7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Traits Classes">
+      <UniqueIdentifier>{5a2dae51-29e7-4a3f-ae12-a9dbc20c6cc1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="main.cu">
+      <Filter>Source</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

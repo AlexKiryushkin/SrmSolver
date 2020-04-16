@@ -7,81 +7,11 @@
 #include "gpu_gas_dynamic_kernel.h"
 #include "gpu_matrix_writer.h"
 #include "gpu_set_ghost_points_kernel.h"
-#include "math_utilities.h"
+#include "solver_reduction_functions.h"
 
 namespace kae {
 
 namespace detail {
-
-template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT> & values,
-                                       const thrust::device_vector<ElemT> & currPhi)
-{
-  const auto first = thrust::make_transform_iterator(std::begin(values), kae::WaveSpeedXY{});
-  const auto last  = thrust::make_transform_iterator(std::end(values), kae::WaveSpeedXY{});
-
-  const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(first, std::begin(currPhi)));
-  const auto zipLast = thrust::make_zip_iterator(thrust::make_tuple(last, std::end(currPhi)));
-
-  const auto takeInner = [] __host__ __device__(
-    const thrust::tuple<CudaFloatT<2U, ElemT>, ElemT> & conservativeVariables)
-  {
-    const auto level = thrust::get<1U>(conservativeVariables);
-    if (level >= 0)
-      return CudaFloatT<2U, ElemT>{};
-
-    return thrust::get<0U>(conservativeVariables);
-  };
-
-  const auto transformFirst = thrust::make_transform_iterator(zipFirst, takeInner);
-  const auto transformLast = thrust::make_transform_iterator(zipLast, takeInner);
-
-  return thrust::reduce(first, last, CudaFloatT<2U, ElemT>{ 0, 0 }, kae::ElemwiseMax{});
-}
-
-template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
-ElemT getDeltaT(const thrust::device_vector<GasStateT> & values,
-                const thrust::device_vector<ElemT> & currPhi, 
-                ElemT courant)
-{
-  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values, currPhi);
-  return courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
-}
-
-template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<4U, ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStateT> & prevValues,
-                                                const thrust::device_vector<GasStateT> & currValues,
-                                                const thrust::device_vector<ElemT> & currPhi,
-                                                ElemT dt)
-{
-  const auto prevFirst = thrust::make_transform_iterator(std::begin(prevValues), kae::ConservativeVariables{});
-  const auto prevLast  = thrust::make_transform_iterator(std::end(prevValues),   kae::ConservativeVariables{});
-
-  const auto currFirst = thrust::make_transform_iterator(std::begin(currValues), kae::ConservativeVariables{});
-  const auto currLast  = thrust::make_transform_iterator(std::end(currValues),   kae::ConservativeVariables{});
-
-  const auto zipFirst  = thrust::make_zip_iterator(thrust::make_tuple(prevFirst, currFirst, std::begin(currPhi)));
-  const auto zipLast   = thrust::make_zip_iterator(thrust::make_tuple(prevLast,  currLast,  std::end(currPhi)));
-
-  const auto toDerivatives = [dt] __host__ __device__(
-    const thrust::tuple<CudaFloatT<4U, ElemT>, CudaFloatT<4U, ElemT>, ElemT> & conservativeVariables)
-  {
-    const auto prevVariable = thrust::get<0U>(conservativeVariables);
-    const auto currVariable = thrust::get<1U>(conservativeVariables);
-    const auto level        = thrust::get<2U>(conservativeVariables);
-    if (level >= 0)
-      return CudaFloatT<4U, ElemT>{};
-
-    return CudaFloatT<4U, ElemT>{ (currVariable.x - prevVariable.x) / dt,
-                                  (currVariable.y - prevVariable.y) / dt,
-                                  (currVariable.z - prevVariable.z) / dt,
-                                  (currVariable.w - prevVariable.w) / dt };
-  };
-
-  const auto transformFirst = thrust::make_transform_iterator(zipFirst, toDerivatives);
-  const auto transformLast  = thrust::make_transform_iterator(zipLast, toDerivatives);
-  return thrust::reduce(transformFirst, transformLast, CudaFloatT<4U, ElemT>{}, kae::ElemwiseAbsMax{});
-}
 
 template <class GpuGridT, class ShapeT, class PropellantPropertiesT, class GasStateT, class ElemT = typename GasStateT::ElemType>
 void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                pPrevValue,
@@ -138,7 +68,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIn
   {
     const auto deltaTGasDynamic = staticIntegrate(deltaT, timeOrder, callback);
     const auto maxDerivatives = getMaxEquationDerivatives();
-    callback(m_currState, currPhi(), i, t, maxDerivatives);
+    callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});
     const auto dt = integrateInTime(deltaTGasDynamic);
     t += dt;
   }

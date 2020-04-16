@@ -6,7 +6,7 @@ namespace gnuplotio {
 
 class Gnuplot;
 
-}
+} // namespace gnuplotio
 
 namespace kae {
 

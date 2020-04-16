@@ -27,6 +27,8 @@ public:
 
   __host__ __device__ constexpr static ElemType getFCritical();
 
+  __host__ __device__ static bool isChamber(ElemType x, ElemType y);
+
 private:
 
   __host__ __device__ static ElemType F_prime(ElemType x);

@@ -94,6 +94,12 @@ __host__ __device__ constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical(
 }
 
 template <class GpuGridT>
+__host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y)
+{
+  return x <= x_junc;
+}
+
+template <class GpuGridT>
 __host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
   bool isOnGrain = (x > x_left) && (x < x_junc) && (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);

@@ -8,6 +8,7 @@
 #include "gnu_plot_wrapper.h"
 #include "gpu_matrix.h"
 #include "gpu_matrix_writer.h"
+#include "solver_reduction_functions.h"
 
 namespace kae {
 
@@ -23,12 +24,21 @@ public:
     kae::current_path(m_folderPath);
   }
 
-  template <class GpuGridType, class GasStateType, class ElemT = typename GasStateType::ElemType>
+  template <class GpuGridType,
+            class GasStateType,
+            class ShapeT,
+            class ElemT = typename GasStateType::ElemType>
   void operator()(const GpuMatrix<GpuGridType, GasStateType> & gasValues,
                   const GpuMatrix<GpuGridType, ElemT> & currPhi,
-                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
+                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ShapeT)
   {
+    static thread_local std::vector<ElemT> meanPressureValues;
+    const auto volume = kae::detail::getChamberVolume<GpuGridType, ShapeT>(currPhi.values());
+    const auto pressureIntegral = kae::detail::getPressureIntegral<GpuGridType, ShapeT>(gasValues.values(), currPhi.values());
+    meanPressureValues.push_back(pressureIntegral / volume);
+
     std::cout << "Iteration: " << i << ". Time: " << t << '\n';
+    std::cout << "Mean chamber pressure: " << pressureIntegral / volume << '\n';
     std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
               << "; d(rho * ux)/dt = "           << maxDerivatives.y
               << "; d(rho * uy)/dt = "           << maxDerivatives.z
@@ -38,6 +48,10 @@ public:
     kae::create_directories(newCurrentPath);
     kae::current_path(newCurrentPath);
 
+    std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
+    std::copy(std::begin(meanPressureValues),
+              std::end(meanPressureValues),
+              std::ostream_iterator<ElemT>{meanPressureFile, "\n"});
     writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
     writeMatrixToFile(currPhi, "sgd.dat");
   }

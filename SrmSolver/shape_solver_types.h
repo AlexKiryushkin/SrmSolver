@@ -51,8 +51,8 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
 template<class ElemT>
 struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
 {
-  constexpr static unsigned nx{ 3280U + 1U };
-  constexpr static unsigned ny{ 1200U + 1U };
+  constexpr static unsigned nx{ 820U + 1U };
+  constexpr static unsigned ny{ 300U + 1U };
   using LxToType = std::ratio<3280, 1000>;
   using LyToType = std::ratio<1200, 1000>;
   using GpuGridType = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
