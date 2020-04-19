@@ -15,23 +15,25 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
   using ElemType = typename GasStateT::ElemType;
   const auto c = SonicSpeed::get(gasState);
 
-  const auto coefficient1 = gasState.ux + c / GasStateT::kappa;
-  const auto coefficient2 = static_cast<ElemType>(-1.0) / gasState.rho / c;
-  const auto coefficient3 = GasStateT::kappa / (GasStateT::kappa - static_cast<ElemType>(1.0)) / PropellantPropertiesT::mt;
+  constexpr auto kappa    = GasStateT::kappa;
+  constexpr auto nu       = PropellantPropertiesT::nu;
+  const auto coefficient1 = gasState.ux + c / kappa;
+  const auto coefficient2 = -1 / gasState.rho / c;
+  const auto coefficient3 = kappa / (kappa - 1) / PropellantPropertiesT::mt;
 
   ElemType p1 = 10 * gasState.p;
 
 #pragma unroll
   for (unsigned i{ 0u }; i < 10u; ++i)
   {
-    const auto power = std::pow(p1, -PropellantPropertiesT::nu);
+    const auto power = std::pow(p1, -nu);
     const auto fOfP = static_cast<ElemType>(0.5) * coefficient2 * coefficient2 * p1 * p1 +
                       coefficient2 * coefficient3 * p1 * p1 * power +
                       coefficient1 * coefficient2 * p1 + coefficient1 * coefficient3 * p1 * power +
                       static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PropellantPropertiesT::H0;
     const auto fPrimeOfP = coefficient2 * coefficient2 * p1 +
-                           (static_cast<ElemType>(2.0) - PropellantPropertiesT::nu) * coefficient2 * coefficient3 * p1 * power +
-                           (static_cast<ElemType>(1.0) - PropellantPropertiesT::nu) * coefficient1 * coefficient3 * power +
+                           (static_cast<ElemType>(2.0) - nu) * coefficient2 * coefficient3 * p1 * power +
+                           (static_cast<ElemType>(1.0) - nu) * coefficient1 * coefficient3 * power +
                             coefficient1 * coefficient2;
 
     const auto delta = fOfP / fPrimeOfP;
@@ -43,7 +45,7 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
   }
 
   const auto un = coefficient1 + coefficient2 * p1;
-  return GasStateT{ PropellantPropertiesT::mt * std::pow(p1, PropellantPropertiesT::nu) / un, un, static_cast<ElemType>(0.0), p1 };
+  return GasStateT{ PropellantPropertiesT::mt * std::pow(p1, nu) / un, un, static_cast<ElemType>(0.0), p1 };
 }
 
 template <class PropellantPropertiesT, class GasStateT>
@@ -55,10 +57,12 @@ __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(
     return gasState;
   }
 
-  return GasStateT{ PropellantPropertiesT::P0 / c / c - (1 - GasStateT::kappa) / GasStateT::kappa * gasState.rho,
-                    gasState.ux + c / GasStateT::kappa - PropellantPropertiesT::P0 / gasState.rho / c,
+  constexpr auto P0    = PropellantPropertiesT::P0;
+  constexpr auto kappa = GasStateT::kappa;
+  return GasStateT{ P0 / c / c - (1 - kappa) / kappa * gasState.rho,
+                    gasState.ux + c / kappa - P0 / gasState.rho / c,
                     gasState.uy,
-                    PropellantPropertiesT::P0 };
+                    P0 };
 }
 
 template <class GasStateT>
@@ -78,7 +82,8 @@ __host__ __device__ GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const Ga
 }
 
 template <class PropellantPropertiesT, class GasStateT>
-__host__ __device__ GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, EBoundaryCondition boundaryCondition)
+__host__ __device__ GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, 
+                                                                  EBoundaryCondition boundaryCondition)
 {
   switch (boundaryCondition)
   {

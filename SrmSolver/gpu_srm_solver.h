@@ -16,12 +16,25 @@ public:
   using PropellantPropertiesType = PropellantPropertiesT;
   using ElemType                 = typename GasStateType::ElemType;
 
-  static_assert(std::is_same<typename GasStateType::ElemType, typename GpuGridT::ElemType>::value, "Error! Precisions differ.");
+  static_assert(std::is_same<typename GasStateType::ElemType, typename GpuGridT::ElemType>::value, 
+                "Error! Precisions differ.");
 
-  GpuSrmSolver(ShapeT shape, GasStateT initialState, unsigned iterationCount = 0U, ElemType courant = static_cast<ElemType>(0.8));
+  GpuSrmSolver(ShapeT shape, 
+               GasStateT initialState, 
+               unsigned iterationCount = 0U, 
+               ElemType courant = static_cast<ElemType>(0.8));
 
   template <class CallbackT>
-  void dynamicIntegrate(unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
+  void quasiStationaryDynamicIntegrate(unsigned iterationCount, 
+                                       ElemType maximumChamberPressure,
+                                       ETimeDiscretizationOrder timeOrder, 
+                                       CallbackT callback);
+
+  template <class CallbackT>
+  void dynamicIntegrate(unsigned iterationCount, 
+                        ElemType deltaT, 
+                        ETimeDiscretizationOrder timeOrder, 
+                        CallbackT callback);
 
   template <class CallbackT>
   ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);

@@ -31,6 +31,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
     return;
   }
 
+  constexpr auto hx = GpuGridT::hx;
   constexpr unsigned smx   = GpuGridT::sharedMemory.x;
   const unsigned sharedIdx = aj * smx + ai;
   const unsigned globalIdx = j * GpuGridT::nx + i;
@@ -43,7 +44,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   if ((ti < GpuGridT::smExtension) && (i >= GpuGridT::smExtension))
   {
     prevSgdMatrix[sharedIdx - GpuGridT::smExtension] = pCurrPhi[globalIdx - GpuGridT::smExtension];
-    if (prevSgdMatrix[sharedIdx - GpuGridT::smExtension] < 5 * GpuGridT::hx)
+    if (prevSgdMatrix[sharedIdx - GpuGridT::smExtension] < 5 * hx)
     {
       prevMatrix[sharedIdx - GpuGridT::smExtension] = pPrevValue[globalIdx - GpuGridT::smExtension];
     }
@@ -52,14 +53,14 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   if ((tj < GpuGridT::smExtension) && (j >= GpuGridT::smExtension))
   {
     prevSgdMatrix[(aj - GpuGridT::smExtension) * smx + ai] = pCurrPhi[(j - GpuGridT::smExtension) * GpuGridT::nx + i];
-    if (prevSgdMatrix[(aj - GpuGridT::smExtension) * smx + ai] < 5 * GpuGridT::hx)
+    if (prevSgdMatrix[(aj - GpuGridT::smExtension) * smx + ai] < 5 * hx)
     {
       prevMatrix[(aj - GpuGridT::smExtension) * smx + ai] = pPrevValue[(j - GpuGridT::smExtension) * GpuGridT::nx + i];
     }
   }
 
   prevSgdMatrix[sharedIdx] = pCurrPhi[globalIdx];
-  if (prevSgdMatrix[sharedIdx] < 5 * GpuGridT::hx)
+  if (prevSgdMatrix[sharedIdx] < 5 * hx)
   {
     prevMatrix[sharedIdx] = pPrevValue[globalIdx];
   }
@@ -67,7 +68,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   if ((ti >= blockDim.x - GpuGridT::smExtension) && (i + GpuGridT::smExtension < GpuGridT::nx))
   {
     prevSgdMatrix[sharedIdx + GpuGridT::smExtension] = pCurrPhi[globalIdx + GpuGridT::smExtension];
-    if (prevSgdMatrix[sharedIdx + GpuGridT::smExtension] < 5 * GpuGridT::hx)
+    if (prevSgdMatrix[sharedIdx + GpuGridT::smExtension] < 5 * hx)
     {
       prevMatrix[sharedIdx + GpuGridT::smExtension] = pPrevValue[globalIdx + GpuGridT::smExtension];
     }
@@ -76,7 +77,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   if ((tj >= blockDim.y - GpuGridT::smExtension) && (j + GpuGridT::smExtension < GpuGridT::ny))
   {
     prevSgdMatrix[(aj + GpuGridT::smExtension) * smx + ai] = pCurrPhi[(j + GpuGridT::smExtension) * GpuGridT::nx + i];
-    if (prevSgdMatrix[(aj + GpuGridT::smExtension) * smx + ai] < 5 * GpuGridT::hx)
+    if (prevSgdMatrix[(aj + GpuGridT::smExtension) * smx + ai] < 5 * hx)
     {
       prevMatrix[(aj + GpuGridT::smExtension) * smx + ai] = pPrevValue[(j + GpuGridT::smExtension) * GpuGridT::nx + i];
     }
@@ -85,7 +86,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   __syncthreads();
 
   const ElemT levelValue = prevSgdMatrix[sharedIdx];
-  bool fluxShouldBeCalculated = levelValue <= 2 * GpuGridT::hx + static_cast<ElemT>(1e-6);
+  bool fluxShouldBeCalculated = levelValue <= 2 * hx + static_cast<ElemT>(1e-6);
   if (fluxShouldBeCalculated)
   {
     if (ti == 0U)
@@ -108,10 +109,11 @@ __global__ void gasDynamicIntegrateTVDSubStep(thrust::device_ptr<const GasStateT
   if (schemeShouldBeApplied)
   {
     const ElemT rReciprocal = 1 / ShapeT::getRadius(i, j);
-    const auto newConservativeVariables = ConservativeVariables::get(prevMatrix[sharedIdx]) -
-                                          dt * GpuGridT::hxReciprocal * (xFluxes[sharedIdx] - xFluxes[sharedIdx - 1U]) -
-                                          dt * GpuGridT::hyReciprocal * (yFluxes[sharedIdx] - yFluxes[sharedIdx - smx]) -
-                                          dt * rReciprocal * SourceTerm::get(prevMatrix[sharedIdx]);
+    const auto newConservativeVariables = 
+      ConservativeVariables::get(prevMatrix[sharedIdx]) -
+      dt * GpuGridT::hxReciprocal * (xFluxes[sharedIdx] - xFluxes[sharedIdx - 1U]) -
+      dt * GpuGridT::hyReciprocal * (yFluxes[sharedIdx] - yFluxes[sharedIdx - smx]) -
+      dt * rReciprocal * SourceTerm::get(prevMatrix[sharedIdx]);
     const GasStateT newGasState = ConservativeToGasState::get<GasStateT>(newConservativeVariables);
 
     if (prevWeight != 1)

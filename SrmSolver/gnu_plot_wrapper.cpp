@@ -17,4 +17,12 @@ void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<float>> & value
   gp.sendBinary2d(values);
 }
 
+void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<double>>& values)
+{
+  auto&& gp = *m_pImpl;
+
+  gp << "plot '-' binary" << gp.binFmt2d(values, "array") << "with image\n";
+  gp.sendBinary2d(values);
+}
+
 } // namespace kae 

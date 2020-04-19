@@ -21,7 +21,8 @@ __host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::F(ElemType x) -> ElemTy
 
   if (x < L + nozzle_lengthening + static_cast<ElemType>(0.55) * l_nozzle)
   {
-    return R0 * (static_cast<ElemType>(0.75) + static_cast<ElemType>(0.25) * cos(k_cos * (x - nozzle_lengthening - L)));
+    return R0 * (static_cast<ElemType>(0.75) + 
+                 static_cast<ElemType>(0.25) * cos(k_cos * (x - nozzle_lengthening - L)));
   }
 
   return k_line() * (x - nozzle_lengthening) + b_line();
@@ -96,18 +97,26 @@ __host__ __device__ constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical(
 template <class GpuGridT>
 __host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y)
 {
-  return x <= x_junc;
+  return (x >= x_left) && (x <= x_junc);
+}
+
+template <class GpuGridT>
+__host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemType x, ElemType y)
+{
+  return (x > x_left) && (x < x_junc) && 
+         (y >= y_bottom + R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
 }
 
 template <class GpuGridT>
 __host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
-  bool isOnGrain = (x > x_left) && (x < x_junc) && (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
+  bool isOnGrain = (x > x_left) && (x < x_junc) && 
+                   (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
   bool isOnCorner = (x >= x_junc) &&
     (x <= x_junc + 20 * GpuGridT::hx) &&
     (y - y_bottom >= R0) &&
     (y - y_bottom <= R0 + 20 * GpuGridT::hx) &&
-    (std::powf(x - x_junc - 20 * GpuGridT::hx, 2) + std::powf(y - y_bottom - R0 - 20 * GpuGridT::hy, 2) >= 400 * GpuGridT::hx * GpuGridT::hx);
+    (std::hypot(x - x_junc - 20 * GpuGridT::hx, y - y_bottom - R0 - 20 * GpuGridT::hy) >= 20 * GpuGridT::hx);
 
   bool shouldBeAdvanced = isOnGrain || isOnCorner;
   return shouldBeAdvanced;
@@ -211,16 +220,16 @@ __host__ __device__ auto SrmShapeWithUmbrella<GpuGridT>::operator()(unsigned i, 
 
   if (Zone15)
   {
-    ElemType val1 = absmin((y - y_bottom - F(x - x_left)) / std::hypot(static_cast<ElemType>(1.0), F_prime(x - x_left)), y_bottom - y);
-
-    return absmin(val1, x_left - x);
+    return absmin((y - y_bottom - F(x - x_left)) / std::hypot(static_cast<ElemType>(1.0), F_prime(x - x_left)),
+                   y_bottom - y, 
+                   x_left - x);
   }
 
   if (Zone16)
   {
-    ElemType val1 = absmin((y - y_bottom - F(x - x_left)) / std::hypot(static_cast<ElemType>(1.0), F_prime(x - x_left)), y_bottom - y);
-
-    return absmin(val1, x - x_right);
+    return absmin((y - y_bottom - F(x - x_left)) / std::hypot(static_cast<ElemType>(1.0), F_prime(x - x_left)),
+                   y_bottom - y,
+                   x - x_right);
   }
 
   if (Zone17)

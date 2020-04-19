@@ -38,11 +38,12 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   {
     return;
   }
-  const EBoundaryCondition boundaryCondition = pBoundaryConditions[globalIdx];
-  const CudaFloatT<2U, ElemT> normal         = pNormals[globalIdx];
-  const GasStateT rotatedState               = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
-  const GasStateT extrapolatedState          = getFirstOrderExtrapolatedGhostValue<PropellantPropertiesT>(rotatedState, boundaryCondition);
-  pGasValues[globalIdx]                      = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
+  const auto boundaryCondition = pBoundaryConditions.get()[globalIdx];
+  const auto normal            = pNormals.get()[globalIdx];
+  const auto rotatedState      = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
+  const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PropellantPropertiesT>(rotatedState, 
+                                                                                            boundaryCondition);
+  pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
 }
 
 template <class GpuGridT, class GasStateT, class PropellantPropertiesT, class ElemT = typename GasStateT::ElemType>

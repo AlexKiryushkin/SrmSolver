@@ -10,7 +10,9 @@
 namespace kae {
 
 template <class GpuGridT, class ShapeT>
-GpuLevelSetSolver<GpuGridT, ShapeT>::GpuLevelSetSolver(ShapeT shape, unsigned iterationCount, ETimeDiscretizationOrder timeOrder)
+GpuLevelSetSolver<GpuGridT, ShapeT>::GpuLevelSetSolver(ShapeT shape, 
+                                                       unsigned iterationCount, 
+                                                       ETimeDiscretizationOrder timeOrder)
   : m_currState(shape), m_prevState(shape), m_firstState(shape), m_secondState(shape)
 {
   reinitialize(iterationCount, timeOrder);
@@ -211,7 +213,8 @@ void GpuLevelSetSolver<GpuGridT, ShapeT>::reinitializeStep(ETimeDiscretizationOr
 
 template <class GpuGridT, class ShapeT>
 template <class PropellantPropertiesT, class GasStateT>
-auto GpuLevelSetSolver<GpuGridT, ShapeT>::getMaxBurningRate(const thrust::device_vector<GasStateT> & gasValues) -> ElemType
+auto GpuLevelSetSolver<GpuGridT, ShapeT>::getMaxBurningRate(const thrust::device_vector<GasStateT> & gasValues)
+  -> ElemType
 {
   auto first = thrust::make_transform_iterator(std::begin(gasValues), kae::BurningRate<PropellantPropertiesT>{});
   auto last = thrust::make_transform_iterator(std::end(gasValues), kae::BurningRate<PropellantPropertiesT>{});

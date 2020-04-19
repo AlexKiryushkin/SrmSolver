@@ -33,9 +33,6 @@
     <ClInclude Include="gpu_srm_solver_def.h">
       <Filter>Headers\Solvers</Filter>
     </ClInclude>
-    <ClInclude Include="gpu_integrate_kernel.h">
-      <Filter>Headers\Kernels</Filter>
-    </ClInclude>
     <ClInclude Include="cuda_includes.h">
       <Filter>Headers\Third Party Includes</Filter>
     </ClInclude>
@@ -134,6 +131,12 @@
     </ClInclude>
     <ClInclude Include="solver_reduction_functions.h">
       <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="delta_dirac_function.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_integrate_kernel.h">
+      <Filter>Headers\Kernels</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

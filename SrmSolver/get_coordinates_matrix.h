@@ -10,7 +10,10 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class ElemT = typename GpuGridT::ElemType>
-Eigen::Matrix<ElemT, 9U, 3U> getCoordinatesMatrix(const ElemT * pCurrPhi, unsigned closestIdx, ElemT xSurface, ElemT ySurface)
+Eigen::Matrix<ElemT, 9U, 3U> getCoordinatesMatrix(const ElemT * pCurrPhi,
+                                                  unsigned      closestIdx, 
+                                                  ElemT         xSurface, 
+                                                  ElemT         ySurface)
 {
   unsigned counter{ 0U };
   Eigen::Matrix<ElemT, 9U, 3U> coordinateMatrix{};

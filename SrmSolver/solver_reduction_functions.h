@@ -3,6 +3,7 @@
 #include "cuda_includes.h"
 
 #include "cuda_float_types.h"
+#include "delta_dirac_function.h"
 #include "gas_state.h"
 #include "math_utilities.h"
 
@@ -112,7 +113,9 @@ ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi)
     }
 
     const auto y = ShapeT::getRadius(i, j);
-    return ((thrust::get<1U>(tuple) > 0) ? static_cast<ElemT>(0.0) : 2 * static_cast<ElemT>(M_PI) * y);
+    return ((thrust::get<1U>(tuple) > 0) ? 
+               static_cast<ElemT>(0.0) : 
+               2 * static_cast<ElemT>(M_PI) * y * GpuGridT::hx * GpuGridT::hy);
   };
 
   const auto transformFirst = thrust::make_transform_iterator(zipFirst, toVolume);
@@ -148,13 +151,79 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
     const auto y = ShapeT::getRadius(i, j);
     return ((thrust::get<2U>(tuple) > 0) ? 
               static_cast<ElemT>(0.0) : 
-              2 * static_cast<ElemT>(M_PI) * y * P::get(thrust::get<0U>(tuple)));
+              2 * static_cast<ElemT>(M_PI) * y * P::get(thrust::get<0U>(tuple)) * GpuGridT::hx * GpuGridT::hy);
   };
 
   const auto transformFirst = thrust::make_transform_iterator(zipFirst, toVolume);
   const auto transformLast = thrust::make_transform_iterator(zipLast, toVolume);
 
   return thrust::reduce(transformFirst, transformLast, static_cast<ElemT>(0.0));
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename GpuGridT::ElemType>
+ElemT getCalculatedBoriPressure(const thrust::device_vector<GasStateT>& gasValues,
+                                const thrust::device_vector<ElemT>& currPhi)
+{
+  return getPressureIntegral<GpuGridT, ShapeT>(gasValues, currPhi) / getChamberVolume<GpuGridT, ShapeT>(currPhi);
+}
+
+template <class GpuGridT, class ShapeT, class ElemT = typename GpuGridT::ElemType>
+ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
+                        const thrust::device_vector<CudaFloatT<2U, ElemT>>& normals)
+{
+  static thread_local thrust::device_vector<unsigned> indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+
+  const auto tupleFirst = thrust::make_tuple(std::begin(indexVector), 
+                                             std::begin(currPhi),
+                                             std::begin(normals));
+  const auto tupleLast = thrust::make_tuple(std::end(indexVector), 
+                                            std::end(currPhi),
+                                            std::end(normals));
+
+  const auto zipFirst = thrust::make_zip_iterator(tupleFirst);
+  const auto zipLast = thrust::make_zip_iterator(tupleLast);
+
+  const auto toVolume = [] __host__ __device__(
+    const thrust::tuple<unsigned, ElemT, CudaFloatT<2U, ElemT>> & tuple)
+  {
+    const auto index   = thrust::get<0U>(tuple);
+    const auto level   = thrust::get<1U>(tuple);
+    const auto normals = thrust::get<2U>(tuple);
+
+    const auto i = index % GpuGridT::nx;
+    const auto j = index / GpuGridT::nx;
+    const auto xSurface = i * GpuGridT::hx - level * normals.x;
+    const auto ySurface = j * GpuGridT::hy - level * normals.y;
+
+    const auto isBurningSurface = ShapeT::isBurningSurface(xSurface, ySurface);
+    if (!isBurningSurface)
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
+    const auto y = ShapeT::getRadius(i, j);
+    return 2 * static_cast<ElemT>(M_PI) * y * deltaDiracFunction(level, GpuGridT::hx) * GpuGridT::hx * GpuGridT::hy;
+  };
+
+  const auto transformFirst = thrust::make_transform_iterator(zipFirst, toVolume);
+  const auto transformLast = thrust::make_transform_iterator(zipLast, toVolume);
+
+  return thrust::reduce(transformFirst, transformLast, static_cast<ElemT>(0.0));
+}
+
+template <class GpuGridT,
+          class ShapeT,
+          class PropellantPropertiesT,
+          class ElemT = typename GpuGridT::ElemType>
+ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
+                                 const thrust::device_vector<CudaFloatT<2U, ElemT>>& normals)
+{
+  constexpr auto kappa = PropellantPropertiesT::kappa;
+  const auto burningSurface = getBurningSurface<GpuGridT, ShapeT>(currPhi, normals);
+  const auto boriPressure = std::pow(
+    burningSurface * PropellantPropertiesT::mt * std::sqrt((kappa - 1) / kappa * PropellantPropertiesT::H0) /
+    PropellantPropertiesT::gammaComplex / ShapeT::getFCritical(), 1 / (1 - PropellantPropertiesT::nu));
+  return boriPressure;
 }
 
 } // namespace detail

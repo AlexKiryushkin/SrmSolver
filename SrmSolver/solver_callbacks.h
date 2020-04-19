@@ -33,12 +33,12 @@ public:
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ShapeT)
   {
     static thread_local std::vector<ElemT> meanPressureValues;
-    const auto volume = kae::detail::getChamberVolume<GpuGridType, ShapeT>(currPhi.values());
-    const auto pressureIntegral = kae::detail::getPressureIntegral<GpuGridType, ShapeT>(gasValues.values(), currPhi.values());
-    meanPressureValues.push_back(pressureIntegral / volume);
+    const auto meanPressure = 
+      detail::getCalculatedBoriPressure<GpuGridType, ShapeT>(gasValues.values(), currPhi.values());
+    meanPressureValues.push_back(meanPressure);
 
     std::cout << "Iteration: " << i << ". Time: " << t << '\n';
-    std::cout << "Mean chamber pressure: " << pressureIntegral / volume << '\n';
+    std::cout << "Mean chamber pressure: " << meanPressure << '\n';
     std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
               << "; d(rho * ux)/dt = "           << maxDerivatives.y
               << "; d(rho * uy)/dt = "           << maxDerivatives.z

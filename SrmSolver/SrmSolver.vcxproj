@@ -14,6 +14,7 @@
     <ClInclude Include="boundary_condition.h" />
     <ClInclude Include="cuda_float_types.h" />
     <ClInclude Include="cuda_includes.h" />
+    <ClInclude Include="delta_dirac_function.h" />
     <ClInclude Include="discretization_order.h" />
     <ClInclude Include="eigen_includes.h" />
     <ClInclude Include="filesystem.h" />

@@ -26,9 +26,7 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     return;
   }
 
-  const ElemT level = pCurrPhi[globalIdx];
-  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 4 * GpuGridT::hx);
-  if (!pointIsGhost)
+  if ((i < 10U) || (j < 10U) || (i >= GpuGridT::nx - 10) || (j >= GpuGridT::ny - 10))
   {
     return;
   }
@@ -40,7 +38,15 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
   ny /= length;
   pNormals[globalIdx] = { nx, ny };
 
-  const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(i * GpuGridT::hx - nx * level, j * GpuGridT::hy - ny * level);
+  const ElemT level = pCurrPhi[globalIdx];
+  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 4 * GpuGridT::hx);
+  if (!pointIsGhost)
+  {
+    return;
+  }
+
+  const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(i * GpuGridT::hx - nx * level, 
+                                                                            j * GpuGridT::hy - ny * level);
   if (boundaryCondition == EBoundaryCondition::eWall)
   {
     const ElemT iMirror  = i - 2 * nx * level * GpuGridT::hxReciprocal;

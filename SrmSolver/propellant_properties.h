@@ -34,6 +34,7 @@ private:
 public:
 
   constexpr static ElemT kappa = kappaDim;
+  constexpr static ElemT gammaComplex = gammaComplexDim;
   constexpr static ElemT nu    = nuDim;
   constexpr static ElemT mt    = mtDim * uScale / pComplex;
   constexpr static ElemT TBurn = TBurnDim / TScale;
@@ -50,7 +51,13 @@ struct BurningRate
   template <class GasStateT>
   __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
-    return -PropellantPropertiesT::mt * std::pow(kae::P::get(state), PropellantPropertiesT::nu) / PropellantPropertiesT::rhoP;
+    return get(P::get(state));
+  }
+
+  template <class ElemT>
+  __host__ __device__ static ElemT get(ElemT p)
+  {
+    return -PropellantPropertiesT::mt * std::pow(p, PropellantPropertiesT::nu) / PropellantPropertiesT::rhoP;
   }
 };
 

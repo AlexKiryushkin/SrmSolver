@@ -16,6 +16,7 @@ public:
   explicit GnuPlotWrapper(const std::string & pathToGnuPlotExe);
 
   void display2dPlot(const std::vector<std::vector<float>> & values);
+  void display2dPlot(const std::vector<std::vector<double>>& values);
 private:
 
   std::shared_ptr<gnuplotio::Gnuplot> m_pImpl;

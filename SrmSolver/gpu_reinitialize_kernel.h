@@ -27,7 +27,8 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
     return;
   }
 
-  const unsigned sharedIdx = aj * GpuGridT::sharedMemory.x + ai;
+  constexpr auto smx = GpuGridT::sharedMemory.x;
+  const unsigned sharedIdx = aj * smx + ai;
   const unsigned globalIdx = j * GpuGridT::nx + i;
 
   __shared__ ElemT prevMatrix[GpuGridT::smSize];
@@ -39,7 +40,7 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
 
   if ((tj < GpuGridT::smExtension) && (j >= GpuGridT::smExtension))
   {
-    prevMatrix[(aj - GpuGridT::smExtension) * GpuGridT::sharedMemory.x + ai] = pPrevValue[(j - GpuGridT::smExtension) * GpuGridT::nx + i];
+    prevMatrix[(aj - GpuGridT::smExtension) * smx + ai] = pPrevValue[(j - GpuGridT::smExtension) * GpuGridT::nx + i];
   }
 
   prevMatrix[sharedIdx] = pPrevValue[globalIdx];
@@ -51,7 +52,7 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
 
   if ((tj >= blockDim.y - GpuGridT::smExtension) && (j + GpuGridT::smExtension < GpuGridT::ny))
   {
-    prevMatrix[(aj + GpuGridT::smExtension) * GpuGridT::sharedMemory.x + ai] = pPrevValue[(j + GpuGridT::smExtension) * GpuGridT::nx + i];
+    prevMatrix[(aj + GpuGridT::smExtension) * smx + ai] = pPrevValue[(j + GpuGridT::smExtension) * GpuGridT::nx + i];
   }
 
   __syncthreads();
@@ -65,7 +66,7 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
   if (schemeShouldBeApplied)
   {
     const ElemT sgdValue = prevMatrix[sharedIdx];
-    const ElemT grad     = getLevelSetAbsGradient<GpuGridT, GpuGridT::sharedMemory.x>(prevMatrix, sharedIdx, (sgdValue > 0));
+    const ElemT grad     = getLevelSetAbsGradient<GpuGridT, smx>(prevMatrix, sharedIdx, (sgdValue > 0));
     const ElemT sgn      = sgdValue / std::hypot(sgdValue, grad * GpuGridT::hx);
     const ElemT val      = sgdValue - dt * sgn * (grad - static_cast<ElemT>(1.0));
 

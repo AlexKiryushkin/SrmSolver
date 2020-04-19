@@ -13,7 +13,11 @@ namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class ShapeT, class PropellantPropertiesT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+template <class GpuGridT,
+          class ShapeT,
+          class PropellantPropertiesT,
+          class GasStateT,
+          class ElemT = typename GasStateT::ElemType>
 void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                pPrevValue,
                                    thrust::device_ptr<const GasStateT>          pFirstValue,
                                    thrust::device_ptr<GasStateT>                pCurrValue,
@@ -56,6 +60,34 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::GpuSrmSolver(
     m_levelSetSolver    { shape, iterationCount, ETimeDiscretizationOrder::eThree },
     m_courant           { courant                                                 }
 {
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class CallbackT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStationaryDynamicIntegrate(
+  unsigned iterationCount, ElemType maximumChamberPressure, ETimeDiscretizationOrder timeOrder, CallbackT callback)
+{
+  auto t{ static_cast<ElemType>(0.0) };
+
+  ElemType currMeanPressure{};
+  ElemType prevMeanPressure{};
+
+  const auto levelSetDeltaT = GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) /
+    BurningRate<PropellantPropertiesType>::get(maximumChamberPressure);
+
+  for (unsigned i{ 0U }; i < iterationCount; ++i)
+  {
+    prevMeanPressure = std::exchange(currMeanPressure, 
+      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesType>(currPhi().values(), m_normals.values()));
+
+    const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(currPhi().values());
+    const auto gasDynamicDeltaT = 900 * std::fabs(prevMeanPressure - currMeanPressure) * chamberVolume + levelSetDeltaT / 50;
+    staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
+    const auto maxDerivatives = getMaxEquationDerivatives();
+    callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});
+    const auto dt = integrateInTime(levelSetDeltaT);
+    t += dt;
+  }
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
@@ -123,11 +155,10 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   while (t < deltaT)
   {
     const CudaFloatT<2U, ElemType> lambdas = detail::getMaxWaveSpeeds(m_currState.values(), currPhi().values());
-    const CudaFloatT<2U, ElemType> multipliedLambdas{ static_cast<ElemType>(1.1) * lambdas.x, static_cast<ElemType>(1.1) * lambdas.y };
     const auto maxDt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
     const auto remainingTime = deltaT - t;
     auto dt = std::min(maxDt, remainingTime);
-    dt = staticIntegrateStep(timeOrder, dt, multipliedLambdas);
+    dt = staticIntegrateStep(timeOrder, dt, lambdas);
     t += dt;
     ++i;
     if (i % 100U == 0U)
@@ -158,14 +189,25 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNo
     return;
   }
 
-  writeMatrixToFile(m_prevState, "prev_error_p.dat", "prev_error_ux.dat", "prev_error_uy.dat", "prev_error_mach.dat", "prev_error_t.dat");
-  writeMatrixToFile(m_currState, "curr_error_p.dat", "curr_error_ux.dat", "curr_error_uy.dat", "curr_error_mach.dat", "curr_error_t.dat");
+  writeMatrixToFile(m_prevState, 
+                    "prev_error_p.dat", 
+                    "prev_error_ux.dat", 
+                    "prev_error_uy.dat", 
+                    "prev_error_mach.dat", 
+                    "prev_error_t.dat");
+  writeMatrixToFile(m_currState, 
+                    "curr_error_p.dat", 
+                    "curr_error_ux.dat", 
+                    "curr_error_uy.dat", 
+                    "curr_error_mach.dat", 
+                    "curr_error_t.dat");
   writeMatrixToFile(currPhi(), "sgd.dat");
   throw std::runtime_error("Gas state has become invalid");
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(ETimeDiscretizationOrder timeOrder) -> ElemType
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(
+  ETimeDiscretizationOrder timeOrder) -> ElemType
 {
   const auto lambdas = detail::getMaxWaveSpeeds(m_currState.values());
   const auto dt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
@@ -183,7 +225,8 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::integrate
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEquationDerivatives() const -> CudaFloatT<4U, ElemType>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEquationDerivatives() const
+  -> CudaFloatT<4U, ElemType>
 {
   return detail::getMaxEquationDerivatives(
     m_prevState.values(),
