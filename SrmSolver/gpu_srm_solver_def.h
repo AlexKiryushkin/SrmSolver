@@ -69,19 +69,31 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
 {
   auto t{ static_cast<ElemType>(0.0) };
 
-  ElemType currMeanPressure{};
-  ElemType prevMeanPressure{};
+  ElemType currP{};
+  ElemType prevP{};
 
   const auto levelSetDeltaT = GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) /
     BurningRate<PropellantPropertiesType>::get(maximumChamberPressure);
 
+  auto && phiValues = currPhi().values();
+  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
+    getDevicePtr(currPhi()),
+    getDevicePtr(m_closestIndices),
+    getDevicePtr(m_boundaryConditions),
+    getDevicePtr(m_normals));
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    prevMeanPressure = std::exchange(currMeanPressure, 
-      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesType>(currPhi().values(), m_normals.values()));
+    prevP = std::exchange(currP,
+      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesType>(phiValues, m_normals.values()));
+    const auto currCalculatedP = detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(m_currState.values(), phiValues);
+    const auto deltaP = std::fabs(prevP - currP);
+    const auto calculatedDeltaP = std::fabs(currCalculatedP - currP);
+    prevP = ((calculatedDeltaP > deltaP) ? currCalculatedP : prevP);
 
-    const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(currPhi().values());
-    const auto gasDynamicDeltaT = 900 * std::fabs(prevMeanPressure - currMeanPressure) * chamberVolume + levelSetDeltaT / 50;
+    const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(phiValues);
+    const auto gasDynamicDeltaT = std::min(
+      900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50,
+      levelSetDeltaT);
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
     const auto maxDerivatives = getMaxEquationDerivatives();
     callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});

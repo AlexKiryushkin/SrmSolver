@@ -32,28 +32,36 @@ public:
                   const GpuMatrix<GpuGridType, ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ShapeT)
   {
-    static thread_local std::vector<ElemT> meanPressureValues;
-    const auto meanPressure = 
+    static thread_local std::vector<std::pair<ElemT, ElemT>> meanPressureValues;
+    const auto meanPressure =
       detail::getCalculatedBoriPressure<GpuGridType, ShapeT>(gasValues.values(), currPhi.values());
-    meanPressureValues.push_back(meanPressure);
+    meanPressureValues.emplace_back(t, meanPressure);
+    const auto writeToFile = [this](std::vector<std::pair<ElemT, ElemT>> meanPressureValues,
+      GpuMatrix<GpuGridType, GasStateType> gasValues,
+      GpuMatrix<GpuGridType, ElemT> currPhi,
+      unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
+    {
+      std::cout << "Iteration: " << i << ". Time: " << t << '\n';
+      std::cout << "Mean chamber pressure: " << meanPressureValues.back().second << '\n';
+      std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
+        << "; d(rho * ux)/dt = " << maxDerivatives.y
+        << "; d(rho * uy)/dt = " << maxDerivatives.z
+        << "; d(rho * E)/dt = " << maxDerivatives.w << "\n\n";
+      const std::wstring tString = std::to_wstring(t);
+      const std::wstring newCurrentPath = kae::append(m_folderPath, tString);
+      kae::create_directories(newCurrentPath);
+      kae::current_path(newCurrentPath);
 
-    std::cout << "Iteration: " << i << ". Time: " << t << '\n';
-    std::cout << "Mean chamber pressure: " << meanPressure << '\n';
-    std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
-              << "; d(rho * ux)/dt = "           << maxDerivatives.y
-              << "; d(rho * uy)/dt = "           << maxDerivatives.z
-              << "; d(rho * E)/dt = "            << maxDerivatives.w << "\n\n";
-    const std::wstring tString = std::to_wstring(t);
-    const std::wstring newCurrentPath = kae::append(m_folderPath, tString);
-    kae::create_directories(newCurrentPath);
-    kae::current_path(newCurrentPath);
-
-    std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
-    std::copy(std::begin(meanPressureValues),
-              std::end(meanPressureValues),
-              std::ostream_iterator<ElemT>{meanPressureFile, "\n"});
-    writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
-    writeMatrixToFile(currPhi, "sgd.dat");
+      std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
+      for (const auto& elem : meanPressureValues)
+      {
+        meanPressureFile << elem.first << ';' << elem.second << '\n';
+      }
+      writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
+      writeMatrixToFile(currPhi, "sgd.dat");
+    };
+    std::thread writeAsync{ writeToFile, meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
+    writeAsync.detach();
   }
 
   template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
