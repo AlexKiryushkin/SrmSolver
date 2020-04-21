@@ -72,7 +72,7 @@ private:
   __host__ __device__ static ElemType k_normal_line() { return -1 / k_line(); }
   __host__ __device__ static ElemType b_normal_line() { return F(x_right - x_left) + (x_right - x_left) / k_line(); }
 
-  constexpr static ElemType nozzle_lengthening = static_cast<ElemType>(0.1);
+  constexpr static ElemType nozzle_lengthening = static_cast<ElemType>(0.2);
 };
 
 } // namespace kae

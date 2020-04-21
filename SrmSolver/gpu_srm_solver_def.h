@@ -69,6 +69,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
 {
   auto t{ static_cast<ElemType>(0.0) };
 
+  ElemType desiredIntegrateTime{};
   ElemType currP{};
   ElemType prevP{};
 
@@ -85,15 +86,12 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
   {
     prevP = std::exchange(currP,
       detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesType>(phiValues, m_normals.values()));
-    const auto currCalculatedP = detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(m_currState.values(), phiValues);
-    const auto deltaP = std::fabs(prevP - currP);
-    const auto calculatedDeltaP = std::fabs(currCalculatedP - currP);
-    prevP = ((calculatedDeltaP > deltaP) ? currCalculatedP : prevP);
 
     const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(phiValues);
-    const auto gasDynamicDeltaT = std::min(
-      900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50,
-      levelSetDeltaT);
+    desiredIntegrateTime += 900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50;
+    const auto gasDynamicDeltaT = std::min(desiredIntegrateTime, levelSetDeltaT);
+    desiredIntegrateTime -= gasDynamicDeltaT;
+
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
     const auto maxDerivatives = getMaxEquationDerivatives();
     callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});
