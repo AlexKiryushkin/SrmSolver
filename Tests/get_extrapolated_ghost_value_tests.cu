@@ -7,14 +7,10 @@
 #include <SrmSolver/get_extrapolated_ghost_value.h>
 #include <SrmSolver/propellant_properties.h>
 
+#include "aliases.h"
 #include "comparators.h"
 
 namespace tests {
-
-struct TestShape
-{
-  
-};
 
 template <class T>
 class get_extrapolated_ghost_value : public ::testing::Test
@@ -23,14 +19,15 @@ public:
   using ElemType     = T;
   using KappaType    = std::ratio<12, 10>;
   using CpType       = std::ratio<6045, 1000>;
-  using GasStateType = kae::GasState<KappaType, CpType, ElemType>;
+  using GasStateType = GasStateType<KappaType, CpType, ElemType>;
 
   using NuType                   = std::ratio<5, 10>;
   using MtType                   = std::ratio<-3, 10>;
   using TBurnType                = std::ratio<1, 1>;
   using RhoPType                 = std::ratio<300, 1>;
   using P0Type                   = std::ratio<144, 1000>;
-  using PropellantPropertiesType = kae::PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, ElemType>;
+  using PropellantPropertiesType = 
+      PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ElemType>;
 };
 
 using TypeParams = ::testing::Types<float, double>;

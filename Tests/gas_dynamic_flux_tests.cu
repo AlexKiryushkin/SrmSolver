@@ -7,6 +7,7 @@
 #include <SrmSolver/gas_dynamic_flux.h>
 #include <SrmSolver/gas_state.h>
 
+#include "aliases.h"
 #include "comparators.h"
 
 namespace tests {
@@ -18,7 +19,7 @@ public:
   using ElemType  = T;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   constexpr static unsigned bias{ 5U };
   constexpr static ElemType startPoint{ static_cast<ElemType>(0.99) };

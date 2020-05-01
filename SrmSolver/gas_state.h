@@ -7,7 +7,6 @@
 #pragma warning(pop)
 
 #include "cuda_float_types.h"
-#include "to_float.h"
 
 namespace kae {
 

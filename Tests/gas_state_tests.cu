@@ -6,6 +6,7 @@
 #include <SrmSolver/cuda_float_types.h>
 #include <SrmSolver/gas_state.h>
 
+#include "aliases.h"
 #include "comparators.h"
 
 namespace tests {
@@ -20,8 +21,8 @@ TYPED_TEST(gas_state, gas_state_fields)
 {
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
-  using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using RT       = std::ratio<6, 1>;
+  using GasStateT = GasStateType<KappaT, RT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(2.0),
@@ -29,21 +30,16 @@ TYPED_TEST(gas_state, gas_state_fields)
                             static_cast<ElemType>(4.0) };
 
   constexpr ElemType goldKappa{ static_cast<ElemType>(1.2) };
-  constexpr ElemType goldCp{    static_cast<ElemType>(6.0) };
-  constexpr ElemType goldR{     static_cast<ElemType>(1.0) };
+  constexpr ElemType goldR{     static_cast<ElemType>(6.0) };
   constexpr ElemType goldRho{   static_cast<ElemType>(1.0) };
   constexpr ElemType goldUx{    static_cast<ElemType>(2.0) };
   constexpr ElemType goldUy{    static_cast<ElemType>(3.0) };
   constexpr ElemType goldP{     static_cast<ElemType>(4.0) };
 
-  const     ElemType goldGammaComplex{ std::sqrt(goldKappa * std::pow(2 / (goldKappa + 1), (goldKappa + 1) / (goldKappa - 1))) };
-
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   EXPECT_NEAR(GasStateT::kappa,        goldKappa,        threshold);
-  EXPECT_NEAR(GasStateT::Cp,           goldCp,           threshold);
   EXPECT_NEAR(GasStateT::R,            goldR,            threshold);
-  EXPECT_NEAR(GasStateT::gammaComplex, goldGammaComplex, threshold);
   EXPECT_EQ(gasState.rho, goldRho);
   EXPECT_EQ(gasState.ux, goldUx);
   EXPECT_EQ(gasState.uy, goldUy);
@@ -55,7 +51,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_1)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(3.0),
@@ -70,7 +66,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_2)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ std::numeric_limits<ElemType>::infinity(),
                             static_cast<ElemType>(3.0),
@@ -85,7 +81,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_3)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ std::numeric_limits<ElemType>::quiet_NaN(),
                             static_cast<ElemType>(3.0),
@@ -100,7 +96,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_4)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(-1.0),
                             static_cast<ElemType>(3.0),
@@ -115,7 +111,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_5)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             std::numeric_limits<ElemType>::infinity(),
@@ -130,7 +126,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_6)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             std::numeric_limits<ElemType>::quiet_NaN(),
@@ -145,7 +141,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_7)
   using ElemType = TypeParam;
   using KappaT = std::ratio<12, 10>;
   using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -160,7 +156,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_8)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -175,7 +171,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_9)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -190,7 +186,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_10)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -205,7 +201,7 @@ TYPED_TEST(gas_state, gas_state_is_valid_11)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -220,7 +216,7 @@ TYPED_TEST(gas_state, gas_state_rho)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(3.0),
@@ -239,7 +235,7 @@ TYPED_TEST(gas_state, gas_state_p)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(3.0),
@@ -258,7 +254,7 @@ TYPED_TEST(gas_state, gas_state_velocity_squared)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(3.0),
@@ -277,7 +273,7 @@ TYPED_TEST(gas_state, gas_state_velocity)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(1.0),
                             static_cast<ElemType>(3.0),
@@ -296,7 +292,7 @@ TYPED_TEST(gas_state, gas_state_mass_flux_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -315,7 +311,7 @@ TYPED_TEST(gas_state, gas_state_mass_flux_y)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -334,7 +330,7 @@ TYPED_TEST(gas_state, gas_state_momentum_flux_xx)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0), 
                             static_cast<ElemType>(3.0),
@@ -353,7 +349,7 @@ TYPED_TEST(gas_state, gas_state_momentum_flux_xy)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -372,7 +368,7 @@ TYPED_TEST(gas_state, gas_state_momentum_flux_yy)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -391,7 +387,7 @@ TYPED_TEST(gas_state, gas_state_rho_energy)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -410,7 +406,7 @@ TYPED_TEST(gas_state, gas_state_energy)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -429,7 +425,7 @@ TYPED_TEST(gas_state, gas_state_enthalpy_flux_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -448,7 +444,7 @@ TYPED_TEST(gas_state, gas_state_enthalpy_flux_y)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -467,7 +463,7 @@ TYPED_TEST(gas_state, gas_state_sonic_speed_squared)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   GasStateT gasState{ static_cast<ElemType>(2.0),
                       static_cast<ElemType>(3.0),
@@ -486,7 +482,7 @@ TYPED_TEST(gas_state, gas_state_sonic_speed)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -505,7 +501,7 @@ TYPED_TEST(gas_state, gas_state_mach)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -522,8 +518,8 @@ TYPED_TEST(gas_state, gas_state_temperature)
 {
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
-  using CpT       = std::ratio<12, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using CpT       = std::ratio<2, 1>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -542,7 +538,7 @@ TYPED_TEST(gas_state, gas_state_rotate_1_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(5.0),
@@ -567,7 +563,7 @@ TYPED_TEST(gas_state, gas_state_rotate_2_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(5.0),
@@ -592,7 +588,7 @@ TYPED_TEST(gas_state, gas_state_rotate_3_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(5.0),
@@ -617,7 +613,7 @@ TYPED_TEST(gas_state, gas_state_rotate_4_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(5.0),
@@ -642,7 +638,7 @@ TYPED_TEST(gas_state, gas_state_reverse_rotate_1_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(11.2),
@@ -667,7 +663,7 @@ TYPED_TEST(gas_state, gas_state_reverse_rotate_2_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.2),
@@ -692,7 +688,7 @@ TYPED_TEST(gas_state, gas_state_reverse_rotate_3_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(-11.2),
@@ -717,7 +713,7 @@ TYPED_TEST(gas_state, gas_state_reverse_rotate_4_quadrant)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(-3.2),
@@ -742,7 +738,7 @@ TYPED_TEST(gas_state, gas_state_wave_speed_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -761,7 +757,7 @@ TYPED_TEST(gas_state, gas_state_wave_speed_y)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -780,7 +776,7 @@ TYPED_TEST(gas_state, gas_state_wave_speed)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -799,7 +795,7 @@ TYPED_TEST(gas_state, gas_state_mirror_state)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(5.0), 
@@ -822,7 +818,7 @@ TYPED_TEST(gas_state, gas_state_conservative_variables)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -844,7 +840,7 @@ TYPED_TEST(gas_state, gas_state_x_fluxes)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -866,7 +862,7 @@ TYPED_TEST(gas_state, gas_state_y_fluxes)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -888,7 +884,7 @@ TYPED_TEST(gas_state, gas_state_source_term)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(5.0),
                             static_cast<ElemType>(3.0),
@@ -910,7 +906,7 @@ TYPED_TEST(gas_state, gas_state_conservative_to_gas_state)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   constexpr kae::CudaFloatT<4U, ElemType> conservativeVariables{ static_cast<ElemType>(5.0),
                                                                  static_cast<ElemType>(15.0),
@@ -932,7 +928,7 @@ TYPED_TEST(gas_state, gas_state_eigen_values_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -954,7 +950,7 @@ TYPED_TEST(gas_state, gas_state_eigen_values_matrix_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -979,7 +975,7 @@ TYPED_TEST(gas_state, gas_state_primitive_jacobian_matrix_x)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
@@ -1004,7 +1000,7 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_1)
   using ElemType  = TypeParam;
   using KappaT    = std::ratio<12, 10>;
   using CpT       = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
@@ -1025,7 +1021,7 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
   using ElemType = TypeParam;
   using KappaT = std::ratio<12, 10>;
   using CpT = std::ratio<6, 1>;
-  using GasStateT = kae::GasState<KappaT, CpT, ElemType>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
   const GasStateT gasState{ static_cast<ElemType>(2.0),
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
