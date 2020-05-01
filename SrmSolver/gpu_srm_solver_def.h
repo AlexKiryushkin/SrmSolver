@@ -42,6 +42,52 @@ void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                
     dt, lambda, prevWeight);
 }
 
+template <class ShapeT,
+          class PropellantPropertiesT,
+          class GpuGridT,
+          class GasStateT,
+          class ElemT = typename GasStateT::ElemType>
+GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT>            & currState,
+                                           const GpuMatrix<GpuGridT, ElemT>                & currPhi,
+                                           const GpuMatrix<GpuGridT, CudaFloatT<2U, ElemT>> & normals)
+{
+  const auto indices = generateIndexMatrix<unsigned>(GpuGridT::n);
+  const auto first   = thrust::make_tuple(std::begin(currState.values()),
+                                          std::begin(indices),
+                                          std::begin(currPhi.values()),
+                                          std::begin(normals.values()));
+  const auto last    = thrust::make_tuple(std::end(currState.values()),
+                                          std::end(indices),
+                                          std::end(currPhi.values()),
+                                          std::end(normals.values()));
+
+  const auto zipFirst = thrust::make_zip_iterator(first);
+  const auto zipLast = thrust::make_zip_iterator(last);
+
+  const auto toBurningRate = [] __host__ __device__
+    (const thrust::tuple<GasStateT, unsigned, ElemT, CudaFloatT<2U, ElemT>> & tuple)
+  {
+    const auto index = thrust::get<1U>(tuple);
+    const auto i = index % GpuGridT::nx;
+    const auto j = index / GpuGridT::nx;
+    if ((i >= GpuGridT::nx) || (j >= GpuGridT::ny))
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
+    const auto level = thrust::get<2U>(tuple);
+    const auto normal = thrust::get<3U>(tuple);
+    const auto isBurningSurface = ShapeT::isPointOnGrain(i * GpuGridT::hx - level * normal.x,
+                                                         j * GpuGridT::hy - level * normal.y);
+    const auto burningRate = BurningRate<PropellantPropertiesT>{}(thrust::get<0U>(tuple));
+    return (isBurningSurface ? burningRate : static_cast<ElemT>(0));
+  };
+
+  GpuMatrix<GpuGridT, ElemT> burningRates;
+  thrust::transform(zipFirst, zipLast, std::begin(burningRates.values()), toBurningRate);
+  return burningRates;
+}
+
 } // namespace detail
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
@@ -227,9 +273,10 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::integrateInTime(ElemType deltaT) -> ElemType
 {
-  return m_levelSetSolver.template integrateInTime<PropellantPropertiesT>(
-    m_currState,
-    m_closestIndices,
+  const auto burningRates = detail::getBurningRates<ShapeT, PropellantPropertiesT>(
+    m_currState, currPhi(), m_normals);
+  return m_levelSetSolver.integrateInTime(
+    burningRates,
     deltaT,
     ETimeDiscretizationOrder::eThree);
 }

@@ -46,7 +46,7 @@ private:
   constexpr static ElemType H        = static_cast<ElemType>(0.6);
   constexpr static ElemType rkr      = static_cast<ElemType>(0.1);
   constexpr static ElemType l        = static_cast<ElemType>(0.7);
-  constexpr static ElemType h        = static_cast<ElemType>(0.08);
+  constexpr static ElemType h        = static_cast<ElemType>(0.12);
   constexpr static ElemType l_nozzle = static_cast<ElemType>(0.4);
   constexpr static ElemType alpha    = static_cast<ElemType>(M_PI / 3.0);
 

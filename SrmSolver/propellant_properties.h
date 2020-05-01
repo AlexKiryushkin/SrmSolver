@@ -54,7 +54,7 @@ struct BurningRate
     return get(P::get(state));
   }
 
-  template <class ElemT>
+  template <class ElemT, class = std::enable_if_t<std::is_floating_point<ElemT>::value>>
   __host__ __device__ static ElemT get(ElemT p)
   {
     return -PropellantPropertiesT::mt * std::pow(p, PropellantPropertiesT::nu) / PropellantPropertiesT::rhoP;

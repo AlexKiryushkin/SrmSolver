@@ -16,16 +16,12 @@ public:
                              unsigned iterationCount = 0,
                              ETimeDiscretizationOrder timeOrder = ETimeDiscretizationOrder::eThree);
 
-  template <class PropellantPropertiesT, class GasStateT>
-  ElemType integrateInTime(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
-                           const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-                           unsigned                               iterationCount,
-                           ETimeDiscretizationOrder               timeOrder = ETimeDiscretizationOrder::eThree);
-  template <class PropellantPropertiesT, class GasStateT>
-  ElemType integrateInTime(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
-                           const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-                           ElemType                               deltaT,
-                           ETimeDiscretizationOrder               timeOrder = ETimeDiscretizationOrder::eThree);
+  ElemType integrateInTime(const GpuMatrix<GpuGridT, ElemType> & velocities,
+                           unsigned                              iterationCount,
+                           ETimeDiscretizationOrder              timeOrder = ETimeDiscretizationOrder::eThree);
+  ElemType integrateInTime(const GpuMatrix<GpuGridT, ElemType> & velocities,
+                           ElemType                              deltaT,
+                           ETimeDiscretizationOrder              timeOrder = ETimeDiscretizationOrder::eThree);
 
   void reinitialize(unsigned iterationCount, ETimeDiscretizationOrder timeOrder = ETimeDiscretizationOrder::eThree);
 
@@ -33,21 +29,15 @@ public:
 
 private:
 
-  template <class PropellantPropertiesT, class GasStateT>
-  ElemType integrateInTimeStep(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
-                               const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-                               ETimeDiscretizationOrder               timeOrder);
-
-  template <class PropellantPropertiesT, class GasStateT>
-  ElemType integrateInTimeStep(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
-                               const GpuMatrix<GpuGridT, unsigned>  & closestIndices,
-                               ETimeDiscretizationOrder               timeOrder,
+  ElemType integrateInTimeStep(const GpuMatrix<GpuGridT, ElemType> & velocities,
+                               ETimeDiscretizationOrder              timeOrder);
+  ElemType integrateInTimeStep(const GpuMatrix<GpuGridT, ElemType> & velocities,
+                               ETimeDiscretizationOrder              timeOrder,
                                ElemType dt);
 
   void reinitializeStep(ETimeDiscretizationOrder timeOrder);
 
-  template <class PropellantPropertiesT, class GasStateT>
-  ElemType getMaxBurningRate(const thrust::device_vector<GasStateT> & gasValues);
+  ElemType getMaxVelocity(const thrust::device_vector<ElemType> & velocities);
 
 private:
   GpuMatrix<GpuGridT, ElemType> m_currState;

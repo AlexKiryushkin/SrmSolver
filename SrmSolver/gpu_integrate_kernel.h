@@ -10,15 +10,11 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT,
-          class ShapeT,
-          class PropellantPropertiesT,
-          class GasStateT,
-          class ElemT = typename GasStateT::ElemType>
-__global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>     pPrevValue,
-                                      thrust::device_ptr<const ElemT>     pFirstValue,
-                                      thrust::device_ptr<ElemT>           pCurrValue,
-                                      thrust::device_ptr<const GasStateT> pGasStates,
-                                      thrust::device_ptr<const unsigned>  pClosestIndices,
+          class ElemT>
+__global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>  pPrevValue,
+                                      thrust::device_ptr<const ElemT>  pFirstValue,
+                                      thrust::device_ptr<ElemT>        pCurrValue,
+                                      thrust::device_ptr<const  ElemT> pVelocities,
                                       ElemT dt, ElemT prevWeight)
 {
   const unsigned ti        = threadIdx.x;
@@ -71,14 +67,8 @@ __global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>     pPrevV
 
     const ElemT normalX  = getLevelSetDerivative<GpuGridT, 1U>(prevMatrix, sharedIdx, true);
     const ElemT normalY  = getLevelSetDerivative<GpuGridT, smx>(prevMatrix, sharedIdx, true);
-    const ElemT xSurface = i * GpuGridT::hx - normalX * sgdValue;
-    const ElemT ySurface = j * GpuGridT::hy - normalY * sgdValue;
 
-    const bool pointIsOnGrain       = ShapeT::isPointOnGrain(xSurface, ySurface);
-    const unsigned closestGlobalIdx = ((sgdValue < 0) ? globalIdx : pClosestIndices[globalIdx]);
-    const ElemT un                  = (pointIsOnGrain ?
-                                         kae::BurningRate<PropellantPropertiesT>{}(pGasStates.get()[closestGlobalIdx]) :
-                                         0);
+    const ElemT un                  = pVelocities[globalIdx];
     const ElemT grad                = ((un != 0) ? std::hypot(normalX, normalY) : 0);
     const ElemT val                 = sgdValue - dt * un * grad;
     if (prevWeight != 1)
@@ -93,19 +83,15 @@ __global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>     pPrevV
 }
 
 template <class GpuGridT,
-          class ShapeT,
-          class PropellantPropertiesT,
-          class GasStateT,
-          class ElemT = typename GasStateT::ElemType>
-void integrateEqTvdSubStepWrapper(thrust::device_ptr<const ElemT>     pPrevValue,
-                                  thrust::device_ptr<const ElemT>     pFirstValue,
-                                  thrust::device_ptr<ElemT>           pCurrValue,
-                                  thrust::device_ptr<const GasStateT> pGasStates,
-                                  thrust::device_ptr<const unsigned>  pClosestIndices,
+          class ElemT>
+void integrateEqTvdSubStepWrapper(thrust::device_ptr<const ElemT> pPrevValue,
+                                  thrust::device_ptr<const ElemT> pFirstValue,
+                                  thrust::device_ptr<ElemT>       pCurrValue,
+                                  thrust::device_ptr<const ElemT> pVelocities,
                                   ElemT dt, ElemT prevWeight)
 {
-  integrateEqTvdSubStep<GpuGridT, ShapeT, PropellantPropertiesT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
-  (pPrevValue, pFirstValue, pCurrValue, pGasStates, pClosestIndices, dt, prevWeight);
+  integrateEqTvdSubStep<GpuGridT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
+  (pPrevValue, pFirstValue, pCurrValue, pVelocities, dt, prevWeight);
   cudaDeviceSynchronize();
 }
 

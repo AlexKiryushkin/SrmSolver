@@ -106,6 +106,11 @@ ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi)
     const auto index     = thrust::get<0U>(tuple);
     const auto i         = index % GpuGridT::nx;
     const auto j         = index / GpuGridT::nx;
+    if ((i >= GpuGridT::nx) || (j >= GpuGridT::ny))
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
     const auto isChamber = ShapeT::isChamber(i * GpuGridT::hx, j * GpuGridT::hy);
     if (!isChamber)
     {
@@ -142,6 +147,11 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
     const auto index = thrust::get<1U>(tuple);
     const auto i = index % GpuGridT::nx;
     const auto j = index / GpuGridT::nx;
+    if ((i >= GpuGridT::nx) || (j >= GpuGridT::ny))
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
     const auto isChamber = ShapeT::isChamber(i * GpuGridT::hx, j * GpuGridT::hy);
     if (!isChamber)
     {
@@ -192,6 +202,11 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
 
     const auto i = index % GpuGridT::nx;
     const auto j = index / GpuGridT::nx;
+    if ((i >= GpuGridT::nx) || (j >= GpuGridT::ny))
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
     const auto xSurface = i * GpuGridT::hx - level * normals.x;
     const auto ySurface = j * GpuGridT::hy - level * normals.y;
 

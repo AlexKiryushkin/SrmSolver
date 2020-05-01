@@ -18,7 +18,7 @@ int main()
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
     kae::WriteToFolderCallback callback{ currentPath };
 
-    constexpr ElemType maximumMeanPressure{ static_cast<ElemType>(2.0) };
+    constexpr ElemType maximumMeanPressure{ static_cast<ElemType>(2) };
     SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U, static_cast<ElemType>(0.9) };
     srmSolver.quasiStationaryDynamicIntegrate(1000U, maximumMeanPressure, kae::ETimeDiscretizationOrder::eTwo, callback);
   }

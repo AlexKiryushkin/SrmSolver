@@ -65,6 +65,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{954E018E-E114-4D8D-8262-177166B08817}</ProjectGuid>
     <RootNamespace>SrmSolver</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
