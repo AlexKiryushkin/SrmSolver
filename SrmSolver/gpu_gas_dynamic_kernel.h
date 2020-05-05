@@ -375,9 +375,6 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
                                           thrust::device_ptr<const ElemT> pCurrPhi,
                                           ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT pPrevWeight)
 {
-  gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, 2U, GasStateT><<<{GpuGridT::gridSize.x / 2, GpuGridT::gridSize.y / 2}, GpuGridT::blockSize>>>
-  (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);
-  cudaDeviceSynchronize();
   gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, GasStateT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
   (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);
   cudaDeviceSynchronize();
