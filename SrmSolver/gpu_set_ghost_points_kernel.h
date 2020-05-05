@@ -55,7 +55,6 @@ void setFirstOrderGhostValuesWrapper(thrust::device_ptr<GasStateT>              
 {
   setFirstOrderGhostValues<GpuGridT, GasStateT, PropellantPropertiesT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
   (pGasValues, pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals);
-  cudaDeviceSynchronize();
 }
 
 } // namespace detail

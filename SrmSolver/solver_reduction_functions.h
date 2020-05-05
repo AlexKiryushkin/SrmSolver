@@ -20,27 +20,10 @@ thrust::device_vector<ElemT> generateIndexMatrix(unsigned n)
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values,
-                                       const thrust::device_vector<ElemT>& currPhi)
+CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values)
 {
   const auto first = thrust::make_transform_iterator(std::begin(values), kae::WaveSpeedXY{});
   const auto last = thrust::make_transform_iterator(std::end(values), kae::WaveSpeedXY{});
-
-  const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(first, std::begin(currPhi)));
-  const auto zipLast = thrust::make_zip_iterator(thrust::make_tuple(last, std::end(currPhi)));
-
-  const auto takeInner = [] __host__ __device__(
-    const thrust::tuple<CudaFloatT<2U, ElemT>, ElemT> & conservativeVariables)
-  {
-    const auto level = thrust::get<1U>(conservativeVariables);
-    if (level >= 0)
-      return CudaFloatT<2U, ElemT>{};
-
-    return thrust::get<0U>(conservativeVariables);
-  };
-
-  const auto transformFirst = thrust::make_transform_iterator(zipFirst, takeInner);
-  const auto transformLast = thrust::make_transform_iterator(zipLast, takeInner);
 
   return thrust::reduce(first, last, CudaFloatT<2U, ElemT>{ 0, 0 }, kae::ElemwiseMax{});
 }

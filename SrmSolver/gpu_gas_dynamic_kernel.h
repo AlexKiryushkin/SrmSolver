@@ -59,24 +59,24 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
 
   if (loadLeftHalo)
   {
-    prevSgdMatrix[sharedIdx - smExtension] = pCurrPhi[globalIdx - smExtension];
+    prevSgdMatrix[sharedIdx - smExtension] = __ldg(&pCurrPhi[globalIdx - smExtension]);
   }
 
   if (loadBottomHalo)
   {
-    prevSgdMatrix[sharedIdx - smExtension * smx] = pCurrPhi[globalIdx - smExtension * nx];
+    prevSgdMatrix[sharedIdx - smExtension * smx] = __ldg(&pCurrPhi[globalIdx - smExtension * nx]);
   }
 
-  prevSgdMatrix[sharedIdx] = pCurrPhi[globalIdx];
+  prevSgdMatrix[sharedIdx] = __ldg(&pCurrPhi[globalIdx]);
 
   if (loadRightHalo)
   {
-    prevSgdMatrix[sharedIdx + smExtension] = pCurrPhi[globalIdx + smExtension];
+    prevSgdMatrix[sharedIdx + smExtension] = __ldg(&pCurrPhi[globalIdx + smExtension]);
   }
 
   if (loadTopHalo)
   {
-    prevSgdMatrix[sharedIdx + smExtension * smx] = pCurrPhi[globalIdx + smExtension * nx];
+    prevSgdMatrix[sharedIdx + smExtension * smx] = __ldg(&pCurrPhi[globalIdx + smExtension * nx]);
   }
 
 
@@ -377,7 +377,6 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
 {
   gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, GasStateT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
   (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);
-  cudaDeviceSynchronize();
 }
 
 } // namespace detail

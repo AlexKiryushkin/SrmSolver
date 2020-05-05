@@ -176,11 +176,19 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     getDevicePtr(m_normals));
 
   auto t{ static_cast<ElemType>(0.0) };
+  CudaFloatT<2U, ElemType> lambdas;
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    const auto dt = staticIntegrateStep(timeOrder);
+    if ((i <= 100U) || (i % 5U == 0U))
+    {
+      lambdas = detail::getMaxWaveSpeeds(m_currState.values());
+    }
+
+    const auto dt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
+    staticIntegrateStep(timeOrder, dt, lambdas);
     t += dt;
-    if (i % 100U == 0U)
+
+    if (i % 200U == 0U)
     {
       callback(m_currState);
     }
@@ -208,23 +216,28 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
 
   unsigned i{ 0U };
   auto t{ static_cast<ElemType>(0.0) };
+  CudaFloatT<2U, ElemType> lambdas;
   while (t < deltaT)
   {
-    const CudaFloatT<2U, ElemType> lambdas = detail::getMaxWaveSpeeds(m_currState.values(), currPhi().values());
+    if ((i <= 100U) || (i % 5U == 0U))
+    {
+      lambdas = detail::getMaxWaveSpeeds(m_currState.values());
+    }
+
     const auto maxDt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
     const auto remainingTime = deltaT - t;
     auto dt = std::min(maxDt, remainingTime);
     dt = staticIntegrateStep(timeOrder, dt, lambdas);
     t += dt;
     ++i;
-    if (i % 100U == 0U)
+    /*if (i % 500U == 0U)
     {
       callback(m_currState);
     }
     if (i % 5000U == 0U)
     {
       std::cout << i << ": " << t << '\n';
-    }
+    }*/
   }
 
   return t;
@@ -258,15 +271,6 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNo
                     "curr_error_t.dat");
   writeMatrixToFile(currPhi(), "sgd.dat");
   throw std::runtime_error("Gas state has become invalid");
-}
-
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(
-  ETimeDiscretizationOrder timeOrder) -> ElemType
-{
-  const auto lambdas = detail::getMaxWaveSpeeds(m_currState.values());
-  const auto dt = m_courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
-  return staticIntegrateStep(timeOrder, dt, lambdas);
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
