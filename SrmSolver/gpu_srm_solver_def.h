@@ -225,7 +225,6 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     {
       std::cout << i << ": " << t << '\n';
     }
-    writeIfNotValid();
   }
 
   return t;
