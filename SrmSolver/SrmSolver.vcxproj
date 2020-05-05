@@ -112,7 +112,8 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
-      <CodeGeneration />
+      <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -136,8 +137,9 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CodeGeneration />
-      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
+      <CodeGeneration>compute_61,sm_61</CodeGeneration>
+      <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend"  -Xptxas -O3,-v %(AdditionalOptions)</AdditionalOptions>
+      <GenerateLineInfo>true</GenerateLineInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

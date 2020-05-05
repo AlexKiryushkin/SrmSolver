@@ -61,9 +61,7 @@ __host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, const unsigne
   const ElemT s[fluxesCount] =
   { WC<ElemT>[0] * sqr(v[0] - 2 * v[1] + v[2]) + WC<ElemT>[1] * sqr(v[0] - 4 * v[1] + 3 * v[2]),
     WC<ElemT>[0] * sqr(v[1] - 2 * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
-
-    WC<ElemT>[0] * sqr(v[2] - 2 * v[3] + v[4]) + 
-    WC<ElemT>[1] * sqr(3 * v[2] - 4 * v[3] + v[4]) };
+    WC<ElemT>[0] * sqr(v[2] - 2 * v[3] + v[4]) + WC<ElemT>[1] * sqr(3 * v[2] - 4 * v[3] + v[4]) };
 
   constexpr ElemT epsilon = std::is_same<ElemT, float>::value ? static_cast<ElemT>(1e-12) : static_cast<ElemT>(1e-24);
   const ElemT alpha[fluxesCount] = {
