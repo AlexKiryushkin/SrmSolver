@@ -110,16 +110,8 @@ __host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemTy
 template <class GpuGridT>
 __host__ __device__ bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
-  bool isOnGrain = (x > x_left) && (x < x_junc) && 
-                   (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
-  bool isOnCorner = (x >= x_junc) &&
-    (x <= x_junc + 20 * GpuGridT::hx) &&
-    (y - y_bottom >= R0) &&
-    (y - y_bottom <= R0 + 20 * GpuGridT::hx) &&
-    (std::hypot(x - x_junc - 20 * GpuGridT::hx, y - y_bottom - R0 - 20 * GpuGridT::hy) >= 20 * GpuGridT::hx);
-
-  bool shouldBeAdvanced = isOnGrain || isOnCorner;
-  return shouldBeAdvanced;
+  return (x > x_left) && (x < x_junc) &&
+         (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
 }
 
 template <class GpuGridT>
