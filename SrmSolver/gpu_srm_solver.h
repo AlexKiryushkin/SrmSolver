@@ -57,13 +57,14 @@ private:
 private:
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;
-  GpuMatrix<GpuGridT, unsigned>                 m_closestIndices;
   GpuMatrix<GpuGridT, CudaFloatT<2U, ElemType>> m_normals;
   GpuMatrix<GpuGridT, GasStateType>             m_currState;
   GpuMatrix<GpuGridT, GasStateType>             m_prevState;
   GpuMatrix<GpuGridT, GasStateType>             m_firstState;
   GpuMatrix<GpuGridT, GasStateType>             m_secondState;
   GpuLevelSetSolver<GpuGridT, ShapeT>           m_levelSetSolver;
+
+  thrust::device_vector<thrust::pair<unsigned, unsigned>> m_closestIndicesMap;
 
   ElemType m_courant{ static_cast<ElemType>(0.8) };
 };

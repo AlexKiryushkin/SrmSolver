@@ -13,10 +13,10 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class ShapeT, class ElemT>
-__global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCurrPhi,
-                                   thrust::device_ptr<unsigned>              pClosestIndices,
-                                   thrust::device_ptr<EBoundaryCondition>    pBoundaryConditions,
-                                   thrust::device_ptr<CudaFloatT<2U, ElemT>> pNormals)
+__global__ void findClosestIndices(thrust::device_ptr<const ElemT>                      pCurrPhi,
+                                   thrust::device_ptr<thrust::pair<unsigned, unsigned>> pClosestIndices,
+                                   thrust::device_ptr<EBoundaryCondition>               pBoundaryConditions,
+                                   thrust::device_ptr<CudaFloatT<2U, ElemT>>            pNormals)
 {
   const unsigned i         = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j         = threadIdx.y + blockDim.y * blockIdx.y;
@@ -59,22 +59,22 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>           pCu
     if ((sum < static_cast<ElemT>(0.01) * GpuGridT::hx) && (pCurrPhi[jMirrorInt * GpuGridT::nx + iMirrorInt] < 0))
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
-      pClosestIndices[globalIdx]     = mirrorGlobalIdx;
+      pClosestIndices[globalIdx]     = thrust::make_pair(globalIdx, mirrorGlobalIdx);
       pBoundaryConditions[globalIdx] = EBoundaryCondition::eMirror;
       return;
     }
   }
 
   const unsigned closestGlobalIdx = getClosestIndex<GpuGridT>(pCurrPhi.get(), i, j, nx, ny);
-  pClosestIndices[globalIdx]      = closestGlobalIdx;
+  pClosestIndices[globalIdx]      = thrust::make_pair(globalIdx, closestGlobalIdx);
   pBoundaryConditions[globalIdx]  = boundaryCondition;
 }
 
 template <class GpuGridT, class ShapeT, class ElemT>
-void findClosestIndicesWrapper(thrust::device_ptr<const ElemT>           pCurrPhi,
-                               thrust::device_ptr<unsigned>              pClosestIndices,
-                               thrust::device_ptr<EBoundaryCondition>    pBoundaryConditions,
-                               thrust::device_ptr<CudaFloatT<2U, ElemT>> pNormals)
+void findClosestIndicesWrapper(thrust::device_ptr<const ElemT>                      pCurrPhi,
+                               thrust::device_ptr<thrust::pair<unsigned, unsigned>> pClosestIndices,
+                               thrust::device_ptr<EBoundaryCondition>               pBoundaryConditions,
+                               thrust::device_ptr<CudaFloatT<2U, ElemT>>            pNormals)
 {
   findClosestIndices<GpuGridT, ShapeT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
     (pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals);

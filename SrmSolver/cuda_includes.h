@@ -11,5 +11,6 @@
 #include <thrust/host_vector.h>
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/reduce.h>
+#include <thrust/remove.h>
 #include <thrust/sequence.h>
 #pragma warning(pop)
