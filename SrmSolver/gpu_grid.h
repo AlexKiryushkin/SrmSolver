@@ -19,7 +19,7 @@ struct GpuGrid
   constexpr static ElemT hy = ly / (ny - 1);
   constexpr static ElemT hxReciprocal = 1 / hx;
   constexpr static ElemT hyReciprocal = 1 / hy;
-  constexpr static dim3 blockSize{ 32U * sizeof(float) / sizeof(ElemT), 16U * sizeof(float) / sizeof(ElemT) };
+  constexpr static dim3 blockSize{ 32U * sizeof(float) / sizeof(ElemT), 8U * sizeof(float) / sizeof(ElemT) };
   constexpr static dim3 gridSize{ (Nx + blockSize.x - 1) / blockSize.x, (Ny + blockSize.y - 1) / blockSize.y };
   constexpr static unsigned smExtension = SmExtension;
   constexpr static dim3 sharedMemory{ blockSize.x + 2 * smExtension, blockSize.y + 2 * smExtension };
