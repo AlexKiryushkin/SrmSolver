@@ -33,7 +33,7 @@ ElemT getDeltaT(const thrust::device_vector<GasStateT>& values,
                 const thrust::device_vector<ElemT>& currPhi,
                 ElemT courant)
 {
-  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values, currPhi);
+  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values);
   return courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
 }
 
