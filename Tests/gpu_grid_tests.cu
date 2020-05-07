@@ -13,7 +13,7 @@ template <class T>
 class gpu_grid : public ::testing::Test {};
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(gpu_grid, TypeParams);
+TYPED_TEST_SUITE(gpu_grid, TypeParams);
 
 TYPED_TEST(gpu_grid, gpu_grid_fields)
 {

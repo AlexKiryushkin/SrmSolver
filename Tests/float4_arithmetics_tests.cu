@@ -11,7 +11,7 @@ template <class T>
 class float4_arithmetics : public ::testing::Test {};
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(float4_arithmetics, TypeParams);
+TYPED_TEST_SUITE(float4_arithmetics, TypeParams);
 
 TYPED_TEST(float4_arithmetics, float4_arithmetics_operator_plus)
 {

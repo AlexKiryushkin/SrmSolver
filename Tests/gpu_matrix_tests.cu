@@ -32,7 +32,7 @@ template <class T>
 class gpu_matrix : public ::testing::Test {};
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(gpu_matrix, TypeParams);
+TYPED_TEST_SUITE(gpu_matrix, TypeParams);
 
 TYPED_TEST(gpu_matrix, gpu_matrix_constructor_a)
 {

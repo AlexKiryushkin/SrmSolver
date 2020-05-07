@@ -57,7 +57,7 @@ public:
 };
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(gas_dynamic_flux, TypeParams);
+TYPED_TEST_SUITE(gas_dynamic_flux, TypeParams);
 
 TYPED_TEST(gas_dynamic_flux, gas_dynamic_flux_mass_flux)
 {

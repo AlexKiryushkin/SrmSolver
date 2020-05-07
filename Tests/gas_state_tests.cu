@@ -15,7 +15,7 @@ template <class T>
 class gas_state : public ::testing::Test {};
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(gas_state, TypeParams);
+TYPED_TEST_SUITE(gas_state, TypeParams);
 
 TYPED_TEST(gas_state, gas_state_fields)
 {

@@ -31,7 +31,7 @@ public:
 };
 
 using TypeParams = ::testing::Types<float, double>;
-TYPED_TEST_CASE(get_extrapolated_ghost_value, TypeParams);
+TYPED_TEST_SUITE(get_extrapolated_ghost_value, TypeParams);
 
 TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_wall)
 {
