@@ -38,123 +38,126 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
 
   const unsigned i = ti + blockDim.x * blockIdx.x;
   const unsigned j = tj + blockDim.y * blockIdx.y;
-  if ((i < nx) && (j < ny))
+  if ((i >= nx) || (j >= ny))
   {
-    const unsigned sharedIdx = aj * smx + ai;
-    const unsigned fluxSharedIdx = (tj + 1U) * fluxSmx + ti + 1U;
-    const unsigned globalIdx = j * nx + i;
+    return;
+  }
 
-    __shared__ GasStateT prevMatrix[smSize];
-    __shared__ ElemT prevSgdMatrix[smSize];
-    __shared__ ElemT xFlux1[fluxSmSize];
-    __shared__ ElemT xFlux2[fluxSmSize];
-    __shared__ ElemT xFlux3[fluxSmSize];
-    __shared__ ElemT xFlux4[fluxSmSize];
-    __shared__ ElemT yFlux1[fluxSmSize];
-    __shared__ ElemT yFlux2[fluxSmSize];
-    __shared__ ElemT yFlux3[fluxSmSize];
-    __shared__ ElemT yFlux4[fluxSmSize];
+  const unsigned sharedIdx = aj * smx + ai;
+  const unsigned fluxSharedIdx = (tj + 1U) * fluxSmx + ti + 1U;
+  const unsigned globalIdx = j * nx + i;
 
-    const bool loadLeftHalo = (ti < smExtension) && (i >= smExtension);
-    const bool loadBottomHalo = (tj < smExtension) && (j >= smExtension);
-    const bool loadRightHalo = (ti >= blockDim.x - smExtension) && (i + smExtension < nx);
-    const bool loadTopHalo = (tj >= blockDim.y - smExtension) && (j + smExtension < ny);
+  __shared__ GasStateT prevMatrix[smSize];
+  __shared__ ElemT prevSgdMatrix[smSize];
+  __shared__ ElemT xFlux1[fluxSmSize];
+  __shared__ ElemT xFlux2[fluxSmSize];
+  __shared__ ElemT xFlux3[fluxSmSize];
+  __shared__ ElemT xFlux4[fluxSmSize];
+  __shared__ ElemT yFlux1[fluxSmSize];
+  __shared__ ElemT yFlux2[fluxSmSize];
+  __shared__ ElemT yFlux3[fluxSmSize];
+  __shared__ ElemT yFlux4[fluxSmSize];
 
-    if (loadLeftHalo)
+  const bool loadLeftHalo   = (ti < smExtension) && (i >= smExtension);
+  const bool loadBottomHalo = (tj < smExtension) && (j >= smExtension);
+  const bool loadRightHalo = (ti >= blockDim.x - smExtension) && (i + smExtension < nx);
+  const bool loadTopHalo = (tj >= blockDim.y - smExtension) && (j + smExtension < ny);
+
+  if (loadLeftHalo)
+  {
+    prevSgdMatrix[sharedIdx - smExtension] = __ldg(&pCurrPhi[globalIdx - smExtension]);
+  }
+
+  if (loadBottomHalo)
+  {
+    prevSgdMatrix[sharedIdx - smExtension * smx] = __ldg(&pCurrPhi[globalIdx - smExtension * nx]);
+  }
+
+  prevSgdMatrix[sharedIdx] = __ldg(&pCurrPhi[globalIdx]);
+
+  if (loadRightHalo)
+  {
+    prevSgdMatrix[sharedIdx + smExtension] = __ldg(&pCurrPhi[globalIdx + smExtension]);
+  }
+
+  if (loadTopHalo)
+  {
+    prevSgdMatrix[sharedIdx + smExtension * smx] = __ldg(&pCurrPhi[globalIdx + smExtension * nx]);
+  }
+
+
+  if (loadLeftHalo && (prevSgdMatrix[sharedIdx - smExtension] < levelThreshold))
+  {
+    prevMatrix[sharedIdx - smExtension] = pPrevValue[globalIdx - smExtension];
+  }
+
+  if (loadBottomHalo && (prevSgdMatrix[sharedIdx - smExtension * smx] < levelThreshold))
+  {
+    prevMatrix[sharedIdx - smExtension * smx] = pPrevValue[globalIdx - smExtension * nx];
+  }
+
+  if (prevSgdMatrix[sharedIdx] < levelThreshold)
+  {
+    prevMatrix[sharedIdx] = pPrevValue[globalIdx];
+  }
+
+  if (loadRightHalo && (prevSgdMatrix[sharedIdx + smExtension] < levelThreshold))
+  {
+    prevMatrix[sharedIdx + smExtension] = pPrevValue[globalIdx + smExtension];
+  }
+
+  if (loadTopHalo && (prevSgdMatrix[sharedIdx + smExtension * smx] < levelThreshold))
+  {
+    prevMatrix[sharedIdx + smExtension * smx] = pPrevValue[globalIdx + smExtension * nx];
+  }
+
+  __syncthreads();
+
+  const ElemT levelValue = prevSgdMatrix[sharedIdx];
+  const bool fluxShouldBeCalculated = (levelValue <= hx + static_cast<ElemT>(1e-6));
+  if (fluxShouldBeCalculated)
+  {
+    if (tj == 0U)
     {
-      prevSgdMatrix[sharedIdx - smExtension] = __ldg(&pCurrPhi[globalIdx - smExtension]);
+      yFlux1[fluxSharedIdx - fluxSmx] = getFlux<Rho, MassFluxY, smx>(prevMatrix, sharedIdx - smx, lambda.y);
+      yFlux2[fluxSharedIdx - fluxSmx] = getFlux<MassFluxX, MomentumFluxXy, smx>(prevMatrix, sharedIdx - smx, lambda.y);
+      yFlux3[fluxSharedIdx - fluxSmx] = getFlux<MassFluxY, MomentumFluxYy, smx>(prevMatrix, sharedIdx - smx, lambda.y);
+      yFlux4[fluxSharedIdx - fluxSmx] = getFlux<RhoEnergy, EnthalpyFluxY, smx>(prevMatrix, sharedIdx - smx, lambda.y);
     }
 
-    if (loadBottomHalo)
+    yFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxY, smx>(prevMatrix, sharedIdx, lambda.y);
+    yFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXy, smx>(prevMatrix, sharedIdx, lambda.y);
+    yFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxYy, smx>(prevMatrix, sharedIdx, lambda.y);
+    yFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxY, smx>(prevMatrix, sharedIdx, lambda.y);
+
+    xFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, sharedIdx, lambda.x);
+    xFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, sharedIdx, lambda.x);
+    xFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, sharedIdx, lambda.x);
+    xFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, sharedIdx, lambda.x);
+  }
+
+  if ((tj == 1U) && (ti < GpuGridT::blockSize.y))
+  {
+    const auto transposedSharedIdx = ai * smx + aj - 1U;
+    if (prevSgdMatrix[transposedSharedIdx] <= hx + static_cast<ElemT>(1e-6))
     {
-      prevSgdMatrix[sharedIdx - smExtension * smx] = __ldg(&pCurrPhi[globalIdx - smExtension * nx]);
+      const auto transFluxSharedIdx = (ti + 1U) * fluxSmx + tj;
+      xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
     }
+  }
 
-    prevSgdMatrix[sharedIdx] = __ldg(&pCurrPhi[globalIdx]);
+  __syncthreads();
 
-    if (loadRightHalo)
-    {
-      prevSgdMatrix[sharedIdx + smExtension] = __ldg(&pCurrPhi[globalIdx + smExtension]);
-    }
+  const bool schemeShouldBeApplied = (levelValue < 0);
+  if (schemeShouldBeApplied)
+  {
+    const ElemT rReciprocal = 1 / ShapeT::getRadius(i, j);
 
-    if (loadTopHalo)
-    {
-      prevSgdMatrix[sharedIdx + smExtension * smx] = __ldg(&pCurrPhi[globalIdx + smExtension * nx]);
-    }
-
-
-    if (loadLeftHalo && (prevSgdMatrix[sharedIdx - smExtension] < levelThreshold))
-    {
-      prevMatrix[sharedIdx - smExtension] = pPrevValue[globalIdx - smExtension];
-    }
-
-    if (loadBottomHalo && (prevSgdMatrix[sharedIdx - smExtension * smx] < levelThreshold))
-    {
-      prevMatrix[sharedIdx - smExtension * smx] = pPrevValue[globalIdx - smExtension * nx];
-    }
-
-    if (prevSgdMatrix[sharedIdx] < levelThreshold)
-    {
-      prevMatrix[sharedIdx] = pPrevValue[globalIdx];
-    }
-
-    if (loadRightHalo && (prevSgdMatrix[sharedIdx + smExtension] < levelThreshold))
-    {
-      prevMatrix[sharedIdx + smExtension] = pPrevValue[globalIdx + smExtension];
-    }
-
-    if (loadTopHalo && (prevSgdMatrix[sharedIdx + smExtension * smx] < levelThreshold))
-    {
-      prevMatrix[sharedIdx + smExtension * smx] = pPrevValue[globalIdx + smExtension * nx];
-    }
-
-    __syncthreads();
-
-    const ElemT levelValue = prevSgdMatrix[sharedIdx];
-    const bool fluxShouldBeCalculated = (levelValue <= hx + static_cast<ElemT>(1e-6));
-    if (fluxShouldBeCalculated)
-    {
-      if (tj == 0U)
-      {
-        yFlux1[fluxSharedIdx - fluxSmx] = getFlux<Rho, MassFluxY, smx>(prevMatrix, sharedIdx - smx, lambda.y);
-        yFlux2[fluxSharedIdx - fluxSmx] = getFlux<MassFluxX, MomentumFluxXy, smx>(prevMatrix, sharedIdx - smx, lambda.y);
-        yFlux3[fluxSharedIdx - fluxSmx] = getFlux<MassFluxY, MomentumFluxYy, smx>(prevMatrix, sharedIdx - smx, lambda.y);
-        yFlux4[fluxSharedIdx - fluxSmx] = getFlux<RhoEnergy, EnthalpyFluxY, smx>(prevMatrix, sharedIdx - smx, lambda.y);
-      }
-
-      yFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxY, smx>(prevMatrix, sharedIdx, lambda.y);
-      yFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXy, smx>(prevMatrix, sharedIdx, lambda.y);
-      yFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxYy, smx>(prevMatrix, sharedIdx, lambda.y);
-      yFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxY, smx>(prevMatrix, sharedIdx, lambda.y);
-
-      xFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, sharedIdx, lambda.x);
-      xFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, sharedIdx, lambda.x);
-      xFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, sharedIdx, lambda.x);
-      xFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, sharedIdx, lambda.x);
-    }
-
-    if ((tj == 1U) && (ti < GpuGridT::blockSize.y))
-    {
-      const auto transposedSharedIdx = ai * smx + aj - 1U;
-      if (prevSgdMatrix[transposedSharedIdx] <= hx + static_cast<ElemT>(1e-6))
-      {
-        const auto transFluxSharedIdx = (ti + 1U) * fluxSmx + tj;
-        xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-        xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-        xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-        xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-      }
-    }
-
-    __syncthreads();
-
-    const bool schemeShouldBeApplied = (levelValue < 0);
-    if (schemeShouldBeApplied)
-    {
-      const ElemT rReciprocal = 1 / ShapeT::getRadius(i, j);
-
-      GasStateT calculatedGasState = prevMatrix[sharedIdx];
-      const CudaFloatT<4U, ElemT> newConservativeVariables =
+    GasStateT calculatedGasState = prevMatrix[sharedIdx];
+    const CudaFloatT<4U, ElemT> newConservativeVariables =
       {
         Rho::get(calculatedGasState) -
           dt * GpuGridT::hxReciprocal * (xFlux1[fluxSharedIdx] - xFlux1[fluxSharedIdx - 1U]) -
@@ -174,23 +177,20 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
           dt * rReciprocal * EnthalpyFluxY::get(calculatedGasState)
       };
 
-      calculatedGasState = ConservativeToGasState::get<GasStateT>(newConservativeVariables);
-      if (prevWeight != 1)
-      {
-        const GasStateT firstGasState = pFirstValue[globalIdx];
-        pCurrValue[globalIdx] = GasStateT{ (1 - prevWeight) * firstGasState.rho + prevWeight * calculatedGasState.rho,
-                                           (1 - prevWeight) * firstGasState.ux + prevWeight * calculatedGasState.ux,
-                                           (1 - prevWeight) * firstGasState.uy + prevWeight * calculatedGasState.uy,
-                                           (1 - prevWeight) * firstGasState.p + prevWeight * calculatedGasState.p };
-      }
-      else
-      {
-        pCurrValue[globalIdx] = calculatedGasState;
-      }
+    calculatedGasState = ConservativeToGasState::get<GasStateT>(newConservativeVariables);
+    if (prevWeight != 1)
+    {
+      const GasStateT firstGasState = pFirstValue[globalIdx];
+      pCurrValue[globalIdx] = GasStateT{ (1 - prevWeight) * firstGasState.rho + prevWeight * calculatedGasState.rho,
+                                         (1 - prevWeight) * firstGasState.ux  + prevWeight * calculatedGasState.ux,
+                                         (1 - prevWeight) * firstGasState.uy  + prevWeight * calculatedGasState.uy,
+                                         (1 - prevWeight) * firstGasState.p   + prevWeight * calculatedGasState.p };
+    }
+    else
+    {
+      pCurrValue[globalIdx] = calculatedGasState;
     }
   }
-
-  
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class ElemT>

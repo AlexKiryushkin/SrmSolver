@@ -50,8 +50,10 @@ private:
   ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloatT<2U, ElemType> lambdas);
   ElemType integrateInTime(ElemType deltaT);
   CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
+  void findClosestIndices();
   bool isCurrentStateValid() const;
   void writeIfNotValid() const;
+
 private:
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;

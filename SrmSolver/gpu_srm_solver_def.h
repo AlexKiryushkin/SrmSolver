@@ -123,11 +123,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
     BurningRate<PropellantPropertiesType>::get(maximumChamberPressure);
 
   auto && phiValues = currPhi().values();
-  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
-    getDevicePtr(currPhi()),
-    getDevicePtr(m_closestIndices),
-    getDevicePtr(m_boundaryConditions),
-    getDevicePtr(m_normals));
+  findClosestIndices();
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
     prevP = std::exchange(currP,
@@ -169,11 +165,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   ETimeDiscretizationOrder timeOrder,
   CallbackT callback) -> ElemType
 {
-  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
-    getDevicePtr(currPhi()),
-    getDevicePtr(m_closestIndices),
-    getDevicePtr(m_boundaryConditions),
-    getDevicePtr(m_normals));
+  findClosestIndices();
 
   auto t{ static_cast<ElemType>(0.0) };
   CudaFloatT<2U, ElemType> lambdas;
@@ -208,11 +200,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   ETimeDiscretizationOrder timeOrder, 
   CallbackT callback) -> ElemType
 {
-  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
-    getDevicePtr(currPhi()),
-    getDevicePtr(m_closestIndices),
-    getDevicePtr(m_boundaryConditions),
-    getDevicePtr(m_normals));
+  findClosestIndices();
 
   unsigned i{ 0U };
   auto t{ static_cast<ElemType>(0.0) };
@@ -230,17 +218,27 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     dt = staticIntegrateStep(timeOrder, dt, lambdas);
     t += dt;
     ++i;
-    /*if (i % 500U == 0U)
+    if (i % 200U == 0U)
     {
       callback(m_currState);
     }
     if (i % 5000U == 0U)
     {
       std::cout << i << ": " << t << '\n';
-    }*/
+    }
   }
 
   return t;
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::findClosestIndices()
+{
+  detail::findClosestIndicesWrapper<GpuGridT, ShapeT>(
+    getDevicePtr(currPhi()),
+    getDevicePtr(m_closestIndices),
+    getDevicePtr(m_boundaryConditions),
+    getDevicePtr(m_normals));
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
@@ -279,9 +277,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::integrate
   const auto burningRates = detail::getBurningRates<ShapeT, PropellantPropertiesT>(
     m_currState, currPhi(), m_normals);
   return m_levelSetSolver.integrateInTime(
-    burningRates,
-    deltaT,
-    ETimeDiscretizationOrder::eThree);
+    burningRates, deltaT, ETimeDiscretizationOrder::eThree);
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
