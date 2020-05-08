@@ -106,8 +106,10 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::GpuSrmSolver(
     m_secondState       { initialState                                            },
     m_levelSetSolver    { shape, iterationCount, ETimeDiscretizationOrder::eThree },
     m_courant           { courant                                                 },
-    m_closestIndicesMap ( GpuGridT::n, thrust::make_pair(0U, 0U)                  )
+    m_closestIndicesMap ( GpuGridT::n, thrust::make_pair(0U, 0U)                  ),
+    m_calculateBlocks   (maxSizeX * maxSizeY, 0                                   )
 {
+  findClosestIndices();
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
@@ -125,7 +127,6 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
     BurningRate<PropellantPropertiesType>::get(maximumChamberPressure);
 
   auto && phiValues = currPhi().values();
-  findClosestIndices();
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
     prevP = std::exchange(currP,
@@ -173,7 +174,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   CudaFloatT<2U, ElemType> lambdas{};
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
-    if ((i <= 1000U) || (i % 30U == 0U))
+    if ((i <= 1000U) || (i % 500U == 0U))
     {
       lambdas = detail::getMaxWaveSpeeds(m_currState.values());
     }
@@ -209,7 +210,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   CudaFloatT<2U, ElemType> lambdas;
   while (t < deltaT)
   {
-    if ((i <= 1000U) || (i % 30U == 0U))
+    if ((i <= 1000U) || (i % 500U == 0U))
     {
       lambdas = detail::getMaxWaveSpeeds(m_currState.values());
     }
@@ -250,6 +251,43 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::findClose
                                             std::end(m_closestIndicesMap),
                                             thrust::placeholders::_1 == thrust::pair<unsigned, unsigned>{0U, 0U});
   m_closestIndicesMap.erase(removeIter, std::end(m_closestIndicesMap));
+  fillCalculateBlockMatrix();
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::fillCalculateBlockMatrix()
+{
+  static_assert(maxSizeX >= GpuGridT::gridSize.x, "Error. Max size is too small!");
+  static_assert(maxSizeY >= GpuGridT::gridSize.y, "Error. Max size is too small!");
+
+  thrust::host_vector<ElemType> currentLevel = currPhi().values();
+
+  for (unsigned blockIdxX{ 0U }; blockIdxX < GpuGridT::gridSize.x; ++blockIdxX)
+  {
+    const auto startX = blockIdxX * GpuGridT::blockSize.x;
+    for (unsigned blockIdxY{ 0U }; blockIdxY < GpuGridT::gridSize.y; ++blockIdxY)
+    {
+      const auto startY = blockIdxY * GpuGridT::blockSize.y;
+      bool calculateBlock{ false };
+      for (unsigned xIdx{ 0U }; (xIdx < GpuGridT::blockSize.x) && !calculateBlock; ++xIdx)
+      {
+        for (unsigned yIdx{ 0U }; (yIdx < GpuGridT::blockSize.y) && !calculateBlock; ++yIdx)
+        {
+          const auto index = (startY + yIdx) * GpuGridT::nx + startX + xIdx;
+          if ((index < GpuGridT::n) && (currentLevel[index] < 0))
+          {
+            calculateBlock = true;
+          }
+        }
+      }
+      if (calculateBlock)
+      {
+        m_calculateBlocks.at(blockIdxY * maxSizeX + blockIdxX) = 1;
+      }
+    }
+  }
+
+  cudaMemcpyToSymbol(calculateBlockMatrix, m_calculateBlocks.data(), sizeof(int8_t) * maxSizeX * maxSizeY);
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>

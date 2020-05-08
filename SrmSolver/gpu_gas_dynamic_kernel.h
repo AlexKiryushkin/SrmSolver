@@ -3,9 +3,12 @@
 #include "cuda_includes.h"
 
 #include "cuda_float_types.h"
-#include "float4_arithmetics.h"
 #include "gas_dynamic_flux.h"
 #include "gas_state.h"
+
+constexpr unsigned maxSizeX = 120U;
+constexpr unsigned maxSizeY = 200U;
+__constant__ int8_t calculateBlockMatrix[maxSizeX * maxSizeY];
 
 namespace kae {
 
@@ -38,7 +41,7 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
 
   const unsigned i = ti + blockDim.x * blockIdx.x;
   const unsigned j = tj + blockDim.y * blockIdx.y;
-  if ((i >= nx) || (j >= ny))
+  if ((i >= nx) || (j >= ny) || (calculateBlockMatrix[blockIdx.y * maxSizeX + blockIdx.x] == 0))
   {
     return;
   }
@@ -200,8 +203,8 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
                                           thrust::device_ptr<const ElemT> pCurrPhi,
                                           ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT pPrevWeight)
 {
-  gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, GasStateT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
-  (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);
+  gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, GasStateT> << <GpuGridT::gridSize, GpuGridT::blockSize >> >
+    (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);
 }
 
 } // namespace detail

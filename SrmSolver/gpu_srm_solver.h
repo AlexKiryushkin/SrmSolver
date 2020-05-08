@@ -51,6 +51,7 @@ private:
   ElemType integrateInTime(ElemType deltaT);
   CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
   void findClosestIndices();
+  void fillCalculateBlockMatrix();
   bool isCurrentStateValid() const;
   void writeIfNotValid() const;
 
@@ -65,6 +66,7 @@ private:
   GpuLevelSetSolver<GpuGridT, ShapeT>           m_levelSetSolver;
 
   thrust::device_vector<thrust::pair<unsigned, unsigned>> m_closestIndicesMap;
+  std::vector<int8_t> m_calculateBlocks;
 
   ElemType m_courant{ static_cast<ElemType>(0.8) };
 };

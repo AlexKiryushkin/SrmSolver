@@ -62,7 +62,7 @@ private:
       k_line() * (L + static_cast<ElemType>(0.55) * l_nozzle);
   }
 
-  constexpr static unsigned offsetPoints = 20U;
+  constexpr static unsigned offsetPoints = 32U;
 
   constexpr static ElemType x_left   = (offsetPoints + static_cast<ElemType>(0.5)) * hx;
   constexpr static ElemType x_junc   = x_left + L;
