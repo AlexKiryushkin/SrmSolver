@@ -959,10 +959,10 @@ TYPED_TEST(gas_state, gas_state_eigen_values_matrix_x)
 
   const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
 
-  const Eigen::Vector4<ElemType> goldEigenValuesX{ static_cast<ElemType>(1.8),
-                                                   static_cast<ElemType>(3.0),
-                                                   static_cast<ElemType>(3.0),
-                                                   static_cast<ElemType>(4.2) };
+  const Eigen::Matrix<ElemType, 4, 1> goldEigenValuesX{ static_cast<ElemType>(1.8),
+                                                        static_cast<ElemType>(3.0),
+                                                        static_cast<ElemType>(3.0),
+                                                        static_cast<ElemType>(4.2) };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   const auto thresholdVector = eigenValuesMatrixX.diagonal() - goldEigenValuesX;
@@ -984,7 +984,7 @@ TYPED_TEST(gas_state, gas_state_primitive_jacobian_matrix_x)
 
   const auto primitiveJacobianMatrixX = kae::PrimitiveJacobianMatrixX::get(gasState);
 
-  Eigen::Matrix4<ElemType> goldPrimitiveJacobianMatrixX;
+  Eigen::Matrix<ElemType, 4, 4> goldPrimitiveJacobianMatrixX;
   goldPrimitiveJacobianMatrixX << gasState.ux, gasState.rho,                  0,           0,
                                   0,           gasState.ux,                   0,           1 / gasState.rho,
                                   0,           0,                             gasState.ux, 0,
