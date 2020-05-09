@@ -167,22 +167,6 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
       pCurrValue[globalIdx] = calculatedGasState;
     }
   }
-
-  /*if (level < 0)
-  {
-    if (prevWeight != 1)
-    {
-      const GasStateT firstGasState = pFirstValue[globalIdx];
-      pCurrValue[globalIdx] = GasStateT{ (1 - prevWeight) * firstGasState.rho + prevWeight * prevMatrix[sharedIdx].rho,
-                                         (1 - prevWeight) * firstGasState.ux + prevWeight * prevMatrix[sharedIdx].ux,
-                                         (1 - prevWeight) * firstGasState.uy + prevWeight * prevMatrix[sharedIdx].uy,
-                                         (1 - prevWeight) * firstGasState.p + prevWeight * prevMatrix[sharedIdx].p };
-    }
-    else
-    {
-      pCurrValue[globalIdx] = prevMatrix[sharedIdx];
-    }
-  }*/
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class ElemT>
