@@ -15,7 +15,9 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
+__global__ void
+__launch_bounds__ (256, 5)
+gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
                                               const GasStateT * __restrict__ pFirstValue,
                                               GasStateT *       __restrict__ pCurrValue,
                                               const ElemT *     __restrict__ pCurrPhi,
@@ -47,11 +49,9 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
   }
 
   const unsigned sharedIdx = aj * smx + ai;
-  const unsigned fluxSharedIdx = (tj + 1U) * fluxSmx + ti + 1U;
   const unsigned globalIdx = j * nx + i;
 
   __shared__ GasStateT prevMatrix[smSize];
-  __shared__ ElemT prevSgdMatrix[smSize];
   __shared__ ElemT xFlux1[fluxSmSize];
   __shared__ ElemT xFlux2[fluxSmSize];
   __shared__ ElemT xFlux3[fluxSmSize];
@@ -61,62 +61,48 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
   __shared__ ElemT yFlux3[fluxSmSize];
   __shared__ ElemT yFlux4[fluxSmSize];
 
-  const bool loadLeftHalo   = (ti < smExtension) && (i >= smExtension);
-  const bool loadBottomHalo = (tj < smExtension) && (j >= smExtension);
-  const bool loadRightHalo = (ti >= blockDim.x - smExtension) && (i + smExtension < nx);
-  const bool loadTopHalo = (tj >= blockDim.y - smExtension) && (j + smExtension < ny);
+  const auto levelValue = __ldg(&pCurrPhi[globalIdx]);
 
-  if (loadLeftHalo)
-  {
-    prevSgdMatrix[sharedIdx - smExtension] = __ldg(&pCurrPhi[globalIdx - smExtension]);
-  }
-
-  if (loadBottomHalo)
-  {
-    prevSgdMatrix[sharedIdx - smExtension * smx] = __ldg(&pCurrPhi[globalIdx - smExtension * nx]);
-  }
-
-  prevSgdMatrix[sharedIdx] = __ldg(&pCurrPhi[globalIdx]);
-
-  if (loadRightHalo)
-  {
-    prevSgdMatrix[sharedIdx + smExtension] = __ldg(&pCurrPhi[globalIdx + smExtension]);
-  }
-
-  if (loadTopHalo)
-  {
-    prevSgdMatrix[sharedIdx + smExtension * smx] = __ldg(&pCurrPhi[globalIdx + smExtension * nx]);
-  }
-
-
-  if (loadLeftHalo && (prevSgdMatrix[sharedIdx - smExtension] < levelThreshold))
+  if ((ti < smExtension) && (i >= smExtension))
   {
     prevMatrix[sharedIdx - smExtension] = pPrevValue[globalIdx - smExtension];
   }
 
-  if (loadBottomHalo && (prevSgdMatrix[sharedIdx - smExtension * smx] < levelThreshold))
+  if ((tj < smExtension) && (j >= smExtension))
   {
     prevMatrix[sharedIdx - smExtension * smx] = pPrevValue[globalIdx - smExtension * nx];
   }
 
-  if (prevSgdMatrix[sharedIdx] < levelThreshold)
+  if (levelValue < levelThreshold)
   {
     prevMatrix[sharedIdx] = pPrevValue[globalIdx];
   }
 
-  if (loadRightHalo && (prevSgdMatrix[sharedIdx + smExtension] < levelThreshold))
+  if ((ti >= GpuGridT::blockSize.x - smExtension) && (i + smExtension < nx))
   {
     prevMatrix[sharedIdx + smExtension] = pPrevValue[globalIdx + smExtension];
   }
 
-  if (loadTopHalo && (prevSgdMatrix[sharedIdx + smExtension * smx] < levelThreshold))
+  if ((tj >= GpuGridT::blockSize.y - smExtension) && (j + smExtension < ny))
   {
     prevMatrix[sharedIdx + smExtension * smx] = pPrevValue[globalIdx + smExtension * nx];
   }
 
   __syncthreads();
 
-  const ElemT levelValue = prevSgdMatrix[sharedIdx];
+  if ((tj == 1U) && (ti < GpuGridT::blockSize.y))
+  {
+    const auto transposedSharedIdx = ai * smx + aj - 1U;
+    {
+      const auto transFluxSharedIdx = (ti + 1U) * fluxSmx + tj;
+      xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+      xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
+    }
+  }
+
+  const unsigned fluxSharedIdx = (tj + 1U) * fluxSmx + ti + 1U;
   const bool fluxShouldBeCalculated = (levelValue <= hx + static_cast<ElemT>(1e-6));
   if (fluxShouldBeCalculated)
   {
@@ -137,19 +123,6 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
     xFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, sharedIdx, lambda.x);
     xFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, sharedIdx, lambda.x);
     xFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, sharedIdx, lambda.x);
-  }
-
-  if ((tj == 1U) && (ti < GpuGridT::blockSize.y))
-  {
-    const auto transposedSharedIdx = ai * smx + aj - 1U;
-    if (prevSgdMatrix[transposedSharedIdx] <= hx + static_cast<ElemT>(1e-6))
-    {
-      const auto transFluxSharedIdx = (ti + 1U) * fluxSmx + tj;
-      xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-      xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-      xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-      xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX, 1U>(prevMatrix, transposedSharedIdx - 1U, lambda.x);
-    }
   }
 
   __syncthreads();
@@ -194,6 +167,22 @@ __global__ void gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPr
       pCurrValue[globalIdx] = calculatedGasState;
     }
   }
+
+  /*if (level < 0)
+  {
+    if (prevWeight != 1)
+    {
+      const GasStateT firstGasState = pFirstValue[globalIdx];
+      pCurrValue[globalIdx] = GasStateT{ (1 - prevWeight) * firstGasState.rho + prevWeight * prevMatrix[sharedIdx].rho,
+                                         (1 - prevWeight) * firstGasState.ux + prevWeight * prevMatrix[sharedIdx].ux,
+                                         (1 - prevWeight) * firstGasState.uy + prevWeight * prevMatrix[sharedIdx].uy,
+                                         (1 - prevWeight) * firstGasState.p + prevWeight * prevMatrix[sharedIdx].p };
+    }
+    else
+    {
+      pCurrValue[globalIdx] = prevMatrix[sharedIdx];
+    }
+  }*/
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class ElemT>
