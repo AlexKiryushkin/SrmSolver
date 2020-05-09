@@ -24,21 +24,21 @@ public:
     kae::current_path(m_folderPath);
   }
 
-  template <class GpuGridType,
-            class GasStateType,
+  template <class GpuGridT,
+            class GasStateT,
             class ShapeT,
-            class ElemT = typename GasStateType::ElemType>
-  void operator()(const GpuMatrix<GpuGridType, GasStateType> & gasValues,
-                  const GpuMatrix<GpuGridType, ElemT> & currPhi,
+            class ElemT = typename GasStateT::ElemType>
+  void operator()(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
+                  const GpuMatrix<GpuGridT, ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ShapeT)
   {
     static thread_local std::vector<std::pair<ElemT, ElemT>> meanPressureValues;
     const auto meanPressure =
-      detail::getCalculatedBoriPressure<GpuGridType, ShapeT>(gasValues.values(), currPhi.values());
+      detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
     meanPressureValues.emplace_back(t, meanPressure);
     const auto writeToFile = [this](std::vector<std::pair<ElemT, ElemT>> meanPressureValues,
-      GpuMatrix<GpuGridType, GasStateType> gasValues,
-      GpuMatrix<GpuGridType, ElemT> currPhi,
+      GpuMatrix<GpuGridT, GasStateT> gasValues,
+      GpuMatrix<GpuGridT, ElemT> currPhi,
       unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
     {
       std::cout << "Iteration: " << i << ". Time: " << t << '\n';
@@ -86,7 +86,7 @@ public:
         std::transform(std::next(std::begin(hostGasStateValues), offset),
           std::next(std::begin(hostGasStateValues), offset + GpuGridT::nx),
           std::begin(rowTemperatureValues),
-          Temperature{});
+          P{});
         gridTemperatureValues.push_back(std::move(rowTemperatureValues));
       }
       m_gnuPlotTemperature.display2dPlot(gridTemperatureValues);
