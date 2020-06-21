@@ -41,7 +41,7 @@
     <ClInclude Include="gpu_srm_solver_def.h" />
     <ClInclude Include="level_set_derivatives.h" />
     <ClInclude Include="math_utilities.h" />
-    <ClInclude Include="propellant_properties.h" />
+    <ClInclude Include="physical_properties.h" />
     <ClInclude Include="shapes.h" />
     <ClInclude Include="shape_solver_types.h" />
     <ClInclude Include="shape_types.h" />
@@ -114,6 +114,8 @@
       <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend" %(AdditionalOptions)</AdditionalOptions>
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
       <GenerateLineInfo>true</GenerateLineInfo>
+      <MaxRegCount>
+      </MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -140,6 +142,8 @@
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
       <AdditionalOptions>-Xcompiler /Zc:__cplusplus —expt-extended-lambda  -Xcudafe "--diag_suppress=bad_friend_decl"  -Xcudafe "--diag_suppress=decl_modifiers_ignored" -Xcudafe "--diag_suppress=probable_guiding_friend"  -Xptxas -O3,-v %(AdditionalOptions)</AdditionalOptions>
       <GenerateLineInfo>true</GenerateLineInfo>
+      <MaxRegCount>
+      </MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
