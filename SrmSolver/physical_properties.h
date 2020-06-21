@@ -9,7 +9,7 @@ namespace kae {
 
 template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class KappaT, class CpT,
           class ShapeT, class ElemT = typename ShapeT::ElemType>
-struct PropellantProperties
+struct PhysicalProperties
 {
 private:
   
@@ -45,7 +45,7 @@ public:
   constexpr static ElemT H0    = H0Dim / uScale / uScale;
 };
 
-template <class PropellantPropertiesT>
+template <class PhysicalPropertiesT>
 struct BurningRate
 {
   template <class GasStateT>
@@ -57,7 +57,7 @@ struct BurningRate
   template <class ElemT, class = std::enable_if_t<std::is_floating_point<ElemT>::value>>
   __host__ __device__ static ElemT get(ElemT p)
   {
-    return -PropellantPropertiesT::mt * std::pow(p, PropellantPropertiesT::nu) / PropellantPropertiesT::rhoP;
+    return -PhysicalPropertiesT::mt * std::pow(p, PhysicalPropertiesT::nu) / PhysicalPropertiesT::rhoP;
   }
 };
 

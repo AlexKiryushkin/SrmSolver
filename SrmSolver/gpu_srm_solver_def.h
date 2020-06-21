@@ -14,21 +14,21 @@ namespace kae {
 
 namespace detail {
 
-template <class PropellantPropertiesT, class ShapeT, class ElemT = typename ShapeT::ElemType>
+template <class PhysicalPropertiesT, class ShapeT, class ElemT = typename ShapeT::ElemType>
 ElemT getDeltaT(ElemT prevP, ElemT currP, ElemT sBurn, ElemT chamberVolume)
 {
-  constexpr auto rt = (PropellantPropertiesT::kappa - 1) / PropellantPropertiesT::kappa * PropellantPropertiesT::H0;
-  const ElemT a = -PropellantPropertiesT::mt * sBurn * rt / chamberVolume;
-  const ElemT b = ShapeT::getFCritical() * std::sqrt(rt) * PropellantPropertiesT::gammaComplex / chamberVolume;
-  return 1 / (1 - PropellantPropertiesT::nu) / b * std::log(
-    (std::pow(prevP, 1 - PropellantPropertiesT::nu) - a / b) /
-    (std::pow(currP, 1 - PropellantPropertiesT::nu) - a / b)
+  constexpr auto rt = (PhysicalPropertiesT::kappa - 1) / PhysicalPropertiesT::kappa * PhysicalPropertiesT::H0;
+  const ElemT a = -PhysicalPropertiesT::mt * sBurn * rt / chamberVolume;
+  const ElemT b = ShapeT::getFCritical() * std::sqrt(rt) * PhysicalPropertiesT::gammaComplex / chamberVolume;
+  return 1 / (1 - PhysicalPropertiesT::nu) / b * std::log(
+    (std::pow(prevP, 1 - PhysicalPropertiesT::nu) - a / b) /
+    (std::pow(currP, 1 - PhysicalPropertiesT::nu) - a / b)
   );
 }
 
 template <class GpuGridT,
           class ShapeT,
-          class PropellantPropertiesT,
+          class PhysicalPropertiesT,
           class GasStateT,
           class ElemT = typename GasStateT::ElemType>
 void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                              pPrevValue,
@@ -40,7 +40,7 @@ void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                
                                    thrust::device_ptr<CudaFloatT<2U, ElemT>>                  pNormals,
                                    unsigned nClosestIndexElems, ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT prevWeight)
 {
-  detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PropellantPropertiesT>(
+  detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT>(
     pPrevValue,
     pCurrentPhi,
     pClosestIndicesMap,
@@ -57,7 +57,7 @@ void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                
 }
 
 template <class ShapeT,
-          class PropellantPropertiesT,
+          class PhysicalPropertiesT,
           class GpuGridT,
           class GasStateT,
           class ElemT = typename GasStateT::ElemType>
@@ -93,7 +93,7 @@ GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT> 
     const auto normal = thrust::get<3U>(tuple);
     const auto isBurningSurface = ShapeT::isPointOnGrain(i * GpuGridT::hx - level * normal.x,
                                                          j * GpuGridT::hy - level * normal.y);
-    const auto burningRate = BurningRate<PropellantPropertiesT>{}(thrust::get<0U>(tuple));
+    const auto burningRate = BurningRate<PhysicalPropertiesT>{}(thrust::get<0U>(tuple));
     return (isBurningSurface ? burningRate : static_cast<ElemT>(0));
   };
 
@@ -104,8 +104,8 @@ GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT> 
 
 } // namespace detail
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::GpuSrmSolver(
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::GpuSrmSolver(
   ShapeT    shape, 
   GasStateT initialState,
   unsigned  iterationCount,
@@ -124,9 +124,9 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::GpuSrmSolver(
   findClosestIndices();
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
-void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStationaryDynamicIntegrate(
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStationaryDynamicIntegrate(
   unsigned iterationCount, ElemType maximumChamberPressure, ETimeDiscretizationOrder timeOrder, CallbackT callback)
 {
   auto t{ static_cast<ElemType>(0.0) };
@@ -136,20 +136,20 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
   ElemType prevP{};
 
   const auto levelSetDeltaT = GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) /
-    BurningRate<PropellantPropertiesType>::get(maximumChamberPressure);
+    BurningRate<PhysicalPropertiesType>::get(maximumChamberPressure);
 
   auto && phiValues = currPhi().values();
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
     prevP = std::exchange(currP,
-      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesT>(phiValues, m_normals.values()));
+      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PhysicalPropertiesT>(phiValues, m_normals.values()));
     const auto sBurn = detail::getBurningSurface<GpuGridT, ShapeT>(phiValues, m_normals.values());
     const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(phiValues);
     desiredIntegrateTime += 900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50;
     const auto gasDynamicDeltaT = std::min(desiredIntegrateTime, levelSetDeltaT);
     desiredIntegrateTime -= gasDynamicDeltaT;
 
-    std::cout << detail::getDeltaT<PropellantPropertiesT, ShapeT>(prevP, currP, sBurn, chamberVolume) << '\n';
+    std::cout << detail::getDeltaT<PhysicalPropertiesT, ShapeT>(prevP, currP, sBurn, chamberVolume) << '\n';
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
     if (i % 5 == 0)
     {
@@ -160,9 +160,9 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
   }
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
-void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIntegrate(
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::dynamicIntegrate(
   unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback)
 {
   auto t{ static_cast<ElemType>(0.0) };
@@ -180,9 +180,9 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIn
   }
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrate(
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrate(
   unsigned iterationCount,
   ETimeDiscretizationOrder timeOrder,
   CallbackT callback) -> ElemType
@@ -215,9 +215,9 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   return t;
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrate(
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrate(
   ElemType deltaT,
   ETimeDiscretizationOrder timeOrder, 
   CallbackT callback) -> ElemType
@@ -253,8 +253,8 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   return t;
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::findClosestIndices()
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::findClosestIndices()
 {
   m_closestIndicesMap.resize(GpuGridT::n);
   thrust::fill(std::begin(m_closestIndicesMap), 
@@ -273,8 +273,8 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::findClose
   fillCalculateBlockMatrix();
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::fillCalculateBlockMatrix()
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::fillCalculateBlockMatrix()
 {
   static_assert(maxSizeX >= GpuGridT::gridSize.x, "Error. Max size is too small!");
   static_assert(maxSizeY >= GpuGridT::gridSize.y, "Error. Max size is too small!");
@@ -309,8 +309,8 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::fillCalcu
   cudaMemcpyToSymbol(calculateBlockMatrix, m_calculateBlocks.data(), sizeof(int8_t) * maxSizeX * maxSizeY);
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNotValid() const
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::writeIfNotValid() const
 {
   if (thrust::all_of(std::begin(m_currState.values()), std::end(m_currState.values()), kae::IsValid{}))
   {
@@ -333,17 +333,17 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNo
   throw std::runtime_error("Gas state has become invalid");
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::integrateInTime(ElemType deltaT) -> ElemType
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::integrateInTime(ElemType deltaT) -> ElemType
 {
-  const auto burningRates = detail::getBurningRates<ShapeT, PropellantPropertiesT>(
+  const auto burningRates = detail::getBurningRates<ShapeT, PhysicalPropertiesT>(
     m_currState, currPhi(), m_normals);
   return m_levelSetSolver.integrateInTime(
     burningRates, deltaT, ETimeDiscretizationOrder::eThree);
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEquationDerivatives() const
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::getMaxEquationDerivatives() const
   -> CudaFloatT<4U, ElemType>
 {
   return detail::getMaxEquationDerivatives(
@@ -352,8 +352,8 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEqu
     detail::getDeltaT<GpuGridT>(m_currState.values(), m_courant));
 }
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticIntegrateStep(
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
+auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrateStep(
   ETimeDiscretizationOrder timeOrder,
   ElemType dt,
   CudaFloatT<2U, ElemType> lambdas) -> ElemType
@@ -362,7 +362,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
   switch (timeOrder)
   {
   case ETimeDiscretizationOrder::eOne:
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_prevState),
       {},
       getDevicePtr(m_currState),
@@ -374,7 +374,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
     break;
 
   case ETimeDiscretizationOrder::eTwo:
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_prevState),
       {},
       getDevicePtr(m_firstState),
@@ -384,7 +384,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
       getDevicePtr(m_normals),
       m_closestIndicesMap.size(), dt, lambdas, static_cast<ElemType>(1.0));
 
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_firstState),
       getDevicePtr(m_prevState),
       getDevicePtr(m_currState),
@@ -395,7 +395,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
       m_closestIndicesMap.size(), dt, lambdas, static_cast<ElemType>(0.5));
     break;
   case ETimeDiscretizationOrder::eThree:
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_prevState),
       {},
       getDevicePtr(m_firstState),
@@ -405,7 +405,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
       getDevicePtr(m_normals),
       m_closestIndicesMap.size(), dt, lambdas, static_cast<ElemType>(1.0));
 
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_firstState),
       getDevicePtr(m_prevState),
       getDevicePtr(m_secondState),
@@ -415,7 +415,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::staticInt
       getDevicePtr(m_normals),
       m_closestIndicesMap.size(), dt, lambdas, static_cast<ElemType>(0.25));
 
-    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PropellantPropertiesT, GasStateT>(
+    detail::srmIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, PhysicalPropertiesT, GasStateT>(
       getDevicePtr(m_secondState),
       getDevicePtr(m_prevState),
       getDevicePtr(m_currState),

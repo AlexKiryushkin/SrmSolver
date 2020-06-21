@@ -7,13 +7,13 @@
 
 namespace kae {
 
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
+template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 class GpuSrmSolver
 {
 public:
 
   using GasStateType             = GasStateT;
-  using PropellantPropertiesType = PropellantPropertiesT;
+  using PhysicalPropertiesType = PhysicalPropertiesT;
   using ElemType                 = typename GasStateType::ElemType;
 
   static_assert(std::is_same<typename GasStateType::ElemType, typename GpuGridT::ElemType>::value, 

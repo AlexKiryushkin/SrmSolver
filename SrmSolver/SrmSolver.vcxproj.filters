@@ -87,9 +87,6 @@
     <ClInclude Include="gpu_grid.h">
       <Filter>Headers\Traits Classes</Filter>
     </ClInclude>
-    <ClInclude Include="propellant_properties.h">
-      <Filter>Headers\Traits Classes</Filter>
-    </ClInclude>
     <ClInclude Include="get_closest_index.h">
       <Filter>Headers\Ghost Points Utils</Filter>
     </ClInclude>
@@ -137,6 +134,9 @@
     </ClInclude>
     <ClInclude Include="gpu_integrate_kernel.h">
       <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="physical_properties.h">
+      <Filter>Headers\Traits Classes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

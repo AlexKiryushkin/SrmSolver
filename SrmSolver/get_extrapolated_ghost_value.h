@@ -9,17 +9,17 @@ namespace kae {
 
 namespace detail {
 
-template <class PropellantPropertiesT, class GasStateT>
+template <class PhysicalPropertiesT, class GasStateT>
 __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState)
 {
   using ElemType = typename GasStateT::ElemType;
   const auto c = SonicSpeed::get(gasState);
 
   constexpr auto kappa    = GasStateT::kappa;
-  constexpr auto nu       = PropellantPropertiesT::nu;
+  constexpr auto nu       = PhysicalPropertiesT::nu;
   const auto coefficient1 = gasState.ux + c / kappa;
   const auto coefficient2 = -1 / gasState.rho / c;
-  const auto coefficient3 = kappa / (kappa - 1) / PropellantPropertiesT::mt;
+  const auto coefficient3 = kappa / (kappa - 1) / PhysicalPropertiesT::mt;
 
   ElemType p1 = 10 * gasState.p;
 
@@ -30,7 +30,7 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
     const auto fOfP = static_cast<ElemType>(0.5) * coefficient2 * coefficient2 * p1 * p1 +
                       coefficient2 * coefficient3 * p1 * p1 * power +
                       coefficient1 * coefficient2 * p1 + coefficient1 * coefficient3 * p1 * power +
-                      static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PropellantPropertiesT::H0;
+                      static_cast<ElemType>(0.5) * coefficient1 * coefficient1 - PhysicalPropertiesT::H0;
     const auto fPrimeOfP = coefficient2 * coefficient2 * p1 +
                            (static_cast<ElemType>(2.0) - nu) * coefficient2 * coefficient3 * p1 * power +
                            (static_cast<ElemType>(1.0) - nu) * coefficient1 * coefficient3 * power +
@@ -45,10 +45,10 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
   }
 
   const auto un = coefficient1 + coefficient2 * p1;
-  return GasStateT{ PropellantPropertiesT::mt * std::pow(p1, nu) / un, un, static_cast<ElemType>(0.0), p1 };
+  return GasStateT{ PhysicalPropertiesT::mt * std::pow(p1, nu) / un, un, static_cast<ElemType>(0.0), p1 };
 }
 
-template <class PropellantPropertiesT, class GasStateT>
+template <class PhysicalPropertiesT, class GasStateT>
 __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState)
 {
   const auto c = SonicSpeed::get(gasState);
@@ -57,7 +57,7 @@ __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(
     return gasState;
   }
 
-  constexpr auto P0    = PropellantPropertiesT::P0;
+  constexpr auto P0    = PhysicalPropertiesT::P0;
   constexpr auto kappa = GasStateT::kappa;
   return GasStateT{ P0 / c / c - (1 - kappa) / kappa * gasState.rho,
                     gasState.ux + c / kappa - P0 / gasState.rho / c,
@@ -81,16 +81,16 @@ __host__ __device__ GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const Ga
   return kae::MirrorState::get(gasState);
 }
 
-template <class PropellantPropertiesT, class GasStateT>
+template <class PhysicalPropertiesT, class GasStateT>
 __host__ __device__ GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, 
                                                                   EBoundaryCondition boundaryCondition)
 {
   switch (boundaryCondition)
   {
   case EBoundaryCondition::eMassFlowInlet:
-    return getFirstOrderMassFlowExtrapolatedGhostValue<PropellantPropertiesT>(gasState);
+    return getFirstOrderMassFlowExtrapolatedGhostValue<PhysicalPropertiesT>(gasState);
   case EBoundaryCondition::ePressureOutlet:
-    return getFirstOrderPressureOutletExtrapolatedGhostValue<PropellantPropertiesT>(gasState);
+    return getFirstOrderPressureOutletExtrapolatedGhostValue<PhysicalPropertiesT>(gasState);
   case EBoundaryCondition::eWall:
     return getFirstOrderWallExtrapolatedGhostValue(gasState);
   case EBoundaryCondition::eMirror:

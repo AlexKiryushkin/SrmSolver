@@ -146,16 +146,16 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
 
 template <class GpuGridT,
           class ShapeT,
-          class PropellantPropertiesT,
+          class PhysicalPropertiesT,
           class ElemT = typename GpuGridT::ElemType>
 ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
                                  const thrust::device_vector<CudaFloatT<2U, ElemT>>& normals)
 {
-  constexpr auto kappa = PropellantPropertiesT::kappa;
+  constexpr auto kappa = PhysicalPropertiesT::kappa;
   const auto burningSurface = getBurningSurface<GpuGridT, ShapeT>(currPhi, normals);
   const auto boriPressure = std::pow(
-    burningSurface * PropellantPropertiesT::mt * std::sqrt((kappa - 1) / kappa * PropellantPropertiesT::H0) /
-    PropellantPropertiesT::gammaComplex / ShapeT::getFCritical(), 1 / (1 - PropellantPropertiesT::nu));
+    burningSurface * PhysicalPropertiesT::mt * std::sqrt((kappa - 1) / kappa * PhysicalPropertiesT::H0) /
+    PhysicalPropertiesT::gammaComplex / ShapeT::getFCritical(), 1 / (1 - PhysicalPropertiesT::nu));
   return boriPressure;
 }
 

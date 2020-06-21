@@ -35,17 +35,17 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
   using P0Type                   = std::ratio<101325, 1>;
   using KappaType                = std::ratio<123, 100>;
   using CpType                   = std::ratio<1800, 1>;
-  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
+  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PropellantPropertiesType, ElemT>;
+  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
-  using SrmSolverType      = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
+  using SrmSolverType      = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PhysicalPropertiesType>;
 
   constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
                                                  static_cast<ElemT>(0.0),
                                                  static_cast<ElemT>(0.0),
-                                                 PropellantPropertiesType::P0 };
+                                                 PhysicalPropertiesType::P0 };
 };
 
 template<class ElemT>
@@ -69,17 +69,17 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
   using P0Type    = std::ratio<101325, 1>;
   using KappaType = std::ratio<118, 100>;
   using CpType    = std::ratio<2628, 1>;
-  using PropellantPropertiesType = PropellantProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
+  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PropellantPropertiesType, ElemT>;
+  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
-  using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PropellantPropertiesType>;
+  using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PhysicalPropertiesType>;
 
   constexpr static GasStateType initialGasState{ static_cast<ElemT>(0.5),
                                                  static_cast<ElemT>(0.0),
                                                  static_cast<ElemT>(0.0),
-                                                 PropellantPropertiesType::P0 };
+                                                 PhysicalPropertiesType::P0 };
 };
 
 } // namespace kae

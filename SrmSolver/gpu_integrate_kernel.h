@@ -3,7 +3,7 @@
 #include "cuda_includes.h"
 
 #include "level_set_derivatives.h"
-#include "propellant_properties.h"
+#include "physical_properties.h"
 
 namespace kae {
 
