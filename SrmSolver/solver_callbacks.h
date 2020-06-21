@@ -30,19 +30,20 @@ public:
             class ElemT = typename GasStateT::ElemType>
   void operator()(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
                   const GpuMatrix<GpuGridT, ElemT> & currPhi,
-                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ShapeT)
+                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ElemT sBurn, ShapeT)
   {
-    static thread_local std::vector<std::pair<ElemT, ElemT>> meanPressureValues;
+    static thread_local std::vector<std::tuple<ElemT, ElemT, ElemT>> meanPressureValues;
     const auto meanPressure =
       detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
-    meanPressureValues.emplace_back(t, meanPressure);
-    const auto writeToFile = [this](std::vector<std::pair<ElemT, ElemT>> meanPressureValues,
+
+    meanPressureValues.emplace_back(t, meanPressure, sBurn);
+    const auto writeToFile = [this](std::vector<std::tuple<ElemT, ElemT, ElemT>> meanPressureValues,
       GpuMatrix<GpuGridT, GasStateT> gasValues,
       GpuMatrix<GpuGridT, ElemT> currPhi,
       unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
     {
       std::cout << "Iteration: " << i << ". Time: " << t << '\n';
-      std::cout << "Mean chamber pressure: " << meanPressureValues.back().second << '\n';
+      std::cout << "Mean chamber pressure: " << std::get<1U>(meanPressureValues.back()) << '\n';
       std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
         << "; d(rho * ux)/dt = " << maxDerivatives.y
         << "; d(rho * uy)/dt = " << maxDerivatives.z
@@ -55,10 +56,10 @@ public:
       std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
       for (const auto& elem : meanPressureValues)
       {
-        meanPressureFile << elem.first << ';' << elem.second << '\n';
+        meanPressureFile << std::get<0U>(elem) << ';' << std::get<1U>(elem) << ';' << std::get<2U>(elem) << '\n';
       }
-      writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
       writeMatrixToFile(currPhi, "sgd.dat");
+      writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
     };
     std::thread writeAsync{ writeToFile, meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
     writeAsync.detach();

@@ -52,7 +52,6 @@ private:
   CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
   void findClosestIndices();
   void fillCalculateBlockMatrix();
-  bool isCurrentStateValid() const;
   void writeIfNotValid() const;
 
 private:

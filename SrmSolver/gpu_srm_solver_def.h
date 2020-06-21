@@ -14,6 +14,18 @@ namespace kae {
 
 namespace detail {
 
+template <class PropellantPropertiesT, class ShapeT, class ElemT = typename ShapeT::ElemType>
+ElemT getDeltaT(ElemT prevP, ElemT currP, ElemT sBurn, ElemT chamberVolume)
+{
+  constexpr auto rt = (PropellantPropertiesT::kappa - 1) / PropellantPropertiesT::kappa * PropellantPropertiesT::H0;
+  const ElemT a = -PropellantPropertiesT::mt * sBurn * rt / chamberVolume;
+  const ElemT b = ShapeT::getFCritical() * std::sqrt(rt) * PropellantPropertiesT::gammaComplex / chamberVolume;
+  return 1 / (1 - PropellantPropertiesT::nu) / b * std::log(
+    (std::pow(prevP, 1 - PropellantPropertiesT::nu) - a / b) /
+    (std::pow(currP, 1 - PropellantPropertiesT::nu) - a / b)
+  );
+}
+
 template <class GpuGridT,
           class ShapeT,
           class PropellantPropertiesT,
@@ -53,20 +65,20 @@ GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT> 
                                            const GpuMatrix<GpuGridT, ElemT>                & currPhi,
                                            const GpuMatrix<GpuGridT, CudaFloatT<2U, ElemT>> & normals)
 {
-  const auto indices = generateIndexMatrix<unsigned>(GpuGridT::n);
-  const auto first   = thrust::make_tuple(std::begin(currState.values()),
-                                          std::begin(indices),
-                                          std::begin(currPhi.values()),
-                                          std::begin(normals.values()));
-  const auto last    = thrust::make_tuple(std::end(currState.values()),
-                                          std::end(indices),
-                                          std::end(currPhi.values()),
-                                          std::end(normals.values()));
+  const static thread_local auto indices = generateIndexMatrix<unsigned>(GpuGridT::n);
 
-  const auto zipFirst = thrust::make_zip_iterator(first);
-  const auto zipLast = thrust::make_zip_iterator(last);
+  const auto zipFirst = thrust::make_zip_iterator(
+    thrust::make_tuple(std::begin(currState.values()), 
+                       std::begin(indices), 
+                       std::begin(currPhi.values()), 
+                       std::begin(normals.values())));
+  const auto zipLast = thrust::make_zip_iterator(
+    thrust::make_tuple(std::end(currState.values()), 
+                       std::end(indices), 
+                       std::end(currPhi.values()), 
+                       std::end(normals.values())));
 
-  const auto toBurningRate = [] __host__ __device__
+  const auto toBurningRate = [] __device__
     (const thrust::tuple<GasStateT, unsigned, ElemT, CudaFloatT<2U, ElemT>> & tuple)
   {
     const auto index = thrust::get<1U>(tuple);
@@ -130,16 +142,19 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::quasiStat
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
     prevP = std::exchange(currP,
-      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesType>(phiValues, m_normals.values()));
-
+      detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PropellantPropertiesT>(phiValues, m_normals.values()));
+    const auto sBurn = detail::getBurningSurface<GpuGridT, ShapeT>(phiValues, m_normals.values());
     const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(phiValues);
     desiredIntegrateTime += 900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50;
     const auto gasDynamicDeltaT = std::min(desiredIntegrateTime, levelSetDeltaT);
     desiredIntegrateTime -= gasDynamicDeltaT;
 
+    std::cout << detail::getDeltaT<PropellantPropertiesT, ShapeT>(prevP, currP, sBurn, chamberVolume) << '\n';
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
-    const auto maxDerivatives = getMaxEquationDerivatives();
-    callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});
+    if (i % 5 == 0)
+    {
+      callback(m_currState, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{});
+    }
     const auto dt = integrateInTime(levelSetDeltaT);
     t += dt;
   }
@@ -155,7 +170,11 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::dynamicIn
   {
     const auto deltaTGasDynamic = staticIntegrate(deltaT, timeOrder, callback);
     const auto maxDerivatives = getMaxEquationDerivatives();
-    callback(m_currState, currPhi(), i, t, maxDerivatives, ShapeT{});
+    const auto sBurn = detail::getBurningSurface<GpuGridT, ShapeT>(currPhi().values(), m_normals.values());
+    if (i % 5 == 0)
+    {
+      callback(m_currState, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{});
+    }
     const auto dt = integrateInTime(deltaTGasDynamic);
     t += dt;
   }
@@ -291,15 +310,9 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::fillCalcu
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
-bool GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::isCurrentStateValid() const
-{
-  return thrust::all_of(std::begin(m_currState.values()), std::end(m_currState.values()), kae::IsValid{});
-}
-
-template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::writeIfNotValid() const
 {
-  if (isCurrentStateValid())
+  if (thrust::all_of(std::begin(m_currState.values()), std::end(m_currState.values()), kae::IsValid{}))
   {
     return;
   }
@@ -336,8 +349,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PropellantPropertiesT>::getMaxEqu
   return detail::getMaxEquationDerivatives(
     m_prevState.values(),
     m_currState.values(),
-    currPhi().values(),
-    detail::getDeltaT<GpuGridT>(m_currState.values(), currPhi().values(), m_courant));
+    detail::getDeltaT<GpuGridT>(m_currState.values(), m_courant));
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PropellantPropertiesT>
