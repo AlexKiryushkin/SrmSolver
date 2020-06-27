@@ -21,9 +21,11 @@ TYPED_TEST(gpu_grid, gpu_grid_fields)
   constexpr unsigned nx{ 70U };
   constexpr unsigned ny{ 30U };
   constexpr unsigned smExtension{ 3U };
+  constexpr unsigned blockSizeX{ 32U * sizeof(float) / sizeof(ElemType) };
+  constexpr unsigned blockSizeY{ 8U * sizeof(float) / sizeof(ElemType) };
   using LxToType = std::ratio<35, 10>;
   using LyToType = std::ratio<26, 100>;
-  using GpuGridType = kae::GpuGrid<nx, ny, LxToType, LyToType, smExtension, ElemType>;
+  using GpuGridType = kae::GpuGrid<nx, ny, LxToType, LyToType, smExtension, ElemType, blockSizeX, blockSizeY>;
 
   constexpr unsigned goldNx{ 70U };
   constexpr unsigned goldNy{ 30U };
@@ -32,7 +34,7 @@ TYPED_TEST(gpu_grid, gpu_grid_fields)
   constexpr ElemType goldLy{ static_cast<ElemType>(0.26) };
   constexpr ElemType goldHx{ goldLx / (goldNx - 1) };
   constexpr ElemType goldHy{ goldLy / (goldNy - 1) };
-  constexpr dim3 goldBlockSize{ 32U * sizeof(float) / sizeof(ElemType), 16U * sizeof(float) / sizeof(ElemType) };
+  constexpr dim3 goldBlockSize{ blockSizeX, blockSizeY };
   constexpr dim3 goldGridSize{ (goldNx + goldBlockSize.x - 1) / goldBlockSize.x, (goldNy + goldBlockSize.y - 1) / goldBlockSize.y };
   constexpr dim3 goldSharedMemory{ goldBlockSize.x + 2 * smExtension, goldBlockSize.y + 2 * smExtension };
   constexpr unsigned goldSmExtension = 3U;
