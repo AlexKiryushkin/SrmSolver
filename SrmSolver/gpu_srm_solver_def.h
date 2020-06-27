@@ -117,9 +117,9 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::GpuSrmSolver(
     m_firstState        { initialState                                            },
     m_secondState       { initialState                                            },
     m_levelSetSolver    { shape, iterationCount, ETimeDiscretizationOrder::eThree },
-    m_courant           { courant                                                 },
     m_closestIndicesMap ( GpuGridT::n, thrust::make_pair(0U, 0U)                  ),
-    m_calculateBlocks   (maxSizeX * maxSizeY, 0                                   )
+    m_calculateBlocks   ( maxSizeX * maxSizeY, 0                                  ),
+    m_courant           { courant                                                 }
 {
   findClosestIndices();
 }
@@ -127,16 +127,13 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::GpuSrmSolver(
 template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStationaryDynamicIntegrate(
-  unsigned iterationCount, ElemType maximumChamberPressure, ETimeDiscretizationOrder timeOrder, CallbackT callback)
+  unsigned iterationCount, ElemType levelSetDeltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback)
 {
   auto t{ static_cast<ElemType>(0.0) };
 
   ElemType desiredIntegrateTime{};
   ElemType currP{};
   ElemType prevP{};
-
-  const auto levelSetDeltaT = GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx + GpuGridT::hy) /
-    BurningRate<PhysicalPropertiesType>::get(maximumChamberPressure);
 
   auto && phiValues = currPhi().values();
   for (unsigned i{ 0U }; i < iterationCount; ++i)
@@ -149,7 +146,6 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStatio
     const auto gasDynamicDeltaT = std::min(desiredIntegrateTime, levelSetDeltaT);
     desiredIntegrateTime -= gasDynamicDeltaT;
 
-    std::cout << detail::getDeltaT<PhysicalPropertiesT, ShapeT>(prevP, currP, sBurn, chamberVolume) << '\n';
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
     if (i % 5 == 0)
     {
