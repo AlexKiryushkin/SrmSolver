@@ -12,7 +12,7 @@ public:
 
   using ElemType = typename GpuGridT::ElemType;
 
-  explicit GpuLevelSetSolver(ShapeT shape,
+  explicit GpuLevelSetSolver(ShapeT shape = ShapeT{},
                              unsigned iterationCount = 0,
                              ETimeDiscretizationOrder timeOrder = ETimeDiscretizationOrder::eThree);
 
