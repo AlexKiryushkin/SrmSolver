@@ -5,7 +5,9 @@
 namespace kae
 {
 
-template <unsigned Nx, unsigned Ny, class LxToType, class LyToType, unsigned SmExtension, class ElemT>
+template <unsigned Nx, unsigned Ny, class LxToType, class LyToType, unsigned SmExtension, class ElemT,
+          unsigned blockSizeX = 32U * sizeof(float) / sizeof(ElemT),
+          unsigned blockSizeY = 8U  * sizeof(float) / sizeof(ElemT)>
 struct GpuGrid
 {
   using ElemType = ElemT;
@@ -19,7 +21,7 @@ struct GpuGrid
   constexpr static ElemT hy = ly / (ny - 1);
   constexpr static ElemT hxReciprocal = 1 / hx;
   constexpr static ElemT hyReciprocal = 1 / hy;
-  constexpr static dim3 blockSize{ 32U * sizeof(float) / sizeof(ElemT), 8U * sizeof(float) / sizeof(ElemT) };
+  constexpr static dim3 blockSize{ blockSizeX, blockSizeY };
   constexpr static dim3 gridSize{ (Nx + blockSize.x - 1) / blockSize.x, (Ny + blockSize.y - 1) / blockSize.y };
   constexpr static unsigned smExtension = SmExtension;
   constexpr static dim3 sharedMemory{ blockSize.x + 2 * smExtension, blockSize.y + 2 * smExtension };
