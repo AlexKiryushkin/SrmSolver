@@ -26,4 +26,8 @@ int main()
   {
     std::cout << e.what() << '\n';
   }
+  catch (...)
+  {
+    std::cout << "Unknown exception caught\n";
+  }
 }
