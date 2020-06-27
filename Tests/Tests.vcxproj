@@ -93,12 +93,14 @@
     <CudaCompile Include="gas_state_tests.cu" />
     <CudaCompile Include="get_extrapolated_ghost_value_tests.cu" />
     <CudaCompile Include="gpu_grid_tests.cu" />
+    <CudaCompile Include="gpu_level_set_solver_tests.cu" />
     <CudaCompile Include="gpu_matrix_tests.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="math_utilities_tests.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aliases.h" />
+    <ClInclude Include="circle_shape.h" />
     <ClInclude Include="comparators.h" />
   </ItemGroup>
   <ItemGroup>

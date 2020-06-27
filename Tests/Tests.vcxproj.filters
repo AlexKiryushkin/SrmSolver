@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="float4_arithmetics_tests.cu" />
+    <CudaCompile Include="gas_dynamic_flux_tests.cu" />
+    <CudaCompile Include="gas_state_tests.cu" />
+    <CudaCompile Include="get_extrapolated_ghost_value_tests.cu" />
+    <CudaCompile Include="gpu_grid_tests.cu" />
+    <CudaCompile Include="gpu_matrix_tests.cu" />
+    <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="math_utilities_tests.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dummy.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="aliases.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="comparators.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="circle_shape.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="utils">
+      <UniqueIdentifier>{6fd93ac6-08f5-4797-ab1e-a75e480ddfc1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
