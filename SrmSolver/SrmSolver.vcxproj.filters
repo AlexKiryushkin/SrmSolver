@@ -120,9 +120,6 @@
     <ClInclude Include="shape_solver_types.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="solver_callbacks.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="to_float.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -137,6 +134,12 @@
     </ClInclude>
     <ClInclude Include="physical_properties.h">
       <Filter>Headers\Traits Classes</Filter>
+    </ClInclude>
+    <ClInclude Include="solver_callbacks.h">
+      <Filter>Headers\Callbacks</Filter>
+    </ClInclude>
+    <ClInclude Include="empty_callback.h">
+      <Filter>Headers\Callbacks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +172,9 @@
     </Filter>
     <Filter Include="Headers\Traits Classes">
       <UniqueIdentifier>{5a2dae51-29e7-4a3f-ae12-a9dbc20c6cc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Callbacks">
+      <UniqueIdentifier>{08c3d26c-6d5c-4907-8c57-325efe40a66a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

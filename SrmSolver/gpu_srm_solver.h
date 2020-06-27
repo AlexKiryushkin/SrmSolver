@@ -2,6 +2,7 @@
 
 #include "boundary_condition.h"
 #include "cuda_float_types.h"
+#include "empty_callback.h"
 #include "gpu_level_set_solver.h"
 #include "gpu_matrix.h"
 
@@ -24,23 +25,27 @@ public:
                unsigned  iterationCount = 0U, 
                ElemType  courant = static_cast<ElemType>(0.8));
 
-  template <class CallbackT>
+  template <class CallbackT = detail::EmptyCallback>
   void quasiStationaryDynamicIntegrate(unsigned                 iterationCount, 
                                        ElemType                 deltaT,
                                        ETimeDiscretizationOrder timeOrder, 
-                                       CallbackT                callback);
+                                       CallbackT                callback = CallbackT{});
 
-  template <class CallbackT>
+  template <class CallbackT = detail::EmptyCallback>
   void dynamicIntegrate(unsigned                 iterationCount, 
                         ElemType                 deltaT, 
                         ETimeDiscretizationOrder timeOrder, 
-                        CallbackT                callback);
+                        CallbackT                callback = CallbackT{});
 
-  template <class CallbackT>
-  ElemType staticIntegrate(unsigned iterationCount, ETimeDiscretizationOrder timeOrder, CallbackT callback);
+  template <class CallbackT = detail::EmptyCallback>
+  ElemType staticIntegrate(unsigned                 iterationCount,
+                           ETimeDiscretizationOrder timeOrder, 
+                           CallbackT                callback = CallbackT{});
 
-  template <class CallbackT>
-  ElemType staticIntegrate(ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback);
+  template <class CallbackT = detail::EmptyCallback>
+  ElemType staticIntegrate(ElemType                 deltaT, 
+                           ETimeDiscretizationOrder timeOrder, 
+                           CallbackT                callback = CallbackT{});
 
   const GpuMatrix<GpuGridT, GasStateType> & currState() const { return m_currState; }
   const GpuMatrix<GpuGridT, ElemType>     & currPhi()   const { return m_levelSetSolver.currState(); }

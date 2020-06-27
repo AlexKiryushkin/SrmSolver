@@ -17,6 +17,7 @@
     <ClInclude Include="delta_dirac_function.h" />
     <ClInclude Include="discretization_order.h" />
     <ClInclude Include="eigen_includes.h" />
+    <ClInclude Include="empty_callback.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="float4_arithmetics.h" />
     <ClInclude Include="gas_dynamic_flux.h" />
