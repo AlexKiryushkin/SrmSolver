@@ -109,8 +109,12 @@ __host__ __device__ auto SrmShapeNozzleLess<GpuGridT>::isBurningSurface(ElemType
 {
   return (xRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
          (x - xStartPropellant >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
-         (y - yBottom >= GpuGridT::hx) && 
-         (y - yBottom < Rk);
+         (isBurningPart<0U>(x - xLeft, y - yBottom) || isBurningPart<1U>(x - xLeft, y - yBottom)
+       || isBurningPart<2U>(x - xLeft, y - yBottom) || isBurningPart<3U>(x - xLeft, y - yBottom)
+       || isBurningPart<4U>(x - xLeft, y - yBottom) || isBurningPart<5U>(x - xLeft, y - yBottom)
+       || isBurningPart<6U>(x - xLeft, y - yBottom) || isBurningPart<7U>(x - xLeft, y - yBottom)
+       || isBurningPart<8U>(x - xLeft, y - yBottom) || isBurningPart<9U>(x - xLeft, y - yBottom)
+       || isBurningPart<10U>(x - xLeft, y - yBottom));
 }
 
 template <class GpuGridT>
@@ -123,10 +127,7 @@ bool SrmShapeNozzleLess<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 template <class GpuGridT>
 bool SrmShapeNozzleLess<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
-  return (xRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
-         (x - xStartPropellant >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
-         (y - yBottom >= rkr - GpuGridT::hx) &&
-         (y - yBottom < Rk);
+  return isBurningSurface(x, y);
 }
 
 template <class GpuGridT>

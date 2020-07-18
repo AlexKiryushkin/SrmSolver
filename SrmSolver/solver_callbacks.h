@@ -32,12 +32,13 @@ public:
                   const GpuMatrix<GpuGridT, ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ElemT sBurn, ShapeT)
   {
-    static thread_local std::vector<std::tuple<ElemT, ElemT, ElemT>> meanPressureValues;
+    static thread_local std::vector<std::tuple<ElemT, ElemT, ElemT, ElemT>> meanPressureValues;
     const auto meanPressure =
       detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
+    const auto maxPressure = detail::getMaxChamberPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
 
-    meanPressureValues.emplace_back(t, meanPressure, sBurn);
-    const auto writeToFile = [this](std::vector<std::tuple<ElemT, ElemT, ElemT>> meanPressureValues,
+    meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn);
+    const auto writeToFile = [this](std::vector<std::tuple<ElemT, ElemT, ElemT, ElemT>> meanPressureValues,
       GpuMatrix<GpuGridT, GasStateT> gasValues,
       GpuMatrix<GpuGridT, ElemT> currPhi,
       unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
@@ -56,7 +57,10 @@ public:
       std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
       for (const auto& elem : meanPressureValues)
       {
-        meanPressureFile << std::get<0U>(elem) << ';' << std::get<1U>(elem) << ';' << std::get<2U>(elem) << '\n';
+        meanPressureFile << std::get<0U>(elem) << ';'
+                         << std::get<1U>(elem) << ';'
+                         << std::get<2U>(elem) << ';'
+                         << std::get<3U>(elem) <<'\n';
       }
       writeMatrixToFile(currPhi, "sgd.dat");
       writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");

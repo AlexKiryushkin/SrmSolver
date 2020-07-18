@@ -76,6 +76,22 @@ private:
     { static_cast<ElemType>(0.0),          static_cast<ElemType>(0.0) }
   };
 
+  constexpr static unsigned nEndPoints{ 12U };
+  constexpr static ElemType endPoints[nEndPoints][dim] = {
+    { static_cast<ElemType>(0.01),  static_cast<ElemType>(0.081)  },
+    { static_cast<ElemType>(0.02),  static_cast<ElemType>(0.081)  },
+    { static_cast<ElemType>(0.055), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(0.102), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(0.105), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(0.145), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(0.691), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(1.045), static_cast<ElemType>(0.0922) },
+    { static_cast<ElemType>(1.087), static_cast<ElemType>(0.081)  },
+    { static_cast<ElemType>(1.139), static_cast<ElemType>(0.081)  },
+    { static_cast<ElemType>(1.184), static_cast<ElemType>(0.0669) },
+    { static_cast<ElemType>(1.274), static_cast<ElemType>(0.0872) }
+  };
+
   template <unsigned idx>
   constexpr __host__ __device__ static ElemType initialSBurnPart()
   {
@@ -83,6 +99,27 @@ private:
     constexpr auto dy = points[idx + 1U][1U] - points[idx][1U];
     constexpr auto distance = gcem::sqrt(dx * dx + dy * dy);
     return static_cast<ElemType>(M_PI) * (points[idx + 1U][1U] + points[idx][1U]) * distance;
+  }
+
+  template <unsigned idx>
+  constexpr __host__ __device__ static bool isBurningPart(ElemType x, ElemType y)
+  {
+    constexpr auto xStart = endPoints[idx][0U];
+    constexpr auto yStart = endPoints[idx][1U];
+
+    constexpr auto threshold = static_cast<ElemType>(0.1) * GpuGridT::hx;
+    constexpr auto xEnd = endPoints[idx + 1U][0U];
+    constexpr auto yEnd = endPoints[idx + 1U][1U];
+    if (((x < xStart)             && (idx != 0U)) || 
+        ((x < xStart - threshold) && (idx == 0U)) ||
+        ((x > xEnd)               && (idx != nEndPoints - 2U)) ||
+        ((x > xEnd   + threshold) && (idx == nEndPoints - 2U)))
+    {
+      return false;
+    }
+
+    const auto yPropellant = yStart + (x - xStart) / (xEnd - xStart) * (yEnd - yStart);
+    return y <= yPropellant && y >= rkr - GpuGridT::hx;
   }
 private:
 

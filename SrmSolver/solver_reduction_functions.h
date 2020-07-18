@@ -106,6 +106,32 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
 }
 
 template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename GpuGridT::ElemType>
+ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
+                            const thrust::device_vector<ElemT>& currPhi)
+{
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+
+  const auto zipFirst = thrust::make_zip_iterator(
+    thrust::make_tuple(std::begin(gasValues), std::begin(indexVector), std::begin(currPhi)));
+  const auto zipLast = thrust::make_zip_iterator(
+    thrust::make_tuple(std::end(gasValues), std::end(indexVector), std::end(currPhi)));
+
+  const auto toPressure = [] __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple)
+  {
+    const auto i = thrust::get<1U>(tuple) % GpuGridT::nx;
+    const auto j = thrust::get<1U>(tuple) / GpuGridT::nx;
+    if ((i >= GpuGridT::nx) || (j >= GpuGridT::ny) || !ShapeT::isChamber(i * GpuGridT::hx, j * GpuGridT::hy))
+    {
+      return static_cast<ElemT>(0.0);
+    }
+
+    return ((thrust::get<2U>(tuple) > 0) ? static_cast<ElemT>(0.0) : P::get(thrust::get<0U>(tuple)));
+  };
+
+  return thrust::transform_reduce(zipFirst, zipLast, toPressure, static_cast<ElemT>(0.0), thrust::maximum<ElemT>{});
+}
+
+template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename GpuGridT::ElemType>
 ElemT getCalculatedBoriPressure(const thrust::device_vector<GasStateT>& gasValues,
                                 const thrust::device_vector<ElemT>& currPhi)
 {
