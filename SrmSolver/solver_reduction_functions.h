@@ -206,7 +206,8 @@ ReturnType getMotorThrust(const thrust::device_vector<GasStateT> & gasValues,
     const auto j = thrust::get<1U>(tuple) / GpuGridT::nx;
     const auto r = ShapeT::getRadius(i, j);
     const auto isInside = thrust::get<2U>(tuple) < static_cast<ElemT>(0.0);
-    if (!isInside)
+    const auto isNearOutlet = ShapeT::getOutletCoordinate() - i * GpuGridT::hx <= GpuGridT::hx;
+    if (!isInside || !isNearOutlet)
     {
       return ReturnType{};
     }

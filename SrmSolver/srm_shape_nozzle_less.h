@@ -31,6 +31,8 @@ public:
 
   constexpr __host__ __device__ static ElemType getFCritical();
 
+  constexpr __host__ __device__ static ElemType getOutletCoordinate() { return xRight; }
+
   __host__ __device__ static ElemType isChamber(ElemType x, ElemType y);
 
   __host__ __device__ static ElemType isBurningSurface(ElemType x, ElemType y);
