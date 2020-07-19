@@ -34,14 +34,8 @@ struct IsValid
   template <class GasStateT>
   __host__ __device__ static bool get(const GasStateT & state)
   {
-    return isValidFloat(state.rho) && isValidFloat(state.ux) && isValidFloat(state.uy) && isValidFloat(state.p) &&
+    return isfinite(state.rho) && isfinite(state.ux) && isfinite(state.uy) && isfinite(state.p) &&
           (state.rho > 0) && (state.p > 0);
-  }
-private:
-  template <class ElemT>
-  __host__ __device__ static bool isValidFloat(ElemT value)
-  {
-    return isfinite(value);
   }
 };
 
