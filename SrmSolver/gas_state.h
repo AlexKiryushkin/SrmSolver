@@ -512,17 +512,17 @@ struct EigenValuesX
 struct EigenValuesMatrixX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     const auto c = SonicSpeed::get(state);
 
-    Eigen::Matrix4<ElemT> resultMatrix = Eigen::Matrix4<ElemT>::Zero();
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix = Eigen::Matrix<ElemT, 4, 4>::Zero();
     resultMatrix.diagonal() << state.ux - c, state.ux, state.ux, state.ux + c;
     return resultMatrix;
   }
@@ -531,13 +531,13 @@ struct EigenValuesMatrixX
 struct LeftEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto half = static_cast<ElemT>(0.5);
@@ -545,7 +545,7 @@ struct LeftEigenVectorsX
     const auto cReciprocal = 1 / SonicSpeed::get(state);
     const auto rhoReciprocal = 1 / state.rho;
 
-    Eigen::Matrix4<ElemT> resultMatrix;
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
     resultMatrix
       << zero,                          -half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal,
         -half * state.uy *rhoReciprocal, zero,               half,  half * state.uy * rhoReciprocal * cReciprocal * cReciprocal,
@@ -558,19 +558,19 @@ struct LeftEigenVectorsX
 struct RightEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto one = static_cast<ElemT>(1.0);
 
     const auto c = SonicSpeed::get(state);
-    Eigen::Matrix4<ElemT> resultMatrix;
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
     resultMatrix << state.rho,        -state.rho / state.uy, state.rho / state.uy, state.rho,
                    -c,                 zero,                 zero,                  c,
                     zero,              one,                  one,                   zero,
@@ -582,18 +582,18 @@ struct RightEigenVectorsX
 struct PrimitiveJacobianMatrixX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix4<ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
 
     const auto c = SonicSpeed::get(state);
-    Eigen::Matrix4<ElemT> resultMatrix;
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
     resultMatrix << state.ux, state.rho,         zero,     zero,
                     zero,     state.ux,          zero,     1 / state.rho,
                     zero,     zero,              state.ux, zero,
