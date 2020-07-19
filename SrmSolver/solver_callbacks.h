@@ -32,13 +32,19 @@ public:
                   const GpuMatrix<GpuGridT, ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ElemT sBurn, ShapeT)
   {
-    static thread_local std::vector<std::tuple<ElemT, ElemT, ElemT, ElemT>> meanPressureValues;
-    const auto meanPressure =
-      detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
-    const auto maxPressure = detail::getMaxChamberPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
+    using IntegralDataT = std::tuple<ElemT, ElemT, ElemT, ElemT, ElemT, ElemT, ElemT>;
+    static thread_local std::vector<IntegralDataT> meanPressureValues;
 
-    meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn);
-    const auto writeToFile = [this](std::vector<std::tuple<ElemT, ElemT, ElemT, ElemT>> meanPressureValues,
+    const auto meanPressure   = detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
+    const auto maxPressure    = detail::getMaxChamberPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
+    const auto thrustData     = detail::getMotorThrust<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
+    const auto massFlowRate   = thrust::get<2U>(thrustData);
+    const auto velocity       = thrust::get<1U>(thrustData) / thrust::get<0U>(thrustData);
+    const auto thrust         = massFlowRate * velocity + thrust::get<3U>(thrustData);
+    const auto specificThrust = thrust / massFlowRate;
+    meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn, thrust, specificThrust, velocity);
+
+    const auto writeToFile = [this](std::vector<IntegralDataT> meanPressureValues,
       GpuMatrix<GpuGridT, GasStateT> gasValues,
       GpuMatrix<GpuGridT, ElemT> currPhi,
       unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
@@ -55,12 +61,16 @@ public:
       kae::current_path(newCurrentPath);
 
       std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
+      meanPressureFile << "t;P_av;P_max;S;Thrust;specThrust;velocity\n";
       for (const auto& elem : meanPressureValues)
       {
         meanPressureFile << std::get<0U>(elem) << ';'
                          << std::get<1U>(elem) << ';'
                          << std::get<2U>(elem) << ';'
-                         << std::get<3U>(elem) <<'\n';
+                         << std::get<3U>(elem) << ';'
+                         << std::get<4U>(elem) << ';'
+                         << std::get<5U>(elem) << ';'
+                         << std::get<6U>(elem) <<'\n';
       }
       writeMatrixToFile(currPhi, "sgd.dat");
       writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
@@ -81,24 +91,32 @@ public:
         return;
       }
     }
-    auto drawTemperature = [this](thrust::host_vector<GasStateT> hostGasStateValues)
-    {
-      std::vector<std::vector<ElemT>> gridTemperatureValues;
-      for (unsigned j{ 0U }; j < GpuGridT::ny; ++j)
-      {
-        const auto offset = j * GpuGridT::nx;
-        std::vector<ElemT> rowTemperatureValues(GpuGridT::nx);
-        std::transform(std::next(std::begin(hostGasStateValues), offset),
-          std::next(std::begin(hostGasStateValues), offset + GpuGridT::nx),
-          std::begin(rowTemperatureValues),
-          P{});
-        gridTemperatureValues.push_back(std::move(rowTemperatureValues));
-      }
-      m_gnuPlotTemperature.display2dPlot(gridTemperatureValues);
-    };
+
     auto && values = gasValues.values();
     thrust::host_vector<GasStateT> hostGasStateValues( values );
-    future = std::async(std::launch::async, drawTemperature, std::move(hostGasStateValues));
+    future = std::async(std::launch::async, [this](thrust::host_vector<GasStateT> hostGasStateValues)
+    {
+      drawTemperature<GpuGridT>(std::move(hostGasStateValues));
+    }, std::move(hostGasStateValues));
+  }
+
+private:
+
+  template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+  void drawTemperature(thrust::host_vector<GasStateT> hostGasStateValues)
+  {
+    std::vector<std::vector<ElemT>> gridTemperatureValues;
+    for (unsigned j{ 0U }; j < GpuGridT::ny; ++j)
+    {
+      const auto offset = j * GpuGridT::nx;
+      std::vector<ElemT> rowTemperatureValues(GpuGridT::nx);
+      std::transform(std::next(std::begin(hostGasStateValues), offset),
+                     std::next(std::begin(hostGasStateValues), offset + GpuGridT::nx),
+                     std::begin(rowTemperatureValues),
+                     P{});
+      gridTemperatureValues.push_back(std::move(rowTemperatureValues));
+    }
+    m_gnuPlotTemperature.display2dPlot(gridTemperatureValues);
   }
 
 private:

@@ -185,6 +185,51 @@ ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
   return boriPressure;
 }
 
+template <class GpuGridT,
+          class ShapeT,
+          class GasStateT,
+          class ElemT      = typename GpuGridT::ElemType,
+          class ReturnType = thrust::tuple<ElemT, ElemT, ElemT, ElemT>>
+ReturnType getMotorThrust(const thrust::device_vector<GasStateT> & gasValues,
+                          const thrust::device_vector<ElemT> &     currPhi)
+{
+  static thread_local thrust::device_vector<unsigned> indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+
+  const auto zipFirst = thrust::make_zip_iterator(
+    thrust::make_tuple(std::begin(gasValues), std::begin(indexVector), std::begin(currPhi)));
+  const auto zipLast = thrust::make_zip_iterator(
+    thrust::make_tuple(std::end(gasValues), std::end(indexVector), std::end(currPhi)));
+
+  const auto toThrust = [] __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple)
+  {
+    const auto i = thrust::get<1U>(tuple) % GpuGridT::nx;
+    const auto j = thrust::get<1U>(tuple) / GpuGridT::nx;
+    const auto r = ShapeT::getRadius(i, j);
+    const auto isInside = thrust::get<2U>(tuple) < static_cast<ElemT>(0.0);
+    if (!isInside)
+    {
+      return ReturnType{};
+    }
+
+    const auto & gasState = thrust::get<0U>(tuple);
+    const auto dS = 2 * static_cast<ElemT>(M_PI) * r * GpuGridT::hy;
+    const auto dUS = gasState.ux * dS;
+    const auto dG = MassFluxX::get(gasState) * dS;
+    const auto dPS = P::get(gasState) * dS;
+    return ReturnType{ dS, dUS, dG, dPS };
+  };
+
+  const auto sumUp = [] __device__(const ReturnType & lhs, const ReturnType & rhs)
+  {
+    return ReturnType{ thrust::get<0U>(lhs) + thrust::get<0U>(rhs),
+                       thrust::get<1U>(lhs) + thrust::get<1U>(rhs),
+                       thrust::get<2U>(lhs) + thrust::get<2U>(rhs),
+                       thrust::get<3U>(lhs) + thrust::get<3U>(rhs) };
+  };
+
+  return thrust::transform_reduce(zipFirst, zipLast, toThrust, ReturnType{}, sumUp);
+}
+
 } // namespace detail
 
 } // namespace kae
