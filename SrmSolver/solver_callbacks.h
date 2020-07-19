@@ -12,6 +12,7 @@
 
 namespace kae {
 
+template <class ElemT>
 class WriteToFolderCallback
 {
 public:
@@ -33,9 +34,6 @@ public:
                   const GpuMatrix<GpuGridT, ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ElemT sBurn, ShapeT)
   {
-    using IntegralDataT = std::tuple<ElemT, ElemT, ElemT, ElemT, ElemT, ElemT, ElemT>;
-    static thread_local std::vector<IntegralDataT> meanPressureValues;
-
     const auto meanPressure   = detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
     const auto maxPressure    = detail::getMaxChamberPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
     const auto thrustData     = detail::getMotorThrust<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
@@ -43,7 +41,7 @@ public:
     const auto velocity       = thrust::get<1U>(thrustData) / thrust::get<0U>(thrustData);
     const auto thrust         = massFlowRate * velocity + thrust::get<3U>(thrustData);
     const auto specificThrust = thrust / massFlowRate;
-    meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn, thrust, specificThrust, velocity);
+    m_meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn, thrust, specificThrust, velocity);
 
     const auto writeToFile = [this](std::vector<IntegralDataT> meanPressureValues,
       GpuMatrix<GpuGridT, GasStateT> gasValues,
@@ -76,17 +74,16 @@ public:
       writeMatrixToFile(currPhi, "sgd.dat");
       writeMatrixToFile(gasValues, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
     };
-    std::thread writeAsync{ writeToFile, meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
+    std::thread writeAsync{ writeToFile, m_meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
     writeAsync.detach();
   }
 
   template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
   void operator()(const GpuMatrix<GpuGridT, GasStateT> & gasValues)
   {
-    static std::future<void> future;
-    if (future.valid())
+    if (m_future.valid())
     {
-      const auto status = future.wait_for(std::chrono::milliseconds(10));
+      const auto status = m_future.wait_for(std::chrono::milliseconds(10));
       if (status != std::future_status::ready)
       {
         return;
@@ -95,13 +92,15 @@ public:
 
     auto && values = gasValues.values();
     thrust::host_vector<GasStateT> hostGasStateValues( values );
-    future = std::async(std::launch::async, [this](thrust::host_vector<GasStateT> hostGasStateValues)
+    m_future = std::async(std::launch::async, [this](thrust::host_vector<GasStateT> hostGasStateValues)
     {
       drawTemperature<GpuGridT>(std::move(hostGasStateValues));
     }, std::move(hostGasStateValues));
   }
 
 private:
+
+  using IntegralDataT = std::tuple<ElemT, ElemT, ElemT, ElemT, ElemT, ElemT, ElemT>;
 
   template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
   void drawTemperature(thrust::host_vector<GasStateT> hostGasStateValues)
@@ -121,8 +120,10 @@ private:
   }
 
 private:
-  std::wstring m_folderPath;
-  GnuPlotWrapper m_gnuPlotTemperature;
+  std::wstring      m_folderPath;
+  GnuPlotWrapper    m_gnuPlotTemperature;
+  std::future<void> m_future;
+  std::vector<IntegralDataT> m_meanPressureValues;
 };
 
 } // namespace kae

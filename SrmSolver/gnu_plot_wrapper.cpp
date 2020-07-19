@@ -5,7 +5,11 @@
 namespace kae {
 
 GnuPlotWrapper::GnuPlotWrapper(const std::string & pathToGnuPlotExe)
-  : m_pImpl(std::make_shared<Gnuplot>(pathToGnuPlotExe))
+  : m_pImpl(std::make_unique<Gnuplot>(pathToGnuPlotExe))
+{
+}
+
+GnuPlotWrapper::~GnuPlotWrapper()
 {
 }
 

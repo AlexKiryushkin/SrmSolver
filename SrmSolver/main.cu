@@ -17,10 +17,10 @@ int main()
 
     const std::wstring writeFolder{ L"data" };
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
-    kae::WriteToFolderCallback callback{ currentPath };
+    kae::WriteToFolderCallback<ElemType> callback{ currentPath };
 
     SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U, static_cast<ElemType>(0.8) };
-    srmSolver.dynamicIntegrate(1000U, 2.50f, kae::ETimeDiscretizationOrder::eTwo, callback);
+    srmSolver.dynamicIntegrate(1000U, 2.5f, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)
   {

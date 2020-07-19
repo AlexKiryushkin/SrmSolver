@@ -127,7 +127,7 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::GpuSrmSolver(
 template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStationaryDynamicIntegrate(
-  unsigned iterationCount, ElemType levelSetDeltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback)
+  unsigned iterationCount, ElemType levelSetDeltaT, ETimeDiscretizationOrder timeOrder, CallbackT && callback)
 {
   auto t{ static_cast<ElemType>(0.0) };
 
@@ -159,7 +159,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStatio
 template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 template <class CallbackT>
 void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::dynamicIntegrate(
-  unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT callback)
+  unsigned iterationCount, ElemType deltaT, ETimeDiscretizationOrder timeOrder, CallbackT && callback)
 {
   auto t{ static_cast<ElemType>(0.0) };
   for (unsigned i{ 0U }; i < iterationCount; ++i)
@@ -167,7 +167,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::dynamicInte
     const auto deltaTGasDynamic = staticIntegrate(deltaT, timeOrder, callback);
     const auto maxDerivatives = getMaxEquationDerivatives();
     const auto sBurn = detail::getBurningSurface<GpuGridT, ShapeT>(currPhi().values(), m_normals.values());
-    if (i % 5 == 0)
+    if (i % 10 == 0)
     {
       callback(m_currState, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{});
     }
@@ -181,7 +181,7 @@ template <class CallbackT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrate(
   unsigned iterationCount,
   ETimeDiscretizationOrder timeOrder,
-  CallbackT callback) -> ElemType
+  CallbackT && callback) -> ElemType
 {
   findClosestIndices();
 
@@ -216,7 +216,7 @@ template <class CallbackT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrate(
   ElemType deltaT,
   ETimeDiscretizationOrder timeOrder, 
-  CallbackT callback) -> ElemType
+  CallbackT && callback) -> ElemType
 {
   findClosestIndices();
 

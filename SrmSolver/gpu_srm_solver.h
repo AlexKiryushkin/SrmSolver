@@ -29,23 +29,23 @@ public:
   void quasiStationaryDynamicIntegrate(unsigned                 iterationCount, 
                                        ElemType                 deltaT,
                                        ETimeDiscretizationOrder timeOrder, 
-                                       CallbackT                callback = CallbackT{});
+                                       CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
   void dynamicIntegrate(unsigned                 iterationCount, 
                         ElemType                 deltaT, 
                         ETimeDiscretizationOrder timeOrder, 
-                        CallbackT                callback = CallbackT{});
+                        CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
   ElemType staticIntegrate(unsigned                 iterationCount,
                            ETimeDiscretizationOrder timeOrder, 
-                           CallbackT                callback = CallbackT{});
+                           CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
   ElemType staticIntegrate(ElemType                 deltaT, 
                            ETimeDiscretizationOrder timeOrder, 
-                           CallbackT                callback = CallbackT{});
+                           CallbackT &&             callback = CallbackT{});
 
   const GpuMatrix<GpuGridT, GasStateType> & currState() const { return m_currState; }
   const GpuMatrix<GpuGridT, ElemType>     & currPhi()   const { return m_levelSetSolver.currState(); }
