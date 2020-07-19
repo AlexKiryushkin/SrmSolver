@@ -15,9 +15,10 @@ namespace kae {
 class WriteToFolderCallback
 {
 public:
-  WriteToFolderCallback(std::wstring folderPath)
-    : m_gnuPlotTemperature("\"C:\\Program Files\\gnuplot\\bin\\gnuplot.exe\""),
-      m_folderPath(std::move(folderPath))
+  WriteToFolderCallback(std::wstring folderPath, 
+                        std::string pathToGnuPlot = "\"C:\\Program Files\\gnuplot\\bin\\gnuplot.exe\"")
+    : m_folderPath(std::move(folderPath)),
+      m_gnuPlotTemperature(pathToGnuPlot)
   {
     kae::remove_all(m_folderPath);
     kae::create_directories(m_folderPath);
@@ -120,8 +121,8 @@ private:
   }
 
 private:
-  GnuPlotWrapper m_gnuPlotTemperature;
   std::wstring m_folderPath;
+  GnuPlotWrapper m_gnuPlotTemperature;
 };
 
 } // namespace kae
