@@ -141,6 +141,9 @@
     <ClInclude Include="empty_callback.h">
       <Filter>Headers\Callbacks</Filter>
     </ClInclude>
+    <ClInclude Include="get_stencil_indices.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

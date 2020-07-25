@@ -25,6 +25,7 @@
     <ClInclude Include="get_closest_index.h" />
     <ClInclude Include="get_coordinates_matrix.h" />
     <ClInclude Include="get_extrapolated_ghost_value.h" />
+    <ClInclude Include="get_stencil_indices.h" />
     <ClInclude Include="gnuplot-iostream.h" />
     <ClInclude Include="gnu_plot_wrapper.h" />
     <ClInclude Include="gpu_build_ghost_to_closest_map_kernel.h" />

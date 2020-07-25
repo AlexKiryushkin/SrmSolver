@@ -92,6 +92,7 @@
     <CudaCompile Include="gas_dynamic_flux_tests.cu" />
     <CudaCompile Include="gas_state_tests.cu" />
     <CudaCompile Include="get_extrapolated_ghost_value_tests.cu" />
+    <CudaCompile Include="get_stencil_indices_tests.cu" />
     <CudaCompile Include="gpu_grid_tests.cu" />
     <CudaCompile Include="gpu_level_set_solver_tests.cu" />
     <CudaCompile Include="gpu_matrix_tests.cu" />

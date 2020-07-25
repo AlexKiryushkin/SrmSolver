@@ -9,6 +9,8 @@
     <CudaCompile Include="gpu_matrix_tests.cu" />
     <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="math_utilities_tests.cu" />
+    <CudaCompile Include="gpu_level_set_solver_tests.cu" />
+    <CudaCompile Include="get_stencil_indices_tests.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dummy.cpp" />
