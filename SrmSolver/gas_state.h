@@ -528,7 +528,7 @@ struct EigenValuesMatrixX
   }
 };
 
-struct LeftEigenVectorsX
+struct LeftPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
   __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
@@ -555,7 +555,7 @@ struct LeftEigenVectorsX
   }
 };
 
-struct RightEigenVectorsX
+struct RightPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
   __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
@@ -599,6 +599,19 @@ struct PrimitiveJacobianMatrixX
                     zero,     zero,              state.ux, zero,
                     zero,     state.rho * c * c, zero,     state.ux;
     return resultMatrix;
+  }
+};
+
+struct PrimitiveCharacteristicVariables
+{
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  __host__ __device__ static auto get(const Eigen::Matrix<ElemT, 4, 4> & leftEigenVectors,
+                                      const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 1>
+  {
+    Eigen::Matrix<ElemT, 4, 1> characteristicVariables;
+    characteristicVariables << state.rho, state.ux, state.uy, state.p;
+    return leftEigenVectors * characteristicVariables;
   }
 };
 
