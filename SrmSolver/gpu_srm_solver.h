@@ -52,9 +52,9 @@ public:
 
 private:
 
-  ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloatT<2U, ElemType> lambdas);
+  ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloat2T<ElemType> lambdas);
   ElemType integrateInTime(ElemType deltaT);
-  CudaFloatT<4U, ElemType> getMaxEquationDerivatives() const;
+  CudaFloat4T<ElemType> getMaxEquationDerivatives() const;
   void findClosestIndices();
   void fillCalculateBlockMatrix();
   void writeIfNotValid() const;
@@ -62,7 +62,7 @@ private:
 private:
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;
-  GpuMatrix<GpuGridT, CudaFloatT<2U, ElemType>> m_normals;
+  GpuMatrix<GpuGridT, CudaFloat2T<ElemType>>    m_normals;
   GpuMatrix<GpuGridT, GasStateType>             m_currState;
   GpuMatrix<GpuGridT, GasStateType>             m_prevState;
   GpuMatrix<GpuGridT, GasStateType>             m_firstState;

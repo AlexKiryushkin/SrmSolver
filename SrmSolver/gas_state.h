@@ -363,13 +363,13 @@ struct WaveSpeedY
 struct WaveSpeedXY
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<2U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat2T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<2U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat2T<ElemT>
   {
     return { WaveSpeedX::get(state), WaveSpeedY::get(state) };
   }
@@ -408,13 +408,13 @@ struct MirrorState
 struct ConservativeVariables
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { Rho::get(state), MassFluxX::get(state), MassFluxY::get(state), RhoEnergy::get(state) };
   }
@@ -423,13 +423,13 @@ struct ConservativeVariables
 struct XFluxes
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxX::get(state),
              MomentumFluxXx::get(state),
@@ -441,13 +441,13 @@ struct XFluxes
 struct YFluxes
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxY::get(state),
              MomentumFluxXy::get(state),
@@ -459,13 +459,13 @@ struct YFluxes
 struct SourceTerm
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxY::get(state),
              MomentumFluxXy::get(state),
@@ -477,13 +477,13 @@ struct SourceTerm
 struct ConservativeToGasState
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ GasStateT operator()(const CudaFloatT<4U, ElemT> & state)
+  __host__ __device__ GasStateT operator()(const CudaFloat4T<ElemT> & state)
   {
     return get<GasStateT>(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static GasStateT get(const CudaFloatT<4U, ElemT> & conservativeVariables)
+  __host__ __device__ static GasStateT get(const CudaFloat4T<ElemT> & conservativeVariables)
   {
     const ElemT ux = conservativeVariables.y / conservativeVariables.x;
     const ElemT uy = conservativeVariables.z / conservativeVariables.x;
@@ -496,13 +496,13 @@ struct ConservativeToGasState
 struct EigenValuesX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloatT<4U, ElemT>
+  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     const auto c = SonicSpeed::get(state);
     return { state.ux - c, state.ux, state.ux, state.ux + c };

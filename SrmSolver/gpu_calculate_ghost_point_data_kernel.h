@@ -17,7 +17,7 @@ template <class GpuGridT, class ShapeT, class ElemT>
 __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>                  pCurrPhi,
                                         thrust::device_ptr<unsigned>                     pClosestIndices,
                                         thrust::device_ptr<EBoundaryCondition>           pBoundaryConditions,
-                                        thrust::device_ptr<CudaFloatT<2U, ElemT>>        pNormals,
+                                        thrust::device_ptr<CudaFloat2T<ElemT>>           pNormals,
                                         thrust::device_ptr<Eigen::Matrix<ElemT, 9U, 3U>> pLhsMatrices)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -72,8 +72,8 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
       const auto currentGlobalIdx{ jIdx * GpuGridT::nx + iIdx };
       if (pCurrPhi[currentGlobalIdx] < 0)
       {
-        const CudaFloatT<2U, ElemT> globalDeltas{ iIdx * GpuGridT::hx - xSurface, jIdx * GpuGridT::hy - ySurface };
-        const CudaFloatT<2U, ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, { nx, ny }) };
+        const CudaFloat2T<ElemT> globalDeltas{ iIdx * GpuGridT::hx - xSurface, jIdx * GpuGridT::hy - ySurface };
+        const CudaFloat2T<ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, { nx, ny }) };
         coordinateMatrix(counter, 0) = static_cast<ElemT>(1.0);
         coordinateMatrix(counter, 1) = localDeltas.x;
         coordinateMatrix(counter, 2) = localDeltas.y;

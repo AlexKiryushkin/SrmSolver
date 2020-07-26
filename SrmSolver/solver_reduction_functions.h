@@ -21,23 +21,23 @@ thrust::device_vector<ElemT> generateIndexMatrix(unsigned n)
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<2U, ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values)
+CudaFloat2T<ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values)
 {
   const auto first = thrust::make_transform_iterator(std::begin(values), kae::WaveSpeedXY{});
   const auto last = thrust::make_transform_iterator(std::end(values), kae::WaveSpeedXY{});
-  return thrust::reduce(first, last, CudaFloatT<2U, ElemT>{ 0, 0 }, kae::ElemwiseMax{});
+  return thrust::reduce(first, last, CudaFloat2T<ElemT>{ 0, 0 }, kae::ElemwiseMax{});
 }
 
 template <class GpuGridT, class GasStateT, class ElemT = typename GasStateT::ElemType>
 ElemT getDeltaT(const thrust::device_vector<GasStateT>& values,
                 ElemT courant)
 {
-  CudaFloatT<2U, ElemT> lambdas = detail::getMaxWaveSpeeds(values);
+  CudaFloat2T<ElemT> lambdas = detail::getMaxWaveSpeeds(values);
   return courant * GpuGridT::hx * GpuGridT::hy / (GpuGridT::hx * lambdas.x + GpuGridT::hy * lambdas.y);
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloatT<4U, ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStateT>& prevValues,
+CudaFloat4T<ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStateT>& prevValues,
                                                 const thrust::device_vector<GasStateT>& currValues,
                                                 ElemT dt)
 {
@@ -51,7 +51,7 @@ CudaFloatT<4U, ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasS
     return ConservativeVariables::get(currState) - ConservativeVariables::get(prevState);
   };
 
-  return (1 / dt) * thrust::transform_reduce(zipFirst, zipLast, toDerivatives, CudaFloatT<4U, ElemT>{}, ElemwiseAbsMax{});
+  return (1 / dt) * thrust::transform_reduce(zipFirst, zipLast, toDerivatives, CudaFloat4T<ElemT>{}, ElemwiseAbsMax{});
 }
 
 template <class GpuGridT, class ShapeT, class ElemT = typename GpuGridT::ElemType>
@@ -140,7 +140,7 @@ ElemT getCalculatedBoriPressure(const thrust::device_vector<GasStateT>& gasValue
 
 template <class GpuGridT, class ShapeT, class ElemT = typename GpuGridT::ElemType>
 ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
-                        const thrust::device_vector<CudaFloatT<2U, ElemT>>& normals)
+                        const thrust::device_vector<CudaFloat2T<ElemT>>& normals)
 {
   static thread_local thrust::device_vector<unsigned> indexVector = generateIndexMatrix<unsigned>(currPhi.size());
 
@@ -149,7 +149,7 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
   const auto zipLast = thrust::make_zip_iterator(
     thrust::make_tuple(std::end(indexVector), std::end(currPhi), std::end(normals)));
 
-  const auto toVolume = [] __device__(const thrust::tuple<unsigned, ElemT, CudaFloatT<2U, ElemT>> & tuple)
+  const auto toVolume = [] __device__(const thrust::tuple<unsigned, ElemT, CudaFloat2T<ElemT>> & tuple)
   {
     const auto level   = thrust::get<1U>(tuple);
     const auto normals = thrust::get<2U>(tuple);
@@ -175,7 +175,7 @@ template <class GpuGridT,
           class PhysicalPropertiesT,
           class ElemT = typename GpuGridT::ElemType>
 ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
-                                 const thrust::device_vector<CudaFloatT<2U, ElemT>>& normals)
+                                 const thrust::device_vector<CudaFloat2T<ElemT>>& normals)
 {
   constexpr auto kappa = PhysicalPropertiesT::kappa;
   const auto burningSurface = getBurningSurface<GpuGridT, ShapeT>(currPhi, normals);

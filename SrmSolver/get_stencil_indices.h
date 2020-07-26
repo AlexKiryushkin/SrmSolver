@@ -12,9 +12,9 @@ namespace detail {
 namespace impl {
 
 template <class GpuGridT, unsigned nPoints, class ElemT, class ReturnType = Eigen::Matrix<unsigned, nPoints, nPoints>>
-__host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *         pCurrPhi,
-                                                     CudaFloatT<2U, ElemT> scaledSurfacePoint,
-                                                     CudaFloatT<2U, ElemT> scaledNormal)
+__host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi,
+                                                     CudaFloat2T<ElemT> scaledSurfacePoint,
+                                                     CudaFloat2T<ElemT> scaledNormal)
 {
   ReturnType indicesMatrix{};
   const auto alongX = std::fabs(scaledNormal.x) > std::fabs(scaledNormal.y);
@@ -103,14 +103,14 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *         pCurr
 } // namespace impl
 
 template <class GpuGridT, unsigned nPoints, class ElemT, class ReturnType = Eigen::Matrix<unsigned, nPoints, nPoints>>
-__host__ __device__ ReturnType getStencilIndices(const ElemT *         pCurrPhi,
-                                                 CudaFloatT<2U, ElemT> surfacePoint,
-                                                 CudaFloatT<2U, ElemT> normal)
+__host__ __device__ ReturnType getStencilIndices(const ElemT *      pCurrPhi,
+                                                 CudaFloat2T<ElemT> surfacePoint,
+                                                 CudaFloat2T<ElemT> normal)
 {
   constexpr auto hxRec = GpuGridT::hxReciprocal;
   constexpr auto hyRec = GpuGridT::hyReciprocal;
 
-  const CudaFloatT<2U, ElemT> scaledSurfacePoint{ surfacePoint.x * hxRec, surfacePoint.y * hyRec };
+  const CudaFloat2T<ElemT> scaledSurfacePoint{ surfacePoint.x * hxRec, surfacePoint.y * hyRec };
   const auto maxNormalElement = thrust::max(std::fabs(normal.x), std::fabs(normal.y));
   normal = { normal.x / maxNormalElement, normal.y / maxNormalElement };
   return impl::getStencilIndicesImpl<GpuGridT, nPoints>(pCurrPhi, scaledSurfacePoint, normal);

@@ -37,8 +37,8 @@ void srmIntegrateTVDSubStepWrapper(thrust::device_ptr<GasStateT>                
                                    thrust::device_ptr<const ElemT>                            pCurrentPhi,
                                    thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndicesMap,
                                    thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                   thrust::device_ptr<CudaFloatT<2U, ElemT>>                  pNormals,
-                                   unsigned nClosestIndexElems, ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT prevWeight)
+                                   thrust::device_ptr<CudaFloat2T<ElemT>>                     pNormals,
+                                   unsigned nClosestIndexElems, ElemT dt, CudaFloat2T<ElemT> lambda, ElemT prevWeight)
 {
   detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT>(
     pPrevValue,
@@ -63,7 +63,7 @@ template <class ShapeT,
           class ElemT = typename GasStateT::ElemType>
 GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT>            & currState,
                                            const GpuMatrix<GpuGridT, ElemT>                & currPhi,
-                                           const GpuMatrix<GpuGridT, CudaFloatT<2U, ElemT>> & normals)
+                                           const GpuMatrix<GpuGridT, CudaFloat2T<ElemT>>   & normals)
 {
   const static thread_local auto indices = generateIndexMatrix<unsigned>(GpuGridT::n);
 
@@ -79,7 +79,7 @@ GpuMatrix<GpuGridT, ElemT> getBurningRates(const GpuMatrix<GpuGridT, GasStateT> 
                        std::end(normals.values())));
 
   const auto toBurningRate = [] __device__
-    (const thrust::tuple<GasStateT, unsigned, ElemT, CudaFloatT<2U, ElemT>> & tuple)
+    (const thrust::tuple<GasStateT, unsigned, ElemT, CudaFloat2T<ElemT>> & tuple)
   {
     const auto index = thrust::get<1U>(tuple);
     const auto i = index % GpuGridT::nx;
@@ -111,7 +111,7 @@ GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::GpuSrmSolver(
   unsigned  iterationCount,
   ElemType  courant)
   : m_boundaryConditions{ EBoundaryCondition::eWall                               },
-    m_normals           { CudaFloatT<2U, ElemType>{ 0, 0 }                        },
+    m_normals           { CudaFloat2T<ElemType>{ 0, 0 }                           },
     m_currState         { initialState                                            },
     m_prevState         { initialState                                            },
     m_firstState        { initialState                                            },
@@ -186,7 +186,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticInteg
   findClosestIndices();
 
   auto t{ static_cast<ElemType>(0.0) };
-  CudaFloatT<2U, ElemType> lambdas{};
+  CudaFloat2T<ElemType> lambdas{};
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
     if ((i <= 1000U) || (i % 500U == 0U))
@@ -222,7 +222,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticInteg
 
   unsigned i{ 0U };
   auto t{ static_cast<ElemType>(0.0) };
-  CudaFloatT<2U, ElemType> lambdas;
+  CudaFloat2T<ElemType> lambdas;
   while (t < deltaT)
   {
     if ((i <= 1000U) || (i % 500U == 0U))
@@ -340,7 +340,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::integrateIn
 
 template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertiesT>
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::getMaxEquationDerivatives() const
-  -> CudaFloatT<4U, ElemType>
+  -> CudaFloat4T<ElemType>
 {
   return detail::getMaxEquationDerivatives(
     m_prevState.values(),
@@ -352,7 +352,7 @@ template <class GpuGridT, class ShapeT, class GasStateT, class PhysicalPropertie
 auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticIntegrateStep(
   ETimeDiscretizationOrder timeOrder,
   ElemType dt,
-  CudaFloatT<2U, ElemType> lambdas) -> ElemType
+  CudaFloat2T<ElemType> lambdas) -> ElemType
 {
   thrust::swap(m_prevState.values(), m_currState.values());
   switch (timeOrder)

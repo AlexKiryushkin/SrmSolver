@@ -824,9 +824,9 @@ TYPED_TEST(gas_state, gas_state_conservative_variables)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.0) };
-  const kae::CudaFloatT<4U, ElemType> conservativeVariables = kae::ConservativeVariables::get(gasState);
+  const kae::CudaFloat4T<ElemType> conservativeVariables = kae::ConservativeVariables::get(gasState);
 
-  constexpr kae::CudaFloatT<4U, ElemType> goldConservativeVariables{ static_cast<ElemType>(5.0),
+  constexpr kae::CudaFloat4T<ElemType> goldConservativeVariables{ static_cast<ElemType>(5.0),
                                                                      static_cast<ElemType>(15.0),
                                                                      static_cast<ElemType>(20.0),
                                                                      static_cast<ElemType>(72.5) };
@@ -846,9 +846,9 @@ TYPED_TEST(gas_state, gas_state_x_fluxes)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.0) };
-  const kae::CudaFloatT<4U, ElemType> xFluxes = kae::XFluxes::get(gasState);
+  const kae::CudaFloat4T<ElemType> xFluxes = kae::XFluxes::get(gasState);
 
-  constexpr kae::CudaFloatT<4U, ElemType> goldXFluxes{ static_cast<ElemType>(15.0),
+  constexpr kae::CudaFloat4T<ElemType> goldXFluxes{ static_cast<ElemType>(15.0),
                                                        static_cast<ElemType>(47.0),
                                                        static_cast<ElemType>(60.0),
                                                        static_cast<ElemType>(223.5) };
@@ -868,9 +868,9 @@ TYPED_TEST(gas_state, gas_state_y_fluxes)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.0) };
-  const kae::CudaFloatT<4U, ElemType> yFluxes = kae::YFluxes::get(gasState);
+  const kae::CudaFloat4T<ElemType> yFluxes = kae::YFluxes::get(gasState);
 
-  constexpr kae::CudaFloatT<4U, ElemType> goldYFluxes{ static_cast<ElemType>(20.0),
+  constexpr kae::CudaFloat4T<ElemType> goldYFluxes{ static_cast<ElemType>(20.0),
                                                        static_cast<ElemType>(60.0),
                                                        static_cast<ElemType>(82.0),
                                                        static_cast<ElemType>(298.0) };
@@ -890,9 +890,9 @@ TYPED_TEST(gas_state, gas_state_source_term)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.0) };
-  const kae::CudaFloatT<4U, ElemType> sourceTerm = kae::SourceTerm::get(gasState);
+  const kae::CudaFloat4T<ElemType> sourceTerm = kae::SourceTerm::get(gasState);
 
-  constexpr kae::CudaFloatT<4U, ElemType> goldSourceTerm{ static_cast<ElemType>(20.0),
+  constexpr kae::CudaFloat4T<ElemType> goldSourceTerm{ static_cast<ElemType>(20.0),
                                                           static_cast<ElemType>(60.0),
                                                           static_cast<ElemType>(80.0),
                                                           static_cast<ElemType>(298.0) };
@@ -908,7 +908,7 @@ TYPED_TEST(gas_state, gas_state_conservative_to_gas_state)
   using CpT       = std::ratio<6, 1>;
   using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
-  constexpr kae::CudaFloatT<4U, ElemType> conservativeVariables{ static_cast<ElemType>(5.0),
+  constexpr kae::CudaFloat4T<ElemType> conservativeVariables{ static_cast<ElemType>(5.0),
                                                                  static_cast<ElemType>(15.0),
                                                                  static_cast<ElemType>(20.0),
                                                                  static_cast<ElemType>(72.5) };
@@ -934,12 +934,12 @@ TYPED_TEST(gas_state, gas_state_eigen_values_x)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.4) };
-  const kae::CudaFloatT<4U, ElemType> eigenValuesX = kae::EigenValuesX::get(gasState);
+  const kae::CudaFloat4T<ElemType> eigenValuesX = kae::EigenValuesX::get(gasState);
 
-  constexpr kae::CudaFloatT<4U, ElemType> goldEigenValuesX{ static_cast<ElemType>(1.8),
-                                                            static_cast<ElemType>(3.0),
-                                                            static_cast<ElemType>(3.0),
-                                                            static_cast<ElemType>(4.2) };
+  constexpr kae::CudaFloat4T<ElemType> goldEigenValuesX{ static_cast<ElemType>(1.8),
+                                                         static_cast<ElemType>(3.0),
+                                                         static_cast<ElemType>(3.0),
+                                                         static_cast<ElemType>(4.2) };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   EXPECT_FLOAT4_NEAR(eigenValuesX, goldEigenValuesX, threshold);

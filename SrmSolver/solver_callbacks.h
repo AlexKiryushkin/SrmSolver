@@ -32,7 +32,7 @@ public:
             class ElemT = typename GasStateT::ElemType>
   void operator()(const GpuMatrix<GpuGridT, GasStateT> & gasValues,
                   const GpuMatrix<GpuGridT, ElemT> & currPhi,
-                  unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives, ElemT sBurn, ShapeT)
+                  unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives, ElemT sBurn, ShapeT)
   {
     const auto meanPressure   = detail::getCalculatedBoriPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
     const auto maxPressure    = detail::getMaxChamberPressure<GpuGridT, ShapeT>(gasValues.values(), currPhi.values());
@@ -46,7 +46,7 @@ public:
     const auto writeToFile = [this](std::vector<IntegralDataT> meanPressureValues,
       GpuMatrix<GpuGridT, GasStateT> gasValues,
       GpuMatrix<GpuGridT, ElemT> currPhi,
-      unsigned i, ElemT t, CudaFloatT<4U, ElemT> maxDerivatives)
+      unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives)
     {
       std::cout << "Iteration: " << i << ". Time: " << t << '\n';
       std::cout << "Mean chamber pressure: " << std::get<1U>(meanPressureValues.back()) << '\n';

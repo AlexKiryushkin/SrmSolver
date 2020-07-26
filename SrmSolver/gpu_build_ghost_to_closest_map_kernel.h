@@ -16,7 +16,7 @@ template <class GpuGridT, class ShapeT, class ElemT>
 __global__ void findClosestIndices(thrust::device_ptr<const ElemT>                      pCurrPhi,
                                    thrust::device_ptr<thrust::pair<unsigned, unsigned>> pClosestIndices,
                                    thrust::device_ptr<EBoundaryCondition>               pBoundaryConditions,
-                                   thrust::device_ptr<CudaFloatT<2U, ElemT>>            pNormals)
+                                   thrust::device_ptr<CudaFloat2T<ElemT>>               pNormals)
 {
   const unsigned i         = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j         = threadIdx.y + blockDim.y * blockIdx.y;
@@ -74,7 +74,7 @@ template <class GpuGridT, class ShapeT, class ElemT>
 void findClosestIndicesWrapper(thrust::device_ptr<const ElemT>                      pCurrPhi,
                                thrust::device_ptr<thrust::pair<unsigned, unsigned>> pClosestIndices,
                                thrust::device_ptr<EBoundaryCondition>               pBoundaryConditions,
-                               thrust::device_ptr<CudaFloatT<2U, ElemT>>            pNormals)
+                               thrust::device_ptr<CudaFloat2T<ElemT>>               pNormals)
 {
   findClosestIndices<GpuGridT, ShapeT><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
     (pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals);

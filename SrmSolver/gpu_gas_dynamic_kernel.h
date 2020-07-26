@@ -21,7 +21,7 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
                                               const GasStateT * __restrict__ pFirstValue,
                                               GasStateT *       __restrict__ pCurrValue,
                                               const ElemT *     __restrict__ pCurrPhi,
-                                              ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT prevWeight)
+                                              ElemT dt, CudaFloat2T<ElemT> lambda, ElemT prevWeight)
 {
   constexpr auto     hx             = GpuGridT::hx;
   constexpr auto     levelThreshold = 4 * hx;
@@ -133,7 +133,7 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
     const ElemT rReciprocal = 1 / ShapeT::getRadius(i, j);
 
     GasStateT calculatedGasState = prevMatrix[sharedIdx];
-    const CudaFloatT<4U, ElemT> newConservativeVariables =
+    const CudaFloat4T<ElemT> newConservativeVariables =
       {
         Rho::get(calculatedGasState) -
           dt * GpuGridT::hxReciprocal * (xFlux1[fluxSharedIdx] - xFlux1[fluxSharedIdx - 1U]) -
@@ -174,7 +174,7 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
                                           thrust::device_ptr<const GasStateT> pFirstValue,
                                           thrust::device_ptr<GasStateT> pCurrValue,
                                           thrust::device_ptr<const ElemT> pCurrPhi,
-                                          ElemT dt, CudaFloatT<2U, ElemT> lambda, ElemT pPrevWeight)
+                                          ElemT dt, CudaFloat2T<ElemT> lambda, ElemT pPrevWeight)
 {
   gasDynamicIntegrateTVDSubStep<GpuGridT, ShapeT, GasStateT> << <GpuGridT::gridSize, GpuGridT::blockSize >> >
     (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight);

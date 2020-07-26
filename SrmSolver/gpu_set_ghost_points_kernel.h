@@ -16,7 +16,7 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
                                          thrust::device_ptr<const ElemT>                            pCurrPhi,
                                          thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndicesMap,
                                          thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                         thrust::device_ptr<CudaFloatT<2U, ElemT>>                  pNormals,
+                                         thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals,
                                          unsigned                                                   nClosestIndexElems)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -41,7 +41,7 @@ void setFirstOrderGhostValuesWrapper(thrust::device_ptr<GasStateT>              
                                      thrust::device_ptr<const ElemT>                            pCurrPhi,
                                      thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndices,
                                      thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                     thrust::device_ptr<CudaFloatT<2U, ElemT>>                  pNormals,
+                                     thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals,
                                      unsigned nClosestIndexElems)
 {
   constexpr unsigned blockSize = 256U;

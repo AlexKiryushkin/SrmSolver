@@ -32,21 +32,21 @@ __forceinline__ __host__ __device__ ElemT getFlux(const GasStateT * pState, unsi
 }
 
 template <unsigned Step, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__forceinline__ __host__ __device__ CudaFloatT<4U, ElemT> getXFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
+__forceinline__ __host__ __device__ CudaFloat4T<ElemT> getXFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
 {
-  return CudaFloatT<4U, ElemT>{ getFlux<Rho,       MassFluxX,      Step>(pState, index, lambda),
-                                getFlux<MassFluxX, MomentumFluxXx, Step>(pState, index, lambda),
-                                getFlux<MassFluxY, MomentumFluxXy, Step>(pState, index, lambda),
-                                getFlux<RhoEnergy, EnthalpyFluxX,  Step>(pState, index, lambda) };
+  return CudaFloat4T<ElemT>{ getFlux<Rho,       MassFluxX,      Step>(pState, index, lambda),
+                             getFlux<MassFluxX, MomentumFluxXx, Step>(pState, index, lambda),
+                             getFlux<MassFluxY, MomentumFluxXy, Step>(pState, index, lambda),
+                             getFlux<RhoEnergy, EnthalpyFluxX,  Step>(pState, index, lambda) };
 }
 
 template <unsigned Step, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__forceinline__ __host__ __device__ CudaFloatT<4U, ElemT> getYFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
+__forceinline__ __host__ __device__ CudaFloat4T<ElemT> getYFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
 {
-  return CudaFloatT<4U, ElemT>{ getFlux<Rho,       MassFluxY,      Step>(pState, index, lambda),
-                                getFlux<MassFluxX, MomentumFluxXy, Step>(pState, index, lambda),
-                                getFlux<MassFluxY, MomentumFluxYy, Step>(pState, index, lambda),
-                                getFlux<RhoEnergy, EnthalpyFluxY,  Step>(pState, index, lambda) };
+  return CudaFloat4T<ElemT>{ getFlux<Rho,       MassFluxY,      Step>(pState, index, lambda),
+                             getFlux<MassFluxX, MomentumFluxXy, Step>(pState, index, lambda),
+                             getFlux<MassFluxY, MomentumFluxYy, Step>(pState, index, lambda),
+                             getFlux<RhoEnergy, EnthalpyFluxY,  Step>(pState, index, lambda) };
 }
 
 } // namespace kae

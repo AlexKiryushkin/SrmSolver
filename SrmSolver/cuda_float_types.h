@@ -5,6 +5,8 @@
 
 namespace kae {
 
+namespace detail {
+
 template <std::size_t nElems, class ElemT>
 struct CudaFloat;
 
@@ -46,5 +48,17 @@ struct CudaFloat<4U, double>
 {
   using type = double4;
 };
+
+} // namespace
+
+
+template <class ElemT>
+using CudaFloat2T = detail::CudaFloatT<2U, ElemT>;
+
+template <class ElemT>
+using CudaFloat3T = detail::CudaFloatT<3U, ElemT>;
+
+template <class ElemT>
+using CudaFloat4T = detail::CudaFloatT<4U, ElemT>;
 
 } // namespace kae

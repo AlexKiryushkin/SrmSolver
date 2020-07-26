@@ -90,7 +90,7 @@ __host__ __device__ ElemT getLevelSetDerivative(const ElemT * arr, unsigned i, b
 }
 
 template <class GpuGridT, unsigned Nx, class ElemT>
-__host__ __device__ CudaFloatT<2U, ElemT> getLevelSetGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
+__host__ __device__ CudaFloat2T<ElemT> getLevelSetGradient(const ElemT * arr, unsigned i, bool isPositiveVelocity)
 {
   ElemT derivativeX = getLevelSetDerivative<GpuGridT, 1>(arr, i, isPositiveVelocity);
   ElemT derivativeY = getLevelSetDerivative<GpuGridT, Nx>(arr, i, isPositiveVelocity);

@@ -14,7 +14,7 @@ public:
 
   constexpr static unsigned nPoints{ 3U };
   using ElemType        = T;
-  using Real2Type       = kae::CudaFloatT<2U, T>;
+  using Real2Type       = kae::CudaFloat2T<T>;
   using IndexMatrixType = Eigen::Matrix<unsigned, nPoints, nPoints>;
 
   constexpr static unsigned nx{ 201U };
