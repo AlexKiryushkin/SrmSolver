@@ -11,12 +11,12 @@ namespace detail {
 
 namespace impl {
 
-template <class GpuGridT, unsigned nPoints, class ElemT, class ReturnType = Eigen::Matrix<unsigned, nPoints, nPoints>>
-__host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi,
-                                                     CudaFloat2T<ElemT> scaledSurfacePoint,
-                                                     CudaFloat2T<ElemT> scaledNormal)
+template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
+__host__ __device__ ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
+                                                  CudaFloat2T<ElemT> scaledSurfacePoint,
+                                                  CudaFloat2T<ElemT> scaledNormal)
 {
-  ReturnType indicesMatrix{};
+  ReturnT indicesMatrix{};
   const auto alongX = std::fabs(scaledNormal.x) > std::fabs(scaledNormal.y);
   if (alongX)
   {
@@ -24,7 +24,7 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi
     const auto delta    = std::fabs(scaledSurfacePoint.x - xRounded);
     const auto startI   = static_cast<unsigned>(xRounded);
     const auto startJ   = scaledSurfacePoint.y - delta * scaledNormal.y;
-    for (unsigned i{ 0U }; i < nPoints; ++i)
+    for (unsigned i{ 0U }; i < order; ++i)
     {
       const auto idxX        = (scaledNormal.x > 0) ? (startI - i) : (startI + i);
       const auto yCoordinate = startJ - i * scaledNormal.y;
@@ -33,7 +33,7 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi
       auto externalPointMet = false;
       auto moveUp           = false;
       unsigned nodesAdded{};
-      for (unsigned j{ 0U }; (j < 2U * nPoints) && (nodesAdded < nPoints); ++j)
+      for (unsigned j{ 0U }; (j < 2U * order) && (nodesAdded < order); ++j)
       {
         const auto isOdd    = j % 2 == 1;
         const auto sumUpIdx = (isOdd && roundDown) || (!isOdd && !roundDown) || (externalPointMet && moveUp);
@@ -63,7 +63,7 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi
     const auto delta = std::fabs(scaledSurfacePoint.y - yRounded);
     const auto startJ = static_cast<unsigned>(yRounded);
     const auto startI = scaledSurfacePoint.x - delta * scaledNormal.x;
-    for (unsigned j{ 0U }; j < nPoints; ++j)
+    for (unsigned j{ 0U }; j < order; ++j)
     {
       const auto idxY = (scaledNormal.y > 0) ? (startJ - j) : (startJ + j);
       const auto xCoordinate = startI - j * scaledNormal.x;
@@ -72,7 +72,7 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi
       auto externalPointMet = false;
       auto moveUp = false;
       unsigned nodesAdded{};
-      for (unsigned i{ 0U }; (i < 2U * nPoints) && (nodesAdded < nPoints); ++i)
+      for (unsigned i{ 0U }; (i < 2U * order) && (nodesAdded < order); ++i)
       {
         const auto isOdd = i % 2 == 1;
         const auto sumUpIdx = (isOdd && roundDown) || (!isOdd && !roundDown) || (externalPointMet && moveUp);
@@ -102,10 +102,10 @@ __host__ __device__ ReturnType getStencilIndicesImpl(const ElemT *      pCurrPhi
 
 } // namespace impl
 
-template <class GpuGridT, unsigned nPoints, class ElemT, class ReturnType = Eigen::Matrix<unsigned, nPoints, nPoints>>
-__host__ __device__ ReturnType getStencilIndices(const ElemT *      pCurrPhi,
-                                                 CudaFloat2T<ElemT> surfacePoint,
-                                                 CudaFloat2T<ElemT> normal)
+template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
+__host__ __device__ ReturnT getStencilIndices(const ElemT *      pCurrPhi,
+                                              CudaFloat2T<ElemT> surfacePoint,
+                                              CudaFloat2T<ElemT> normal)
 {
   constexpr auto hxRec = GpuGridT::hxReciprocal;
   constexpr auto hyRec = GpuGridT::hyReciprocal;
@@ -113,7 +113,7 @@ __host__ __device__ ReturnType getStencilIndices(const ElemT *      pCurrPhi,
   const CudaFloat2T<ElemT> scaledSurfacePoint{ surfacePoint.x * hxRec, surfacePoint.y * hyRec };
   const auto maxNormalElement = thrust::max(std::fabs(normal.x), std::fabs(normal.y));
   normal = { normal.x / maxNormalElement, normal.y / maxNormalElement };
-  return impl::getStencilIndicesImpl<GpuGridT, nPoints>(pCurrPhi, scaledSurfacePoint, normal);
+  return impl::getStencilIndicesImpl<GpuGridT, order>(pCurrPhi, scaledSurfacePoint, normal);
 }
 
 } // namespace detail 
