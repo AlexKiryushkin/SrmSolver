@@ -7,7 +7,7 @@
 #include "gpu_build_ghost_to_closest_map_kernel.h"
 #include "gpu_gas_dynamic_kernel.h"
 #include "gpu_matrix_writer.h"
-#include "gpu_set_ghost_points_kernel.h"
+#include "gpu_set_first_order_ghost_points_kernel.h"
 #include "solver_reduction_functions.h"
 
 namespace kae {

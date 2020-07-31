@@ -91,6 +91,7 @@
     <CudaCompile Include="float4_arithmetics_tests.cu" />
     <CudaCompile Include="gas_dynamic_flux_tests.cu" />
     <CudaCompile Include="gas_state_tests.cu" />
+    <CudaCompile Include="get_coordinate_matrix_tests.cu" />
     <CudaCompile Include="get_extrapolated_ghost_value_tests.cu" />
     <CudaCompile Include="get_stencil_indices_tests.cu" />
     <CudaCompile Include="gpu_grid_tests.cu" />

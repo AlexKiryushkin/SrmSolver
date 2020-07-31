@@ -42,9 +42,6 @@
     <ClInclude Include="std_includes.h">
       <Filter>Headers\Third Party Includes</Filter>
     </ClInclude>
-    <ClInclude Include="gpu_set_ghost_points_kernel.h">
-      <Filter>Headers\Kernels</Filter>
-    </ClInclude>
     <ClInclude Include="srm_shape_nozzle_less.h">
       <Filter>Headers\Shapes</Filter>
     </ClInclude>
@@ -143,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="get_stencil_indices.h">
       <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_set_first_order_ghost_points_kernel.h">
+      <Filter>Headers\Kernels</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

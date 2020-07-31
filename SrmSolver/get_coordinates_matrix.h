@@ -3,42 +3,126 @@
 #include <Eigen/Core>
 
 #include "cuda_float_types.h"
+#include "gas_state.h"
+#include "get_stencil_indices.h"
 #include "math_utilities.h"
 
 namespace kae {
 
 namespace detail {
 
-template <class GpuGridT, class ElemT = typename GpuGridT::ElemType>
-Eigen::Matrix<ElemT, 9U, 3U> getCoordinatesMatrix(const ElemT * pCurrPhi,
-                                                  unsigned      closestIdx, 
-                                                  ElemT         xSurface, 
-                                                  ElemT         ySurface)
-{
-  unsigned counter{ 0U };
-  Eigen::Matrix<ElemT, 9U, 3U> coordinateMatrix{};
+namespace impl {
 
-  const unsigned i = closestIdx % GpuGridT::nx;
-  const unsigned j = closestIdx / GpuGridT::nx;
-  for (unsigned iIdx{ i - 1 }; iIdx <= i + 1; ++iIdx)
+template <unsigned order>
+class CoordinateRow;
+
+template <>
+class CoordinateRow<1U>
+{
+public:
+
+  template <class ElemT>
+  using ReturnT = Eigen::Matrix<ElemT, 1U, 1U>;
+
+  template <class ElemT>
+  static ReturnT<ElemT> get(CudaFloat2T<ElemT>)
   {
-    for (unsigned jIdx{ j - 1 }; jIdx <= j + 1; ++jIdx)
+    return ReturnT<ElemT>{ 1 };
+  }
+};
+
+template <>
+class CoordinateRow<2U>
+{
+public:
+
+  template <class ElemT>
+  using ReturnT = Eigen::Matrix<ElemT, 1U, 3U>;
+
+  template <class ElemT>
+  static ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
+  {
+    return ReturnT<ElemT>{ static_cast<ElemT>(1), deltas.x, deltas.y };
+  }
+};
+
+template <>
+class CoordinateRow<3U>
+{
+public:
+
+  template <class ElemT>
+  using ReturnT = Eigen::Matrix<ElemT, 1U, 6U>;
+
+  template <class ElemT>
+  static ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
+  {
+    const auto dn   = deltas.x;
+    const auto dtau = deltas.y;
+    return ReturnT<ElemT>{ static_cast<ElemT>(1), dn, dtau, dn * dn, dn * dtau, dtau * dtau };
+  }
+};
+
+} // namespace impl
+
+template <class GpuGridT, unsigned order, class ElemT = typename GpuGridT::ElemType,
+          class InputMatrixT        = Eigen::Matrix<unsigned, order, order>,
+          unsigned degreesOfFreedom = order * (order + 1U) / 2,
+          class ReturnT             = Eigen::Matrix<ElemT, order * order, degreesOfFreedom>>
+ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
+                             const CudaFloat2T<ElemT> normal,
+                             const InputMatrixT &     indexMatrix)
+{
+  ReturnT coordinateMatrix;
+  for (unsigned i{}; i < order; ++i)
+  {
+    for(unsigned j{}; j < order; ++j)
     {
-      const auto currentGlobalIdx{ jIdx * GpuGridT::nx + iIdx };
-      if (pCurrPhi[currentGlobalIdx] < 0)
-      {
-        const CudaFloatT<2U, ElemT> globalDeltas{ iIdx * GpuGridT::hx - xSurface, jIdx * GpuGridT::hy - ySurface };
-        const CudaFloatT<2U, ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, { nx, ny }) };
-        coordinateMatrix(counter, 0) = static_cast<ElemT>(1.0);
-        coordinateMatrix(counter, 1) = localDeltas.x;
-        coordinateMatrix(counter, 2) = localDeltas.y;
-        ++counter;
-      }
+      const auto rowIndex = i * order + j;
+      const auto gridIndex = indexMatrix(i, j);
+      const auto idxX = gridIndex % GpuGridT::nx;
+      const auto idxY = gridIndex / GpuGridT::nx;
+      const CudaFloat2T<ElemT> globalDeltas{ idxX * GpuGridT::hx - surfacePoint.x, idxY * GpuGridT::hy - surfacePoint.y };
+      const CudaFloat2T<ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, normal) };
+      coordinateMatrix.row(rowIndex) = impl::CoordinateRow<order>::template get<ElemT>(localDeltas);
+    }
+  }
+  return coordinateMatrix;
+}
+
+template <class GpuGridT, unsigned order, class GasState,
+          class ElemT = typename GpuGridT::ElemType,
+          class InputMatrixT = Eigen::Matrix<ElemT, order, order>,
+          class ReturnT      = Eigen::Matrix<ElemT, order * order, 4U>>
+ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
+                               const GasState * pGasStates,
+                               const InputMatrixT &     indexMatrix)
+{
+  ReturnT rhsMatrix;
+  for (unsigned i{}; i < order; ++i)
+  {
+    for (unsigned j{}; j < order; ++j)
+    {
+      const auto rowIndex = i * order + j;
+      const auto gridIndex = indexMatrix(i, j);
+      const auto rotatedState = Rotate::get(pGasStates[gridIndex], normal.x, normal.y);
+      rhsMatrix.row(rowIndex) = { rotatedState.rho, rotatedState.ux, rotatedState.uy, rotatedState.p };
     }
   }
 
-  return coordinateMatrix;
+  return rhsMatrix;
 }
+
+template <class GpuGridT, unsigned order, class GasStateT,
+          class ElemT               = typename GpuGridT::ElemType,
+          class LhsMatrixT          = Eigen::Matrix<ElemT, order, order>,
+          unsigned degreesOfFreedom = order * (order + 1U) / 2,
+          class RhsMatrixT          = Eigen::Matrix<ElemT, order* order, degreesOfFreedom>>
+RhsMatrixT getPolynomialCoefficients(const LhsMatrixT & lhsMatrix, const RhsMatrixT & rhsMatrix)
+{
+  return lhsMatrix.colPivHouseholderQr().solve(rhsMatrix);
+}
+
 
 } // detail
 
