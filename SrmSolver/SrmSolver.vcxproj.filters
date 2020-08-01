@@ -144,6 +144,12 @@
     <ClInclude Include="gpu_set_first_order_ghost_points_kernel.h">
       <Filter>Headers\Kernels</Filter>
     </ClInclude>
+    <ClInclude Include="gpu_set_ghost_points_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="linear_system_solver.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

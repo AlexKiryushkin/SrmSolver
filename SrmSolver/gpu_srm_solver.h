@@ -61,8 +61,13 @@ private:
 
 private:
 
+  constexpr static unsigned order{ 3U };
+  using IndexMatrixT = Eigen::Matrix<unsigned, order, order>;
+
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;
   GpuMatrix<GpuGridT, CudaFloat2T<ElemType>>    m_normals;
+  GpuMatrix<GpuGridT, CudaFloat2T<ElemType>>    m_surfacePoints;
+  GpuMatrix<GpuGridT, IndexMatrixT>             m_indexMatrices;
   GpuMatrix<GpuGridT, GasStateType>             m_currState;
   GpuMatrix<GpuGridT, GasStateType>             m_prevState;
   GpuMatrix<GpuGridT, GasStateType>             m_firstState;

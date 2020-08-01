@@ -36,7 +36,7 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
 }
 
-template <class GpuGridT, class GasStateT, class PhysicalPropertiesT, class ElemT = typename GasStateT::ElemType>
+template <class GpuGridT, class GasStateT, class PhysicalPropertiesT, class ElemT>
 void setFirstOrderGhostValuesWrapper(thrust::device_ptr<GasStateT>                              pGasValues,
                                      thrust::device_ptr<const ElemT>                            pCurrPhi,
                                      thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndices,

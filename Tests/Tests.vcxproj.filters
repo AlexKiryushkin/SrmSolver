@@ -12,6 +12,7 @@
     <CudaCompile Include="gpu_level_set_solver_tests.cu" />
     <CudaCompile Include="get_stencil_indices_tests.cu" />
     <CudaCompile Include="get_coordinate_matrix_tests.cu" />
+    <CudaCompile Include="a_linear_system_solver_tests.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dummy.cpp" />

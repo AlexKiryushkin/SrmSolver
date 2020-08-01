@@ -17,10 +17,10 @@ struct ShapeSolverTypes;
 template<class ElemT>
 struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
 {
-  constexpr static unsigned nx{ 1344U * 2U + 1U };
-  constexpr static unsigned ny{ 150U * 2U + 1U };
-  using LxToType            = std::ratio<1344, 1000>;
-  using LyToType            = std::ratio<150, 1000>;
+  constexpr static unsigned nx{ 1410U / 2U + 1U };
+  constexpr static unsigned ny{ 190U  / 2U + 1U };
+  using LxToType            = std::ratio<1410, 1000>;
+  using LyToType            = std::ratio<190, 1000>;
   using GpuGridType         = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
   using ShapeType           = kae::SrmShapeNozzleLess<GpuGridType>;
   constexpr static ElemT hx = GpuGridType::hx;
@@ -51,8 +51,8 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
 template<class ElemT>
 struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
 {
-  constexpr static unsigned nx{ 820U * 2U + 1U };
-  constexpr static unsigned ny{ 300U * 2U + 1U };
+  constexpr static unsigned nx{ 820U * 4U + 1U };
+  constexpr static unsigned ny{ 300U * 4U + 1U };
   using LxToType = std::ratio<3280, 1000>;
   using LyToType = std::ratio<1200, 1000>;
   using GpuGridType = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;

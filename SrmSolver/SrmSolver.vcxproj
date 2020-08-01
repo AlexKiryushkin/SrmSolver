@@ -39,9 +39,11 @@
     <ClInclude Include="gpu_matrix_writer.h" />
     <ClInclude Include="gpu_reinitialize_kernel.h" />
     <ClInclude Include="gpu_set_first_order_ghost_points_kernel.h" />
+    <ClInclude Include="gpu_set_ghost_points_kernel.h" />
     <ClInclude Include="gpu_srm_solver.h" />
     <ClInclude Include="gpu_srm_solver_def.h" />
     <ClInclude Include="level_set_derivatives.h" />
+    <ClInclude Include="linear_system_solver.h" />
     <ClInclude Include="math_utilities.h" />
     <ClInclude Include="physical_properties.h" />
     <ClInclude Include="shapes.h" />

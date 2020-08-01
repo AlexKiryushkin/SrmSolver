@@ -88,6 +88,7 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="a_linear_system_solver_tests.cu" />
     <CudaCompile Include="float4_arithmetics_tests.cu" />
     <CudaCompile Include="gas_dynamic_flux_tests.cu" />
     <CudaCompile Include="gas_state_tests.cu" />
