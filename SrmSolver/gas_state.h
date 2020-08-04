@@ -588,6 +588,23 @@ struct LeftPrimitiveEigenVectorsX<true>
   }
 };
 
+struct DispatchedLeftPrimitiveEigenVectorsX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    constexpr auto eps = std::numeric_limits<ElemT>::epsilon();
+    return std::fabs(state.uy) > eps ? LeftPrimitiveEigenVectorsX<false>::get(state) :
+                                       LeftPrimitiveEigenVectorsX<true>::get(state);
+  }
+};
+
 template <bool uyIsZero>
 struct RightPrimitiveEigenVectorsX
 {
@@ -636,6 +653,23 @@ struct RightPrimitiveEigenVectorsX<true>
                     zero,              uy,   one,       zero,
                     state.rho * c * c, zero, zero,      state.rho * c * c;
     return resultMatrix;
+  }
+};
+
+struct DispatchedRightPrimitiveEigenVectorsX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    constexpr auto eps = std::numeric_limits<ElemT>::epsilon();
+    return std::fabs(state.uy) > eps ? RightPrimitiveEigenVectorsX<false>::get(state) :
+                                       RightPrimitiveEigenVectorsX<true>::get(state);
   }
 };
 

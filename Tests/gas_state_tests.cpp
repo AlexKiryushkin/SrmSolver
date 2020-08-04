@@ -1053,6 +1053,79 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
   test(std::false_type{});
 }
 
+TYPED_TEST(gas_state, gas_state_dispatched_eigen_vectors_x_1)
+{
+  using ElemType  = TypeParam;
+  using KappaT    = std::ratio<12, 10>;
+  using CpT       = std::ratio<6, 1>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const GasStateT smallTangentialGasState{ static_cast<ElemType>(2.0),
+                                           static_cast<ElemType>(3.0),
+                                           static_cast<ElemType>(std::numeric_limits<ElemType>::epsilon() / 2),
+                                           static_cast<ElemType>(2.4) };
+  const GasStateT zeroTangentialGasState{ static_cast<ElemType>(2.0),
+                                          static_cast<ElemType>(3.0),
+                                          static_cast<ElemType>(0.0),
+                                          static_cast<ElemType>(2.4) };
+  const auto test = [](const GasStateT & gasState)
+  {
+    const auto leftEigenVectorsX  = kae::DispatchedLeftPrimitiveEigenVectorsX::get(gasState);
+    const auto rightEigenVectorsX = kae::DispatchedRightPrimitiveEigenVectorsX::get(gasState);
+    const auto multiplyMatrix     = leftEigenVectorsX * rightEigenVectorsX;
+
+    constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                         static_cast<ElemType>(1e-14) };
+    const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
+    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  };
+
+  test(gasState);
+  test(smallTangentialGasState);
+  test(zeroTangentialGasState);
+}
+
+TYPED_TEST(gas_state, gas_state_dispatched_eigen_vectors_x_2)
+{
+  using ElemType = TypeParam;
+  using KappaT = std::ratio<12, 10>;
+  using CpT = std::ratio<6, 1>;
+  using GasStateT = GasStateType<KappaT, CpT, ElemType>;
+  const GasStateT gasState{ static_cast<ElemType>(2.0),
+                            static_cast<ElemType>(3.0),
+                            static_cast<ElemType>(4.0),
+                            static_cast<ElemType>(2.4) };
+  const GasStateT smallTangentialGasState{ static_cast<ElemType>(2.0),
+                                           static_cast<ElemType>(3.0),
+                                           static_cast<ElemType>(std::numeric_limits<ElemType>::epsilon() / 2),
+                                           static_cast<ElemType>(2.4) };
+  const GasStateT zeroTangentialGasState{ static_cast<ElemType>(2.0),
+                                          static_cast<ElemType>(3.0),
+                                          static_cast<ElemType>(0.0),
+                                          static_cast<ElemType>(2.4) };
+
+  const auto test = [](const GasStateT & gasState)
+  {
+    const auto leftEigenVectorsX = kae::DispatchedLeftPrimitiveEigenVectorsX::get(gasState);
+    const auto rightEigenVectorsX = kae::DispatchedRightPrimitiveEigenVectorsX::get(gasState);
+    const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
+    const auto multiplyMatrix = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
+
+    const auto goldMatrix = kae::PrimitiveJacobianMatrixX::get(gasState);
+    constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                         static_cast<ElemType>(1e-14) };
+    const auto thresholdMatrix = multiplyMatrix - goldMatrix;
+    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  };
+
+  test(gasState);
+  test(smallTangentialGasState);
+  test(zeroTangentialGasState);
+}
+
 TYPED_TEST(gas_state, gas_state_primitive_characteristic_variables)
 {
   using ElemType  = TypeParam;
