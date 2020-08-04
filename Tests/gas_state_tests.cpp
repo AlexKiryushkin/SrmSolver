@@ -1006,14 +1006,21 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_1)
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.4) };
 
-  const auto leftEigenVectorsX  = kae::LeftPrimitiveEigenVectorsX::get(gasState);
-  const auto rightEigenVectorsX = kae::RightPrimitiveEigenVectorsX::get(gasState);
-  const auto multiplyMatrix     = leftEigenVectorsX * rightEigenVectorsX;
+  const auto test = [&](auto dispatcher)
+  {
+    constexpr auto uyIsZero       = decltype(dispatcher)::value;
+    const auto leftEigenVectorsX  = kae::LeftPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
+    const auto rightEigenVectorsX = kae::RightPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
+    const auto multiplyMatrix     = leftEigenVectorsX * rightEigenVectorsX;
 
-  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
-                                                                       static_cast<ElemType>(1e-14) };
-  const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                         static_cast<ElemType>(1e-14) };
+    const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
+    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  };
+
+  test(std::true_type{});
+  test(std::false_type{});
 }
 
 TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
@@ -1027,16 +1034,23 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
                             static_cast<ElemType>(4.0),
                             static_cast<ElemType>(2.4) };
 
-  const auto leftEigenVectorsX  = kae::LeftPrimitiveEigenVectorsX::get(gasState);
-  const auto rightEigenVectorsX = kae::RightPrimitiveEigenVectorsX::get(gasState);
-  const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
-  const auto multiplyMatrix     = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
+  const auto test = [&](auto dispatcher)
+  {
+    constexpr auto uyIsZero       = decltype(dispatcher)::value;
+    const auto leftEigenVectorsX  = kae::LeftPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
+    const auto rightEigenVectorsX = kae::RightPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
+    const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
+    const auto multiplyMatrix     = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
 
-  const auto goldMatrix         = kae::PrimitiveJacobianMatrixX::get(gasState);
-  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
-                                                                       static_cast<ElemType>(1e-14) };
-  const auto thresholdMatrix = multiplyMatrix - goldMatrix;
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    const auto goldMatrix = kae::PrimitiveJacobianMatrixX::get(gasState);
+    constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                         static_cast<ElemType>(1e-14) };
+    const auto thresholdMatrix = multiplyMatrix - goldMatrix;
+    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  };
+
+  test(std::true_type{});
+  test(std::false_type{});
 }
 
 TYPED_TEST(gas_state, gas_state_primitive_characteristic_variables)
@@ -1053,7 +1067,8 @@ TYPED_TEST(gas_state, gas_state_primitive_characteristic_variables)
                             static_cast<ElemType>(3.0),
                             static_cast<ElemType>(2.0),
                             static_cast<ElemType>(1.0) };
-  const auto leftEigenVectors = kae::LeftPrimitiveEigenVectorsX::get(closestState);
+
+  const auto leftEigenVectors = kae::LeftPrimitiveEigenVectorsX<false>::get(closestState);
   const auto characteristicVariables = kae::PrimitiveCharacteristicVariables::get(leftEigenVectors, gasState);
 
   const Eigen::Matrix<ElemType, 4, 1> goldCharacteristicVariables{ static_cast<ElemType>(5.0),

@@ -98,14 +98,14 @@ constexpr auto SrmShapeNozzleLess<GpuGridT>::getFCritical() -> ElemType
 }
 
 template <class GpuGridT>
-__host__ __device__ auto SrmShapeNozzleLess<GpuGridT>::isChamber(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmShapeNozzleLess<GpuGridT>::isChamber(ElemType x, ElemType y) -> ElemType
 {
   return (xRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
          (x - xLeft >= static_cast<ElemType>(0.1) * GpuGridT::hx);
 }
 
 template <class GpuGridT>
-__host__ __device__ auto SrmShapeNozzleLess<GpuGridT>::isBurningSurface(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmShapeNozzleLess<GpuGridT>::isBurningSurface(ElemType x, ElemType y) -> ElemType
 {
   return (xRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
          (x - xStartPropellant >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&

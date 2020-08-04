@@ -9,7 +9,7 @@ namespace detail {
 struct AbsMinComparator
 {
   template <class ElemT>
-  __host__ __device__ bool operator()(ElemT lhsValue, ElemT rhsValue) const
+  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const
   {
     return std::fabs(lhsValue) < std::fabs(rhsValue);
   }
@@ -18,7 +18,7 @@ struct AbsMinComparator
 struct AbsMaxComparator
 {
   template <class ElemT>
-  __host__ __device__ bool operator()(ElemT lhsValue, ElemT rhsValue) const
+  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const
   {
     return std::fabs(lhsValue) > std::fabs(rhsValue);
   }
@@ -27,44 +27,44 @@ struct AbsMaxComparator
 } // namespace detail
 
 template <class ElemT>
-__host__ __device__ ElemT absmin(ElemT lhsValue, ElemT rhsValue)
+HOST_DEVICE ElemT absmin(ElemT lhsValue, ElemT rhsValue)
 {
   return thrust::min(lhsValue, rhsValue, detail::AbsMinComparator{});
 }
 
 template <class T, class... Rest>
-__host__ __device__ T absmin(T value, Rest... restValues)
+HOST_DEVICE T absmin(T value, Rest... restValues)
 {
   return absmin(value, absmin(restValues...));
 }
 
 
 template <class ElemT>
-__host__ __device__ ElemT absmax(ElemT lhsValue, ElemT rhsValue)
+HOST_DEVICE ElemT absmax(ElemT lhsValue, ElemT rhsValue)
 {
   return thrust::max(lhsValue, rhsValue, detail::AbsMinComparator{});
 }
 
 template <class T, class... Rest>
-__host__ __device__ T absmax(T value, Rest... restValues)
+HOST_DEVICE T absmax(T value, Rest... restValues)
 {
   return absmax(value, absmax(restValues...));
 }
 
 template <class ElemT>
-__host__ __device__ ElemT sqr(ElemT value)
+HOST_DEVICE ElemT sqr(ElemT value)
 {
   return value * value;
 }
 
 struct ElemwiseMax
 {
-  __host__ __device__ float2 operator()(float2 lhsValue, float2 rhsValue) const
+  HOST_DEVICE float2 operator()(float2 lhsValue, float2 rhsValue) const
   {
     return { thrust::max(lhsValue.x, rhsValue.x), thrust::max(lhsValue.y, rhsValue.y) };
   }
 
-  __host__ __device__ double2 operator()(double2 lhsValue, double2 rhsValue) const
+  HOST_DEVICE double2 operator()(double2 lhsValue, double2 rhsValue) const
   {
     return { thrust::max(lhsValue.x, rhsValue.x), thrust::max(lhsValue.y, rhsValue.y) };
   }
@@ -72,7 +72,7 @@ struct ElemwiseMax
 
 struct ElemwiseAbsMax
 {
-  __host__ __device__ float4 operator()(float4 lhsValue, float4 rhsValue) const
+  HOST_DEVICE float4 operator()(float4 lhsValue, float4 rhsValue) const
   {
     return { absmax(lhsValue.x, rhsValue.x),
              absmax(lhsValue.y, rhsValue.y),
@@ -80,7 +80,7 @@ struct ElemwiseAbsMax
              absmax(lhsValue.w, rhsValue.w) };
   }
 
-  __host__ __device__ double4 operator()(double4 lhsValue, double4 rhsValue) const
+  HOST_DEVICE double4 operator()(double4 lhsValue, double4 rhsValue) const
   {
     return { absmax(lhsValue.x, rhsValue.x),
              absmax(lhsValue.y, rhsValue.y),
@@ -91,12 +91,12 @@ struct ElemwiseAbsMax
 
 struct TransformCoordinates
 {
-  __host__ __device__ float2 operator()(float2 coordinates, float2 n) const
+  HOST_DEVICE float2 operator()(float2 coordinates, float2 n) const
   {
     return { coordinates.x * n.x + coordinates.y * n.y, -coordinates.x * n.y + coordinates.y * n.x };
   }
 
-  __host__ __device__ double2 operator()(double2 coordinates, double2 n) const
+  HOST_DEVICE double2 operator()(double2 coordinates, double2 n) const
   {
     return { coordinates.x * n.x + coordinates.y * n.y, -coordinates.x * n.y + coordinates.y * n.x };
   }

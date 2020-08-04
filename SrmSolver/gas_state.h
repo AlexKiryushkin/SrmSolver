@@ -7,6 +7,7 @@
 #pragma warning(pop)
 
 #include "cuda_float_types.h"
+#include "math_utilities.h"
 
 namespace kae {
 
@@ -26,13 +27,13 @@ struct alignas(16) GasState
 struct IsValid
 {
   template <class GasStateT>
-  __host__ __device__ bool operator()(const GasStateT & state)
+  HOST_DEVICE bool operator()(const GasStateT & state)
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static bool get(const GasStateT & state)
+  HOST_DEVICE static bool get(const GasStateT & state)
   {
     return isfinite(state.rho) && isfinite(state.ux) && isfinite(state.uy) && isfinite(state.p) &&
           (state.rho > 0) && (state.p > 0);
@@ -42,13 +43,13 @@ struct IsValid
 struct Rho
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho;
   }
@@ -57,13 +58,13 @@ struct Rho
 struct P
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.p;
   }
@@ -72,13 +73,13 @@ struct P
 struct VelocitySquared
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.ux * state.ux + state.uy * state.uy;
   }
@@ -87,13 +88,13 @@ struct VelocitySquared
 struct Velocity
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return std::sqrt(VelocitySquared::get(state));
   }
@@ -102,13 +103,13 @@ struct Velocity
 struct MassFluxX
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho * state.ux;
   }
@@ -117,13 +118,13 @@ struct MassFluxX
 struct MassFluxY
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho * state.uy;
   }
@@ -132,13 +133,13 @@ struct MassFluxY
 struct MomentumFluxXx
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho * state.ux * state.ux + state.p;
   }
@@ -147,13 +148,13 @@ struct MomentumFluxXx
 struct MomentumFluxXy
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho * state.ux * state.uy;
   }
@@ -162,13 +163,13 @@ struct MomentumFluxXy
 struct MomentumFluxYy
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.rho * state.uy * state.uy + state.p;
   }
@@ -177,13 +178,13 @@ struct MomentumFluxYy
 struct RhoEnergy
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     using ElemType = typename GasStateT::ElemType;
     constexpr ElemType multiplier = static_cast<ElemType>(1.0) / (GasStateT::kappa - static_cast<ElemType>(1.0));
@@ -194,13 +195,13 @@ struct RhoEnergy
 struct Energy
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return RhoEnergy::get(state) / state.rho;
   }
@@ -209,13 +210,13 @@ struct Energy
 struct EnthalpyFluxX
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return RhoEnergy::get(state) * state.ux + state.ux * state.p;
   }
@@ -224,13 +225,13 @@ struct EnthalpyFluxX
 struct EnthalpyFluxY
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return RhoEnergy::get(state) * state.uy + state.uy * state.p;
   }
@@ -239,13 +240,13 @@ struct EnthalpyFluxY
 struct SonicSpeedSquared
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return GasStateT::kappa * state.p / state.rho;
   }
@@ -254,13 +255,13 @@ struct SonicSpeedSquared
 struct SonicSpeed
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return std::sqrt(SonicSpeedSquared::get(state));
   }
@@ -269,13 +270,13 @@ struct SonicSpeed
 struct Mach
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return std::sqrt(VelocitySquared::get(state) / SonicSpeedSquared::get(state));
   }
@@ -284,13 +285,13 @@ struct Mach
 struct Temperature
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return state.p / state.rho / GasStateT::R;
   }
@@ -299,13 +300,13 @@ struct Temperature
 struct Rotate
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ GasStateT operator()(const GasStateT & state, ElemT nx, ElemT ny)
+  HOST_DEVICE GasStateT operator()(const GasStateT & state, ElemT nx, ElemT ny)
   {
     return get(state, nx, ny);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static GasStateT get(const GasStateT & state, ElemT nx, ElemT ny)
+  HOST_DEVICE static GasStateT get(const GasStateT & state, ElemT nx, ElemT ny)
   {
     ElemT newUx = state.ux * nx + state.uy * ny;
     ElemT newUy = -state.ux * ny + state.uy * nx;
@@ -316,13 +317,13 @@ struct Rotate
 struct ReverseRotate
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ GasStateT operator()(const GasStateT & state, ElemT nx, ElemT ny)
+  HOST_DEVICE GasStateT operator()(const GasStateT & state, ElemT nx, ElemT ny)
   {
     return get(state, nx, ny);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static GasStateT get(const GasStateT & state, ElemT nx, ElemT ny)
+  HOST_DEVICE static GasStateT get(const GasStateT & state, ElemT nx, ElemT ny)
   {
     ElemT newUx = state.ux * nx - state.uy * ny;
     ElemT newUy = state.ux * ny + state.uy * nx;
@@ -333,13 +334,13 @@ struct ReverseRotate
 struct WaveSpeedX
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return SonicSpeed::get(state) + std::fabs(state.ux);
   }
@@ -348,13 +349,13 @@ struct WaveSpeedX
 struct WaveSpeedY
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return SonicSpeed::get(state) + std::fabs(state.uy);
   }
@@ -363,13 +364,13 @@ struct WaveSpeedY
 struct WaveSpeedXY
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat2T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat2T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat2T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat2T<ElemT>
   {
     return { WaveSpeedX::get(state), WaveSpeedY::get(state) };
   }
@@ -378,13 +379,13 @@ struct WaveSpeedXY
 struct WaveSpeed
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static auto get(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE static auto get(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return SonicSpeed::get(state) + Velocity::get(state);
   }
@@ -393,13 +394,13 @@ struct WaveSpeed
 struct MirrorState
 {
   template <class GasStateT>
-  __host__ __device__ GasStateT operator()(const GasStateT & state)
+  HOST_DEVICE GasStateT operator()(const GasStateT & state)
   {
     return get(state);
   }
 
   template <class GasStateT>
-  __host__ __device__ static GasStateT get(const GasStateT & state)
+  HOST_DEVICE static GasStateT get(const GasStateT & state)
   {
     return { state.rho, -state.ux, state.uy, state.p };
   }
@@ -408,13 +409,13 @@ struct MirrorState
 struct ConservativeVariables
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { Rho::get(state), MassFluxX::get(state), MassFluxY::get(state), RhoEnergy::get(state) };
   }
@@ -423,13 +424,13 @@ struct ConservativeVariables
 struct XFluxes
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxX::get(state),
              MomentumFluxXx::get(state),
@@ -441,13 +442,13 @@ struct XFluxes
 struct YFluxes
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxY::get(state),
              MomentumFluxXy::get(state),
@@ -459,13 +460,13 @@ struct YFluxes
 struct SourceTerm
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return { MassFluxY::get(state),
              MomentumFluxXy::get(state),
@@ -477,13 +478,13 @@ struct SourceTerm
 struct ConservativeToGasState
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ GasStateT operator()(const CudaFloat4T<ElemT> & state)
+  HOST_DEVICE GasStateT operator()(const CudaFloat4T<ElemT> & state)
   {
     return get<GasStateT>(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static GasStateT get(const CudaFloat4T<ElemT> & conservativeVariables)
+  HOST_DEVICE static GasStateT get(const CudaFloat4T<ElemT> & conservativeVariables)
   {
     const ElemT ux = conservativeVariables.y / conservativeVariables.x;
     const ElemT uy = conservativeVariables.z / conservativeVariables.x;
@@ -496,13 +497,13 @@ struct ConservativeToGasState
 struct EigenValuesX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
+  HOST_DEVICE static auto get(const GasStateT & state) -> CudaFloat4T<ElemT>
   {
     const auto c = SonicSpeed::get(state);
     return { state.ux - c, state.ux, state.ux, state.ux + c };
@@ -512,13 +513,13 @@ struct EigenValuesX
 struct EigenValuesMatrixX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     const auto c = SonicSpeed::get(state);
 
@@ -528,16 +529,17 @@ struct EigenValuesMatrixX
   }
 };
 
+template <bool uyIsZero>
 struct LeftPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto half = static_cast<ElemT>(0.5);
@@ -555,16 +557,48 @@ struct LeftPrimitiveEigenVectorsX
   }
 };
 
-struct RightPrimitiveEigenVectorsX
+template<>
+struct LeftPrimitiveEigenVectorsX<true>
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    constexpr auto zero = static_cast<ElemT>(0.0);
+    constexpr auto half = static_cast<ElemT>(0.5);
+
+    const auto cRec = 1 / SonicSpeed::get(state);
+    const auto cRecSqr = sqr(cRec);
+    const auto uy = state.uy;
+    const auto rho = state.rho;
+    const auto mult = 1 / (1 - rho * uy);
+
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
+    resultMatrix
+      << zero,     -cRec / 2, zero,        cRecSqr / rho / 2,
+         mult,      zero,    -rho * mult, -cRecSqr * mult,
+        -uy * mult, zero,     mult,        uy * cRecSqr* mult,
+         zero,      cRec / 2, zero,        cRecSqr / rho / 2;
+    return resultMatrix;
+  }
+};
+
+template <bool uyIsZero>
+struct RightPrimitiveEigenVectorsX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto one = static_cast<ElemT>(1.0);
@@ -579,16 +613,42 @@ struct RightPrimitiveEigenVectorsX
   }
 };
 
-struct PrimitiveJacobianMatrixX
+template <>
+struct RightPrimitiveEigenVectorsX<true>
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    constexpr auto zero = static_cast<ElemT>(0.0);
+    constexpr auto one = static_cast<ElemT>(1.0);
+
+    const auto c  = SonicSpeed::get(state);
+    const auto uy = state.uy;
+    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
+    resultMatrix << state.rho,         one,  state.rho, state.rho,
+                   -c,                 zero, zero,      c,
+                    zero,              uy,   one,       zero,
+                    state.rho * c * c, zero, zero,      state.rho * c * c;
+    return resultMatrix;
+  }
+};
+
+struct PrimitiveJacobianMatrixX
+{
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  {
+    return get(state);
+  }
+
+  template <class GasStateT, class ElemT = typename GasStateT::ElemType>
+  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
 
@@ -606,8 +666,8 @@ struct PrimitiveCharacteristicVariables
 {
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  __host__ __device__ static auto get(const Eigen::Matrix<ElemT, 4, 4> & leftEigenVectors,
-                                      const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 1>
+  HOST_DEVICE static auto get(const Eigen::Matrix<ElemT, 4, 4> & leftEigenVectors,
+                              const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 1>
   {
     Eigen::Matrix<ElemT, 4, 1> characteristicVariables;
     characteristicVariables << state.rho, state.ux, state.uy, state.p;

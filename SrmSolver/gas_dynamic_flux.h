@@ -7,7 +7,7 @@
 namespace kae {
 
 template <class U, class F, unsigned Step, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__forceinline__ __host__ __device__ ElemT getFlux(const GasStateT * pState, unsigned idx, ElemT lambda)
+__forceinline__ HOST_DEVICE ElemT getFlux(const GasStateT * pState, unsigned idx, ElemT lambda)
 {
   constexpr ElemT epsilon{ std::is_same<ElemT, float>::value ? static_cast<ElemT>(1e-12) : static_cast<ElemT>(1e-24) };
   const ElemT plusFluxes[2U] = {
@@ -32,7 +32,7 @@ __forceinline__ __host__ __device__ ElemT getFlux(const GasStateT * pState, unsi
 }
 
 template <unsigned Step, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__forceinline__ __host__ __device__ CudaFloat4T<ElemT> getXFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
+__forceinline__ HOST_DEVICE CudaFloat4T<ElemT> getXFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
 {
   return CudaFloat4T<ElemT>{ getFlux<Rho,       MassFluxX,      Step>(pState, index, lambda),
                              getFlux<MassFluxX, MomentumFluxXx, Step>(pState, index, lambda),
@@ -41,7 +41,7 @@ __forceinline__ __host__ __device__ CudaFloat4T<ElemT> getXFluxes(const GasState
 }
 
 template <unsigned Step, class GasStateT, class ElemT = typename GasStateT::ElemType>
-__forceinline__ __host__ __device__ CudaFloat4T<ElemT> getYFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
+__forceinline__ HOST_DEVICE CudaFloat4T<ElemT> getYFluxes(const GasStateT * pState, unsigned index, ElemT lambda)
 {
   return CudaFloat4T<ElemT>{ getFlux<Rho,       MassFluxY,      Step>(pState, index, lambda),
                              getFlux<MassFluxX, MomentumFluxXy, Step>(pState, index, lambda),

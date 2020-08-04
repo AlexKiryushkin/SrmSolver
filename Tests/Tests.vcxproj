@@ -50,6 +50,8 @@
       <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(GTEST_INCLUDEDIR);$(GMOCK_INCLUDEDIR);$(SolutionDir);$(EIGEN_INCLUDE_DIR);$(GCEM_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions> -Xcompiler /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -72,6 +74,8 @@
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(GTEST_INCLUDEDIR);$(GMOCK_INCLUDEDIR);$(SolutionDir);$(EIGEN_INCLUDE_DIR);$(GCEM_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions> -Xcompiler /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -88,18 +92,9 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="a_linear_system_solver_tests.cu" />
-    <CudaCompile Include="float4_arithmetics_tests.cu" />
-    <CudaCompile Include="gas_dynamic_flux_tests.cu" />
-    <CudaCompile Include="gas_state_tests.cu" />
-    <CudaCompile Include="get_coordinate_matrix_tests.cu" />
-    <CudaCompile Include="get_extrapolated_ghost_value_tests.cu" />
-    <CudaCompile Include="get_stencil_indices_tests.cu" />
-    <CudaCompile Include="gpu_grid_tests.cu" />
     <CudaCompile Include="gpu_level_set_solver_tests.cu" />
     <CudaCompile Include="gpu_matrix_tests.cu" />
     <CudaCompile Include="kernel.cu" />
-    <CudaCompile Include="math_utilities_tests.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aliases.h" />
@@ -107,7 +102,17 @@
     <ClInclude Include="comparators.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="extrapolate_polynomial_tests.cpp" />
+    <ClCompile Include="linear_system_solver_tests.cpp" />
     <ClCompile Include="dummy.cpp" />
+    <ClCompile Include="float4_arithmetics_tests.cpp" />
+    <ClCompile Include="gas_dynamic_flux_tests.cpp" />
+    <ClCompile Include="gas_state_tests.cpp" />
+    <ClCompile Include="get_coordinate_matrix_tests.cpp" />
+    <ClCompile Include="get_extrapolated_ghost_value_tests.cpp" />
+    <ClCompile Include="get_stencil_indices_tests.cpp" />
+    <ClCompile Include="gpu_grid_tests.cpp" />
+    <ClCompile Include="math_utilities_tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

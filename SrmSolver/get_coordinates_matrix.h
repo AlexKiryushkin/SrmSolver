@@ -25,7 +25,7 @@ public:
   using ReturnT = Eigen::Matrix<ElemT, 1U, 1U>;
 
   template <class ElemT>
-  static __host__ __device__ ReturnT<ElemT> get(CudaFloat2T<ElemT>)
+  static HOST_DEVICE ReturnT<ElemT> get(CudaFloat2T<ElemT>)
   {
     return ReturnT<ElemT>{ 1 };
   }
@@ -40,7 +40,7 @@ public:
   using ReturnT = Eigen::Matrix<ElemT, 1U, 3U>;
 
   template <class ElemT>
-  static __host__ __device__ ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
+  static HOST_DEVICE ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
   {
     return ReturnT<ElemT>{ static_cast<ElemT>(1), deltas.x, deltas.y };
   }
@@ -55,7 +55,7 @@ public:
   using ReturnT = Eigen::Matrix<ElemT, 1U, 6U>;
 
   template <class ElemT>
-  static __host__ __device__ ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
+  static HOST_DEVICE ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
   {
     const auto dn   = deltas.x;
     const auto dtau = deltas.y;
@@ -69,7 +69,7 @@ template <class GpuGridT, unsigned order, class ElemT = typename GpuGridT::ElemT
           class InputMatrixT        = Eigen::Matrix<unsigned, order, order>,
           unsigned degreesOfFreedom = order * (order + 1U) / 2,
           class ReturnT             = Eigen::Matrix<ElemT, order * order, degreesOfFreedom>>
-__host__ __device__ ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
+HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
                                                  const CudaFloat2T<ElemT> normal,
                                                  const InputMatrixT &     indexMatrix)
 {
@@ -94,9 +94,9 @@ template <class GpuGridT, unsigned order, class GasState,
           class ElemT = typename GpuGridT::ElemType,
           class InputMatrixT = Eigen::Matrix<ElemT, order, order>,
           class ReturnT      = Eigen::Matrix<ElemT, order * order, 4U>>
-__host__ __device__ ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
-                                                   const GasState *         pGasStates,
-                                                   const InputMatrixT &     indexMatrix)
+HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
+                                           const GasState *         pGasStates,
+                                           const InputMatrixT &     indexMatrix)
 {
   ReturnT rhsMatrix;
   for (unsigned i{}; i < order; ++i)

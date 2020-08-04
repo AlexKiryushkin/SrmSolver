@@ -7,7 +7,7 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class ElemT>
-__host__ __device__ unsigned getClosestIndex(const ElemT * pCurrPhi,
+HOST_DEVICE unsigned getClosestIndex(const ElemT * pCurrPhi,
                                              unsigned      i,
                                              unsigned      j,
                                              ElemT         nx,

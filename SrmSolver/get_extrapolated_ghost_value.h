@@ -10,7 +10,7 @@ namespace kae {
 namespace detail {
 
 template <class PhysicalPropertiesT, class GasStateT>
-__host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState)
 {
   using ElemType = typename GasStateT::ElemType;
   const auto c = SonicSpeed::get(gasState);
@@ -49,7 +49,7 @@ __host__ __device__ GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const 
 }
 
 template <class PhysicalPropertiesT, class GasStateT>
-__host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState)
 {
   const auto c = SonicSpeed::get(gasState);
   if (gasState.ux >= c)
@@ -66,7 +66,7 @@ __host__ __device__ GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(
 }
 
 template <class GasStateT>
-__host__ __device__ GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasStateT & gasState)
 {
   const auto c = SonicSpeed::get(gasState);
   return GasStateT{ gasState.rho * (1 + gasState.ux / c),
@@ -76,13 +76,13 @@ __host__ __device__ GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasS
 }
 
 template <class GasStateT>
-__host__ __device__ GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const GasStateT & gasState)
 {
   return kae::MirrorState::get(gasState);
 }
 
 template <class PhysicalPropertiesT, class GasStateT>
-__host__ __device__ GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, 
+HOST_DEVICE GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, 
                                                                   EBoundaryCondition boundaryCondition)
 {
   switch (boundaryCondition)

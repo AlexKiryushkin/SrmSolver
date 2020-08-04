@@ -27,13 +27,13 @@ namespace detail {
 
 template <class GpuGridT, class GasStateT, class PhysicalPropertiesT, unsigned order, unsigned smSizeX,
           class InputMatrixT, class ElemT = typename GasStateT::ElemType>
-__global__ void setGhostValues(DevicePtr<GasStateT>                              pGasValues,
-                               DevicePtr<const thrust::pair<unsigned, unsigned>> pClosestIndicesMap,
-                               DevicePtr<const EBoundaryCondition>               pBoundaryConditions,
-                               DevicePtr<CudaFloat2T<ElemT>>                     pNormals,
-                               DevicePtr<CudaFloat2T<ElemT>>                     pSurfacePoints,
-                               DevicePtr<InputMatrixT>                           pIndexMatrix,
-                               unsigned                                          nClosestIndexElems)
+__global__ void setGhostValues(GasStateT *                              pGasValues,
+                               const thrust::pair<unsigned, unsigned> * pClosestIndicesMap,
+                               const EBoundaryCondition *               pBoundaryConditions,
+                               CudaFloat2T<ElemT> *                     pNormals,
+                               CudaFloat2T<ElemT> *                     pSurfacePoints,
+                               InputMatrixT *                           pIndexMatrix,
+                               unsigned                                 nClosestIndexElems)
 {
   const auto i = threadIdx.x + blockDim.x * blockIdx.x;
   if (i >= nClosestIndexElems)
@@ -41,29 +41,71 @@ __global__ void setGhostValues(DevicePtr<GasStateT>                             
     return;
   }
 
-  __shared__ InputMatrixT indexMatrices[smSizeX];
-  __shared__ LhsMatrix<ElemT, order> lhsMatrices[smSizeX];
-  __shared__ RhsMatrix<ElemT, order> rhsMatrices[smSizeX];
+  const auto indexMap            = pClosestIndicesMap[i];
+  const auto ghostIdx            = indexMap.first;
+  const auto closestIdx          = indexMap.second;
+  const auto surfacePoint        = pSurfacePoints[ghostIdx];
+  const auto normal              = pNormals[ghostIdx];
 
-  const auto indexMap         = pClosestIndicesMap.get()[i];
-  const auto globalIdx        = indexMap.first;
-  const auto closestGlobalIdx = indexMap.second;
-  const auto surfacePoint     = pSurfacePoints.get()[globalIdx];
-  const auto normal           = pNormals.get()[globalIdx];
+  const auto rotatedClosestState = Rotate::get(pGasValues[closestIdx], normal.x, normal.y);
+  const auto boundaryCondition   = pBoundaryConditions[ghostIdx];
+  const auto closestSonic        = SonicSpeed::get(rotatedClosestState);
 
-  indexMatrices[threadIdx.x]  = pIndexMatrix[globalIdx];
-  lhsMatrices[threadIdx.x]    = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrices[threadIdx.x]);
-  rhsMatrices[threadIdx.x]    = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues.get(), indexMatrices[threadIdx.x]);
+  if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
+  {
+    const auto indexMatrix = pIndexMatrix[ghostIdx];
+    const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
+    const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
+    const auto A = lhsMatrix.transpose() * lhsMatrix;
+    const auto b = lhsMatrix.transpose() * rhsMatrix;
+    const auto x = choleskySolve(A, b);
 
-  const auto A = lhsMatrices[threadIdx.x].transpose() * lhsMatrices[threadIdx.x];
-  const auto x = lhsMatrices[threadIdx.x].transpose() * rhsMatrices[threadIdx.x];
-  const auto l = choleskyDecompositionL(A);
+    const auto ghostI = ghostIdx % GpuGridT::nx;
+    const auto ghostJ = ghostIdx / GpuGridT::nx;
+    const auto dn = std::hypot(ghostI * GpuGridT::hx - surfacePoint.x, ghostJ * GpuGridT::hy - surfacePoint.y);
 
-  const auto boundaryCondition = pBoundaryConditions.get()[globalIdx];
-  const auto rotatedState      = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
-  const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedState, 
-                                                                                            boundaryCondition);
-  pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
+    const auto rho  = x(0, 0) + x(1, 0) * dn + x(3, 0) * dn * dn;
+    const auto un   = x(0, 1) + x(1, 1) * dn + x(3, 1) * dn * dn;
+    const auto utau = x(0, 2) + x(1, 2) * dn + x(3, 2) * dn * dn;
+    const auto p    = x(0, 3) + x(1, 3) * dn + x(3, 3) * dn * dn;
+    pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
+  }
+  else if (boundaryCondition == EBoundaryCondition::eWall && rotatedClosestState.p > 0.5f)
+  {
+    const auto indexMatrix = pIndexMatrix[ghostIdx];
+    const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
+    const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
+    const auto A = lhsMatrix.transpose() * lhsMatrix;
+    const auto b = lhsMatrix.transpose() * rhsMatrix;
+    const auto x = choleskySolve(A, b);
+
+    const auto ghostI = ghostIdx % GpuGridT::nx;
+    const auto ghostJ = ghostIdx / GpuGridT::nx;
+    const auto dn = std::hypot(ghostI * GpuGridT::hx - surfacePoint.x, ghostJ * GpuGridT::hy - surfacePoint.y);
+
+    const ElemT rho_0 = x(0, 0) + rotatedClosestState.rho / closestSonic * x(0, 1);
+    const ElemT un_0 = 0;
+    const ElemT utau_0 = x(0, 2);
+    const ElemT p_0 = x(0, 3) + rotatedClosestState.rho * closestSonic * x(0, 1);
+
+    const ElemT p_1 = -rho_0 * utau_0 * x(2, 1);
+    const ElemT rho_1 = x(1, 0) - 1 / closestSonic / closestSonic * (x(1, 3) - p_1);
+    const ElemT un_1 = x(1, 1) + 1 / rotatedClosestState.rho / closestSonic * (x(1, 3) - p_1);
+    const ElemT utau_1 = x(1, 2);
+
+    const auto rho  = rho_0  + rho_1 * dn  + x(3, 0) * dn * dn;
+    const auto un   = un_0   + un_1 * dn   + x(3, 1) * dn * dn;
+    const auto utau = utau_0 + utau_1 * dn + x(3, 2) * dn * dn;
+    const auto p    = p_0    + p_1 * dn    + x(3, 3) * dn * dn;
+    pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
+  }
+  else
+  {
+    const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedClosestState,
+      boundaryCondition);
+    pGasValues[ghostIdx] = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
+  }
+
 }
 
 template <class GpuGridT, class GasStateT, class PhysicalPropertiesT, unsigned order,
@@ -79,7 +121,8 @@ void setGhostValuesWrapper(DevicePtr<GasStateT>                              pGa
   constexpr unsigned blockSize = 64U;
   const unsigned gridSize = (nClosestIndexElems + blockSize - 1U) / blockSize;
   setGhostValues<GpuGridT, GasStateT, PhysicalPropertiesT, order, blockSize><<<gridSize, blockSize>>>
-  (pGasValues, pClosestIndices, pBoundaryConditions, pNormals, pSurfacePoints, pIndexMatrix, nClosestIndexElems);
+  (pGasValues.get(), pClosestIndices.get(), pBoundaryConditions.get(), pNormals.get(), 
+    pSurfacePoints.get(), pIndexMatrix.get(), nClosestIndexElems);
 }
 
 } // namespace detail

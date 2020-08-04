@@ -19,23 +19,23 @@ public:
 
   SrmShapeNozzleLess();
 
-  __host__ __device__ static bool shouldApplyScheme(unsigned i, unsigned j);
+  HOST_DEVICE static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  __host__ __device__ static bool isPointOnGrain(ElemType x, ElemType y);
+  HOST_DEVICE static bool isPointOnGrain(ElemType x, ElemType y);
 
-  __host__ __device__ static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
+  HOST_DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
 
-  __host__ __device__ static ElemType getRadius(unsigned i, unsigned j);
+  HOST_DEVICE static ElemType getRadius(unsigned i, unsigned j);
 
-  constexpr __host__ __device__ static ElemType getInitialSBurn();
+  constexpr HOST_DEVICE static ElemType getInitialSBurn();
 
-  constexpr __host__ __device__ static ElemType getFCritical();
+  constexpr HOST_DEVICE static ElemType getFCritical();
 
-  constexpr __host__ __device__ static ElemType getOutletCoordinate() { return xRight; }
+  constexpr HOST_DEVICE static ElemType getOutletCoordinate() { return xRight; }
 
-  __host__ __device__ static ElemType isChamber(ElemType x, ElemType y);
+  HOST_DEVICE static ElemType isChamber(ElemType x, ElemType y);
 
-  __host__ __device__ static ElemType isBurningSurface(ElemType x, ElemType y);
+  HOST_DEVICE static ElemType isBurningSurface(ElemType x, ElemType y);
   
   const thrust::host_vector<ElemType> & values() const;
 
@@ -95,7 +95,7 @@ private:
   };
 
   template <unsigned idx>
-  constexpr __host__ __device__ static ElemType initialSBurnPart()
+  constexpr HOST_DEVICE static ElemType initialSBurnPart()
   {
     constexpr auto dx = points[idx + 1U][0U] - points[idx][0U];
     constexpr auto dy = points[idx + 1U][1U] - points[idx][1U];
@@ -104,7 +104,7 @@ private:
   }
 
   template <unsigned idx>
-  constexpr __host__ __device__ static bool isBurningPart(ElemType x, ElemType y)
+  constexpr HOST_DEVICE static bool isBurningPart(ElemType x, ElemType y)
   {
     constexpr auto xStart = endPoints[idx][0U];
     constexpr auto yStart = endPoints[idx][1U];

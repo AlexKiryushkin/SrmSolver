@@ -57,7 +57,7 @@ CudaFloat4T<ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStat
 template <class GpuGridT, class ShapeT, class ElemT = typename GpuGridT::ElemType>
 ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi)
 {
-  static thread_local auto indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(std::begin(indexVector), std::begin(currPhi)));
   const auto zipLast  = thrust::make_zip_iterator(thrust::make_tuple(std::end(indexVector), std::end(currPhi)));
@@ -82,7 +82,7 @@ template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename 
 ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
                           const thrust::device_vector<ElemT>& currPhi)
 {
-  static thread_local auto indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(
     thrust::make_tuple(std::begin(gasValues), std::begin(indexVector), std::begin(currPhi)));
@@ -109,7 +109,7 @@ template <class GpuGridT, class ShapeT, class GasStateT, class ElemT = typename 
 ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
                             const thrust::device_vector<ElemT>& currPhi)
 {
-  static thread_local auto indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(
     thrust::make_tuple(std::begin(gasValues), std::begin(indexVector), std::begin(currPhi)));
@@ -142,7 +142,7 @@ template <class GpuGridT, class ShapeT, class ElemT = typename GpuGridT::ElemTyp
 ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
                         const thrust::device_vector<CudaFloat2T<ElemT>>& normals)
 {
-  static thread_local thrust::device_vector<unsigned> indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(
     thrust::make_tuple(std::begin(indexVector), std::begin(currPhi), std::begin(normals)));
@@ -193,7 +193,7 @@ template <class GpuGridT,
 ReturnType getMotorThrust(const thrust::device_vector<GasStateT> & gasValues,
                           const thrust::device_vector<ElemT> &     currPhi)
 {
-  static thread_local thrust::device_vector<unsigned> indexVector = generateIndexMatrix<unsigned>(currPhi.size());
+  static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(
     thrust::make_tuple(std::begin(gasValues), std::begin(indexVector), std::begin(currPhi)));

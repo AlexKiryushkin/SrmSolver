@@ -22,7 +22,7 @@ template <class ValueT>
 struct EqualToValue
 {
   template <class ElemT>
-  __host__ __device__ bool operator()(ElemT value) const
+  HOST_DEVICE bool operator()(ElemT value) const
   {
     return value == kae::detail::ToFloatV<ValueT, ElemT>;
   }
@@ -53,7 +53,7 @@ TYPED_TEST(gpu_matrix, gpu_matrix_constructor_a)
 
 struct Initializer
 {
-  __host__ __device__ float operator()(unsigned i, unsigned j) const
+  HOST_DEVICE float operator()(unsigned i, unsigned j) const
   {
     return static_cast<float>(i * i + j * j);
   }

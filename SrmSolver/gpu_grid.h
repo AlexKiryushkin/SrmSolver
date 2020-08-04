@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cuda_includes.h"
 #include "to_float.h"
 
 namespace kae

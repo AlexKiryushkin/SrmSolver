@@ -49,13 +49,13 @@ template <class PhysicalPropertiesT>
 struct BurningRate
 {
   template <class GasStateT>
-  __host__ __device__ auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
   {
     return get(P::get(state));
   }
 
   template <class ElemT, class = std::enable_if_t<std::is_floating_point<ElemT>::value>>
-  __host__ __device__ static ElemT get(ElemT p)
+  HOST_DEVICE static ElemT get(ElemT p)
   {
     return -PhysicalPropertiesT::mt * std::pow(p, PhysicalPropertiesT::nu) / PhysicalPropertiesT::rhoP;
   }

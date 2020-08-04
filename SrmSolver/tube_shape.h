@@ -15,7 +15,7 @@ public:
 
   using ElemType = typename GpuGridT::ElemType;
 
-  __host__ __device__ ElemType operator()(unsigned i, unsigned j) const
+  HOST_DEVICE ElemType operator()(unsigned i, unsigned j) const
   {
     const auto x = GpuGridT::hx * i;
     const auto y = GpuGridT::hy * j;
@@ -63,11 +63,11 @@ public:
     return absmin(distanceToLeftWall, distanceToRightWall, distanceToBottomWall, distanceToTopWall);
   }
 
-  __host__ __device__ static bool shouldApplyScheme(unsigned i, unsigned j) { return false; }
+  HOST_DEVICE static bool shouldApplyScheme(unsigned i, unsigned j) { return false; }
 
-  __host__ __device__ static bool isPointOnGrain(ElemType x, ElemType y) { return false; }
+  HOST_DEVICE static bool isPointOnGrain(ElemType x, ElemType y) { return false; }
 
-  __host__ __device__ static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y)
+  HOST_DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y)
   {
     if (std::fabs(x - xLeft) < static_cast<ElemType>(1e-6))
     {
@@ -82,7 +82,7 @@ public:
     return EBoundaryCondition::eWall;
   }
 
-  __host__ __device__ static ElemType getRadius(unsigned i, unsigned j) { return j * GpuGridT::hy - yBottom; }
+  HOST_DEVICE static ElemType getRadius(unsigned i, unsigned j) { return j * GpuGridT::hy - yBottom; }
 
 private:
 

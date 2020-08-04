@@ -12,7 +12,7 @@ namespace detail {
 namespace impl {
 
 template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
-__host__ __device__ ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
+HOST_DEVICE ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
                                                   CudaFloat2T<ElemT> scaledSurfacePoint,
                                                   CudaFloat2T<ElemT> scaledNormal)
 {
@@ -103,7 +103,7 @@ __host__ __device__ ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
 } // namespace impl
 
 template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
-__host__ __device__ ReturnT getStencilIndices(const ElemT *      pCurrPhi,
+HOST_DEVICE ReturnT getStencilIndices(const ElemT *      pCurrPhi,
                                               CudaFloat2T<ElemT> surfacePoint,
                                               CudaFloat2T<ElemT> normal)
 {

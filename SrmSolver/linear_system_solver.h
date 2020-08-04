@@ -12,7 +12,7 @@ namespace detail {
 template <class LhsMatrixT,
           class ElemT = typename LhsMatrixT::Scalar,
           class ReturnT = Eigen::Matrix<ElemT, LhsMatrixT::RowsAtCompileTime, LhsMatrixT::ColsAtCompileTime>>
-  __host__ __device__ ReturnT choleskyDecompositionL(const LhsMatrixT& lhsMatrix)
+  HOST_DEVICE ReturnT choleskyDecompositionL(const LhsMatrixT& lhsMatrix)
 {
   static_assert(LhsMatrixT::RowsAtCompileTime == LhsMatrixT::ColsAtCompileTime, "");
 
@@ -42,7 +42,7 @@ template <class LhsMatrixT,
           class RhsMatrixT,
           class ElemT = typename LhsMatrixT::Scalar,
           class ReturnT = Eigen::Matrix<ElemT, RhsMatrixT::RowsAtCompileTime, RhsMatrixT::ColsAtCompileTime>>
-  __host__ __device__ ReturnT choleskySolve(const LhsMatrixT& lhsMatrix, const RhsMatrixT & rhsMatrix)
+  HOST_DEVICE ReturnT choleskySolve(const LhsMatrixT& lhsMatrix, const RhsMatrixT & rhsMatrix)
 {
   static_assert(LhsMatrixT::RowsAtCompileTime == LhsMatrixT::ColsAtCompileTime, "");
   static_assert(LhsMatrixT::RowsAtCompileTime == RhsMatrixT::RowsAtCompileTime, "");
