@@ -31,6 +31,8 @@ public:
 
   HOST_DEVICE static bool isBurningSurface(ElemType x, ElemType y);
 
+  HOST_DEVICE constexpr static ElemType getOutletCoordinate() { return x_right; }
+
 private:
 
   HOST_DEVICE static ElemType F_prime(ElemType x);

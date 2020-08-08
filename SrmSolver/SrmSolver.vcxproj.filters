@@ -150,6 +150,15 @@
     <ClInclude Include="linear_system_solver.h">
       <Filter>Headers\Ghost Points Utils</Filter>
     </ClInclude>
+    <ClInclude Include="matrix.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix_def.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="get_polynomial.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
@@ -184,6 +193,9 @@
     </Filter>
     <Filter Include="Headers\Callbacks">
       <UniqueIdentifier>{08c3d26c-6d5c-4907-8c57-325efe40a66a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Linear Algebra">
+      <UniqueIdentifier>{2b9b0b87-dea1-4971-9787-9aecbbfe968d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

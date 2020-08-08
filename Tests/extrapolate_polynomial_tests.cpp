@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include <SrmSolver/get_coordinates_matrix.h>
+#include <SrmSolver/get_polynomial.h>
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
 #include <SrmSolver/linear_system_solver.h>  
@@ -19,6 +20,8 @@ public:
   using ElemType        = T;
   using Real2Type       = kae::CudaFloat2T<T>;
   using IndexMatrixType = Eigen::Matrix<unsigned, order, order>;
+  constexpr static ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                              static_cast<ElemType>(1e-14) };
 
   constexpr static unsigned nx{ 201U };
   constexpr static unsigned ny{ 101U };
@@ -26,6 +29,9 @@ public:
   using LxToType    = std::ratio<2, 1>;
   using LyToType    = std::ratio<1, 1>;
   using GpuGridType = kae::GpuGrid<nx, ny, LxToType, LyToType, smExtension, ElemType>;
+
+  constexpr static ElemType hxRec = GpuGridType::hxReciprocal;
+  constexpr static ElemType hyRec = GpuGridType::hyReciprocal;
 
   using KappaType    = std::ratio<12, 10>;
   using RType        = std::ratio<6, 1>;
@@ -35,9 +41,31 @@ public:
   constexpr static Real2Type normal{ static_cast<ElemType>(0.8), static_cast<ElemType>(0.6) };
 
   constexpr static std::array<ElemType, 6U> rhoCoeffs{ 1.0, 2.0, 3.0, -4.0, 5.0, 6.0 };
-  constexpr static std::array<ElemType, 6U> unCoeffs{ 3.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-  constexpr static std::array<ElemType, 6U> utauCoeffs{ 4.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+  constexpr static std::array<ElemType, 6U> uCoeffs{ 3.0, 1.0, -2.4, 3.1, 0.5, 5.0 };
+  constexpr static std::array<ElemType, 6U> vCoeffs{ 4.0, 3.0, 1.5, 2.6, 0.7, 4.0 };
   constexpr static std::array<ElemType, 6U> pCoeffs{ 2.0, -1.0, 2.5, 3.0, 0.5, 1.5 };
+
+  constexpr static std::array<ElemType, 6U> unCoeffs{
+    std::get<0U>(uCoeffs) * normal.x + std::get<0U>(vCoeffs) * normal.y,
+    std::get<1U>(uCoeffs) * normal.x + std::get<1U>(vCoeffs) * normal.y,
+    std::get<2U>(uCoeffs) * normal.x + std::get<2U>(vCoeffs) * normal.y,
+    std::get<3U>(uCoeffs) * normal.x + std::get<3U>(vCoeffs) * normal.y,
+    std::get<4U>(uCoeffs) * normal.x + std::get<4U>(vCoeffs) * normal.y,
+    std::get<5U>(uCoeffs) * normal.x + std::get<5U>(vCoeffs) * normal.y
+  };
+
+  constexpr static std::array<ElemType, 6U> utauCoeffs{
+    -std::get<0U>(uCoeffs) * normal.y + std::get<0U>(vCoeffs) * normal.x,
+    -std::get<1U>(uCoeffs) * normal.y + std::get<1U>(vCoeffs) * normal.x,
+    -std::get<2U>(uCoeffs) * normal.y + std::get<2U>(vCoeffs) * normal.x,
+    -std::get<3U>(uCoeffs) * normal.y + std::get<3U>(vCoeffs) * normal.x,
+    -std::get<4U>(uCoeffs) * normal.y + std::get<4U>(vCoeffs) * normal.x,
+    -std::get<5U>(uCoeffs) * normal.y + std::get<5U>(vCoeffs) * normal.x
+  };
+
+  constexpr static std::array<ElemType, 6U> thresholdVector{
+    threshold, threshold * hxRec, threshold * hyRec,
+    threshold * hxRec * hxRec, threshold * hxRec * hyRec, threshold * hyRec * hyRec };
 
   static std::vector<GasStateType> generateGasStates()
   {
@@ -55,17 +83,38 @@ public:
 
         const auto rho = rhoCoeffs[0] + rhoCoeffs[1] * dn + rhoCoeffs[2] * dtau +
           rhoCoeffs[3] * dn * dn + rhoCoeffs[4] * dn * dtau + rhoCoeffs[5] * dtau * dtau;
-        const auto un = unCoeffs[0] + unCoeffs[1] * dn + unCoeffs[2] * dtau +
-          unCoeffs[3] * dn * dn + unCoeffs[4] * dn * dtau + unCoeffs[5] * dtau * dtau;
-        const auto utau = utauCoeffs[0] + utauCoeffs[1] * dn + utauCoeffs[2] * dtau +
-          utauCoeffs[3] * dn * dn + utauCoeffs[4] * dn * dtau + utauCoeffs[5] * dtau * dtau;
+        const auto u = uCoeffs[0] + uCoeffs[1] * dn + uCoeffs[2] * dtau +
+          uCoeffs[3] * dn * dn + uCoeffs[4] * dn * dtau + uCoeffs[5] * dtau * dtau;
+        const auto v = vCoeffs[0] + vCoeffs[1] * dn + vCoeffs[2] * dtau +
+          vCoeffs[3] * dn * dn + vCoeffs[4] * dn * dtau + vCoeffs[5] * dtau * dtau;
         const auto p = pCoeffs[0] + pCoeffs[1] * dn + pCoeffs[2] * dtau +
           pCoeffs[3] * dn * dn + pCoeffs[4] * dn * dtau + pCoeffs[5] * dtau * dtau;
 
-        gasStates.at(index) = GasStateType{ rho, un, utau, p };
+        gasStates.at(index) = GasStateType{ rho, u, v, p };
       }
     }
     return gasStates;
+  }
+
+  static Eigen::Matrix<ElemType, 6U, 4U> goldCoefficients()
+  {
+    Eigen::Matrix<ElemType, 6U, 4U> coefficients;
+    coefficients.col(0U) = Eigen::Matrix<ElemType, 6U, 1U>(rhoCoeffs.data());
+    coefficients.col(1U) = Eigen::Matrix<ElemType, 6U, 1U>(unCoeffs.data());
+    coefficients.col(2U) = Eigen::Matrix<ElemType, 6U, 1U>(utauCoeffs.data());
+    coefficients.col(3U) = Eigen::Matrix<ElemType, 6U, 1U>(pCoeffs.data());
+
+    return coefficients;
+  }
+
+  static Eigen::Matrix<ElemType, 6U, 4U> thresholdMatrix()
+  {
+    Eigen::Matrix<ElemType, 6U, 4U> thresholds;
+    thresholds.col(0U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
+    thresholds.col(1U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
+    thresholds.col(2U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
+    thresholds.col(3U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
+    return thresholds;
   }
 }; 
 
@@ -90,14 +139,18 @@ TYPED_TEST(extrapolate_polynomial_tests, extrapolate_polynomial_tests_1)
   const auto gasStates = this->generateGasStates();
   const auto pGasValues = gasStates.data();
 
+  std::cout.precision(9);
   const auto indexMatrix = getStencilIndices<GpuGridType, tf::order>(phiValues.data(), tf::surfacePoint, tf::normal);
-  const auto lhsMatrix   = getCoordinatesMatrix<GpuGridType, tf::order>(tf::surfacePoint, tf::normal, indexMatrix);
-  const auto rhsMatrix   = getRightHandSideMatrix<GpuGridType, tf::order>(tf::normal, pGasValues, indexMatrix);
-  const auto A = lhsMatrix.transpose() * lhsMatrix;
-  const auto b = lhsMatrix.transpose() * rhsMatrix;
-  const auto x = kae::detail::choleskySolve(A, b);
+  const auto coefficients = kae::detail::getWenoPolynomial<GpuGridType, tf::order>(tf::surfacePoint, 
+                                                                               tf::normal, 
+                                                                               pGasValues, 
+                                                                               indexMatrix);
 
-  std::cout << x << '\n';
+  const auto goldCoefficients = tf::goldCoefficients();
+  const auto maxDiff = ((goldCoefficients - coefficients).cwiseAbs() - tf::thresholdMatrix()).maxCoeff();
+  EXPECT_LE(maxDiff, 0) << coefficients << "\n\n" << goldCoefficients << "\n\n"
+                        << (goldCoefficients - coefficients).cwiseAbs() << "\n\n"
+                        << tf::thresholdMatrix() << "\n\n";
 }
 
 } // namespace tests

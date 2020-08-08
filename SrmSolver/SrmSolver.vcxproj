@@ -26,6 +26,7 @@
     <ClInclude Include="get_coordinates_matrix.h" />
     <ClInclude Include="get_extrapolated_ghost_value.h" />
     <ClInclude Include="get_stencil_indices.h" />
+    <ClInclude Include="get_polynomial.h" />
     <ClInclude Include="gnuplot-iostream.h" />
     <ClInclude Include="gnu_plot_wrapper.h" />
     <ClInclude Include="gpu_build_ghost_to_closest_map_kernel.h" />
@@ -45,6 +46,8 @@
     <ClInclude Include="level_set_derivatives.h" />
     <ClInclude Include="linear_system_solver.h" />
     <ClInclude Include="math_utilities.h" />
+    <ClInclude Include="matrix.h" />
+    <ClInclude Include="matrix_def.h" />
     <ClInclude Include="physical_properties.h" />
     <ClInclude Include="shapes.h" />
     <ClInclude Include="shape_solver_types.h" />
@@ -132,6 +135,7 @@
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(EIGEN_INCLUDE_DIR);$(GCEM_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> -Xcompiler /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

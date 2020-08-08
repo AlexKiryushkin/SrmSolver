@@ -49,7 +49,6 @@ template <class LhsMatrixT,
 
   const auto lCholeskyMatrix = choleskyDecompositionL(lhsMatrix);
   ReturnT solution = rhsMatrix;
-
   for (int i{}; i < LhsMatrixT::RowsAtCompileTime; ++i)
   {
     for (int j{}; j < i; ++j)
