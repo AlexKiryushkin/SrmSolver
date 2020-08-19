@@ -5,7 +5,7 @@
 
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 TEST(absmin, absmin_functional_1)
 {
@@ -139,4 +139,4 @@ TEST(elemwise_max, elemwise_abs_max_functional_1)
   EXPECT_FLOAT4_NEAR(res, goldRes, threshold);
 }
 
-} // namespace tests
+} // namespace kae_tests

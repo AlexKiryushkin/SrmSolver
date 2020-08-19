@@ -9,7 +9,7 @@
 #include "aliases.h"
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class gas_state : public ::testing::Test {};
@@ -1155,4 +1155,4 @@ TYPED_TEST(gas_state, gas_state_primitive_characteristic_variables)
 
 }
 
-} // namespace tests
+} // namespace kae_tests

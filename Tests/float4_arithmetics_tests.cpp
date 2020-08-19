@@ -5,7 +5,7 @@
 
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class float4_arithmetics : public ::testing::Test {};
@@ -55,4 +55,4 @@ TYPED_TEST(float4_arithmetics, float4_arithmetics_operator_multiply)
   EXPECT_FLOAT4_NEAR(res, goldRes, threshold);
 }
 
-} // namespace tests
+} // namespace kae_tests

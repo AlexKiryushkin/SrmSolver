@@ -2,7 +2,7 @@
 
 #include <SrmSolver/cuda_includes.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class GpuGridT>
 class CircleShape
@@ -38,4 +38,4 @@ public:
   }
 };
 
-} // namespace tests
+} // namespace kae_tests

@@ -7,7 +7,7 @@
 
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class gpu_grid : public ::testing::Test {};
@@ -58,4 +58,4 @@ TYPED_TEST(gpu_grid, gpu_grid_fields)
   EXPECT_EQ(GpuGridType::smSizeBytes, goldSmSizeBytes);
 }
 
-} // namespace tests
+} // namespace kae_tests

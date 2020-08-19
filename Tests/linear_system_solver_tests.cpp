@@ -3,7 +3,7 @@
 
 #include <SrmSolver/linear_system_solver.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class linear_system_solver_tests : public testing::Test
@@ -65,4 +65,4 @@ TYPED_TEST(linear_system_solver_tests, cholesky_solve_1)
   this->template testCholeskySolve<6U, 4U>();
 }
 
-} // namespace tests
+} // namespace kae_tests

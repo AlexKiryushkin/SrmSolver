@@ -105,7 +105,6 @@
   <ItemGroup>
     <ClCompile Include="extrapolate_polynomial_tests.cpp" />
     <ClCompile Include="linear_system_solver_tests.cpp" />
-    <ClCompile Include="dummy.cpp" />
     <ClCompile Include="float4_arithmetics_tests.cpp" />
     <ClCompile Include="gas_dynamic_flux_tests.cpp" />
     <ClCompile Include="gas_state_tests.cpp" />
@@ -114,7 +113,10 @@
     <ClCompile Include="get_stencil_indices_tests.cpp" />
     <ClCompile Include="gpu_grid_tests.cpp" />
     <ClCompile Include="math_utilities_tests.cpp" />
+    <ClCompile Include="matrix_operations_tests.cpp" />
     <ClCompile Include="matrix_tests.cpp" />
+    <ClCompile Include="multiply_result_tests.cpp" />
+    <ClCompile Include="transpose_view_tests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

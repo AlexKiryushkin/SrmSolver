@@ -48,6 +48,9 @@
     <ClInclude Include="math_utilities.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="matrix_def.h" />
+    <ClInclude Include="matrix_operations.h" />
+    <ClInclude Include="matrix_traits.h" />
+    <ClInclude Include="multiply_result.h" />
     <ClInclude Include="physical_properties.h" />
     <ClInclude Include="shapes.h" />
     <ClInclude Include="shape_solver_types.h" />
@@ -60,7 +63,9 @@
     <ClInclude Include="srm_shape_with_umbrella_def.h" />
     <ClInclude Include="std_includes.h" />
     <ClInclude Include="to_float.h" />
+    <ClInclude Include="transpose_view.h" />
     <ClInclude Include="tube_shape.h" />
+    <ClInclude Include="wrapper_base.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="filesystem.cpp" />

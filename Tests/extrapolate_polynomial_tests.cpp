@@ -9,7 +9,7 @@
 
 #include "aliases.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class extrapolate_polynomial_tests : public ::testing::Test
@@ -153,4 +153,4 @@ TYPED_TEST(extrapolate_polynomial_tests, extrapolate_polynomial_tests_1)
                         << tf::thresholdMatrix() << "\n\n";
 }
 
-} // namespace tests
+} // namespace kae_tests

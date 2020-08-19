@@ -29,24 +29,4 @@ constexpr Matrix<ElemT, nRows, nCols>::Matrix(const std::initializer_list<std::i
   }
 }
 
-template<class ElemT, unsigned nRows, unsigned nCommon, unsigned nCols>
-Matrix<ElemT, nRows, nCols> operator*(const Matrix<ElemT, nRows, nCommon>& lhs, 
-                                      const Matrix<ElemT, nCommon, nCols>& rhs)
-{
-  Matrix<ElemT, nRows, nCols> result;
-  for (unsigned i{}; i < nRows; ++i)
-  {
-    for (unsigned j{}; j < nCols; ++j)
-    {
-      ElemT elem{};
-      for (unsigned k{}; k < nCommon; ++k)
-      {
-        elem += lhs(i, k) * rhs(k, j);
-      }
-      result(i, j) = elem;
-    }
-  }
-  return result;
-}
-
 } // namespace kae

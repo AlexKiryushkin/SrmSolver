@@ -3,7 +3,7 @@
 
 #include <SrmSolver/matrix.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class matrix_tests : public ::testing::Test
@@ -74,4 +74,24 @@ TYPED_TEST(matrix_tests, matrix_tests_initializer_list_constructor)
   }
 }
 
-} // namespace tests
+TYPED_TEST(matrix_tests, matrix_tests_operator_round_braces)
+{
+  using tf = TestFixture;
+  using ElemType = typename tf::ElemType;
+  constexpr auto rows = 4U;
+  constexpr auto cols = 3U;
+  using MatrixType = typename tf::template MatrixType<rows, cols>;
+
+  MatrixType matrix{};
+  for (unsigned i{}; i < rows; ++i)
+  {
+    for (unsigned j{}; j < cols; ++j)
+    {
+      const auto value = static_cast<ElemType>(i * cols + j + 1U);
+      matrix(i, j) = value;
+      EXPECT_EQ(matrix(i, j), value);
+    }
+  }
+}
+
+} // namespace kae_tests

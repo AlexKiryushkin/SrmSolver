@@ -6,7 +6,7 @@
 
 #include "circle_shape.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class gpu_level_set_solver : public ::testing::Test
@@ -192,4 +192,4 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_b)
   }
 }
 
-} // namespace tests
+} // namespace kae_tests

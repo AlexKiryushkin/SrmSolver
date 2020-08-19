@@ -6,7 +6,6 @@
     <CudaCompile Include="gpu_level_set_solver_tests.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dummy.cpp" />
     <ClCompile Include="float4_arithmetics_tests.cpp" />
     <ClCompile Include="gas_dynamic_flux_tests.cpp" />
     <ClCompile Include="gas_state_tests.cpp" />
@@ -18,6 +17,9 @@
     <ClCompile Include="linear_system_solver_tests.cpp" />
     <ClCompile Include="extrapolate_polynomial_tests.cpp" />
     <ClCompile Include="matrix_tests.cpp" />
+    <ClCompile Include="transpose_view_tests.cpp" />
+    <ClCompile Include="matrix_operations_tests.cpp" />
+    <ClCompile Include="multiply_result_tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="aliases.h">

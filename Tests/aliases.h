@@ -3,7 +3,7 @@
 #include <SrmSolver/gas_state.h>
 #include <SrmSolver/to_float.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class KappaT, class RT, class ElemT>
 struct GasStateProperties

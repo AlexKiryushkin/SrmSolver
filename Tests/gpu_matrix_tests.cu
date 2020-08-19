@@ -16,7 +16,7 @@
 #include <SrmSolver/to_float.h>
 #include <SrmSolver/gpu_grid.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class ValueT>
 struct EqualToValue
@@ -119,4 +119,4 @@ TYPED_TEST(gpu_matrix, gpu_matrix_values_const)
   EXPECT_EQ(matrixSize, nx * ny);
 }
 
-} // namespace tests
+} // namespace kae_tests

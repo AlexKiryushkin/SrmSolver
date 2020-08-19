@@ -159,6 +159,21 @@
     <ClInclude Include="get_polynomial.h">
       <Filter>Headers\Kernels</Filter>
     </ClInclude>
+    <ClInclude Include="transpose_view.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="multiply_result.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="wrapper_base.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix_operations.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix_traits.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

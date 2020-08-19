@@ -10,7 +10,7 @@
 #include "aliases.h"
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class gas_dynamic_flux : public ::testing::Test
@@ -85,4 +85,4 @@ TYPED_TEST(gas_dynamic_flux, gas_dynamic_flux_mass_flux)
   }
 }
 
-} // namespace tests
+} // namespace kae_tests

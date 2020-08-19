@@ -7,7 +7,7 @@
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class get_coordinate_matrix : public testing::Test
@@ -105,4 +105,4 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_2)
   EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
 }
 
-} // namespace tests
+} // namespace kae_tests

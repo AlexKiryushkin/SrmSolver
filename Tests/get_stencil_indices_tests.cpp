@@ -5,7 +5,7 @@
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class get_stencil_indices_tests : public ::testing::Test
@@ -492,4 +492,4 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_8)
   test(7284U, 2U, { 7283U, 7282U, 7281U });
 }
 
-} // namespace tests
+} // namespace kae_tests

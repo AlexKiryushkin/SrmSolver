@@ -10,7 +10,7 @@
 #include "aliases.h"
 #include "comparators.h"
 
-namespace tests {
+namespace kae_tests {
 
 template <class T>
 class get_extrapolated_ghost_value : public ::testing::Test
@@ -117,4 +117,4 @@ TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_massflow_i
   EXPECT_GAS_STATE_NEAR(extrapolatedState, goldExtrapolatedState, threshold);
 }
 
-} // namespace tests
+} // namespace kae_tests
