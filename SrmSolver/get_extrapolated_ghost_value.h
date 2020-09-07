@@ -5,6 +5,8 @@
 #include "boundary_condition.h"
 #include "gas_state.h"
 
+#pragma warning( disable : 4068 )
+
 namespace kae {
 
 namespace detail {

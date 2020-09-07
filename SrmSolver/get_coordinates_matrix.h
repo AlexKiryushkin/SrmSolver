@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Eigen/Core>
-
 #include "cuda_float_types.h"
 #include "gas_state.h"
 #include "get_stencil_indices.h"
 #include "math_utilities.h"
+#include "matrix.h"
+#include "matrix_operations.h"
 
 namespace kae {
 
@@ -22,12 +22,12 @@ class CoordinateRow<1U>
 public:
 
   template <class ElemT>
-  using ReturnT = Eigen::Matrix<ElemT, 1U, 1U>;
+  using ReturnT = kae::Matrix<ElemT, 1U, 1U>;
 
   template <class GpuGridT, class ElemT>
   static HOST_DEVICE ReturnT<ElemT> get(CudaFloat2T<ElemT>)
   {
-    return ReturnT<ElemT>{ 1 };
+    return ReturnT<ElemT>{ static_cast<ElemT>(1) };
   }
 };
 
@@ -37,7 +37,7 @@ class CoordinateRow<2U>
 public:
 
   template <class ElemT>
-  using ReturnT = Eigen::Matrix<ElemT, 1U, 3U>;
+  using ReturnT = kae::Matrix<ElemT, 1U, 3U>;
 
   template <class GpuGridT, class ElemT>
   static HOST_DEVICE ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
@@ -52,7 +52,7 @@ class CoordinateRow<3U>
 public:
 
   template <class ElemT>
-  using ReturnT = Eigen::Matrix<ElemT, 1U, 6U>;
+  using ReturnT = kae::Matrix<ElemT, 1U, 6U>;
 
   template <class GpuGridT, class ElemT>
   static HOST_DEVICE ReturnT<ElemT> get(const CudaFloat2T<ElemT> deltas)
@@ -66,9 +66,9 @@ public:
 } // namespace impl
 
 template <class GpuGridT, unsigned order, class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT        = Eigen::Matrix<unsigned, order, order>,
+          class InputMatrixT        = kae::Matrix<unsigned, order, order>,
           unsigned degreesOfFreedom = order * (order + 1U) / 2,
-          class ReturnT             = Eigen::Matrix<ElemT, order * order, degreesOfFreedom>>
+          class ReturnT             = kae::Matrix<ElemT, order * order, degreesOfFreedom>>
 HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
                                          const CudaFloat2T<ElemT> normal,
                                          const InputMatrixT &     indexMatrix)
@@ -84,7 +84,7 @@ HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
       const auto idxY = gridIndex / GpuGridT::nx;
       const CudaFloat2T<ElemT> globalDeltas{ idxX * GpuGridT::hx - surfacePoint.x, idxY * GpuGridT::hy - surfacePoint.y };
       const CudaFloat2T<ElemT> localDeltas{ TransformCoordinates{}(globalDeltas, normal) };
-      coordinateMatrix.row(rowIndex) = impl::CoordinateRow<order>::template get<GpuGridT, ElemT>(localDeltas);
+      setRow(coordinateMatrix, rowIndex, impl::CoordinateRow<order>::template get<GpuGridT, ElemT>(localDeltas));
     }
   }
   return coordinateMatrix;
@@ -92,8 +92,8 @@ HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
 
 template <class GpuGridT, unsigned order, class GasState,
           class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT = Eigen::Matrix<ElemT, order, order>,
-          class ReturnT      = Eigen::Matrix<ElemT, order * order, 4U>>
+          class InputMatrixT = kae::Matrix<ElemT, order, order>,
+          class ReturnT      = kae::Matrix<ElemT, order * order, 4U>>
 HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
                                            const GasState *         pGasStates,
                                            const InputMatrixT &     indexMatrix)
@@ -106,7 +106,8 @@ HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
       const auto rowIndex = i * order + j;
       const auto gridIndex = indexMatrix(i, j);
       const auto rotatedState = Rotate::get(pGasStates[gridIndex], normal.x, normal.y);
-      rhsMatrix.row(rowIndex) << rotatedState.rho, rotatedState.ux, rotatedState.uy, rotatedState.p;
+      setRow(rhsMatrix, rowIndex, 
+            kae::Matrix<ElemT, 4U, 1U>{rotatedState.rho, rotatedState.ux, rotatedState.uy, rotatedState.p});
     }
   }
 
@@ -115,8 +116,8 @@ HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
 
 template <class GpuGridT, unsigned order, class GasState,
           class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT = Eigen::Matrix<ElemT, order, order>,
-          class ReturnT      = Eigen::Matrix<ElemT, order * order, 4U>>
+          class InputMatrixT = kae::Matrix<ElemT, order, order>,
+          class ReturnT      = kae::Matrix<ElemT, order * order, 4U>>
 HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
                                            const GasState *         pGasStates,
                                            const GasState &         rotatedClosestState,
@@ -132,7 +133,7 @@ HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
       const auto gridIndex = indexMatrix(i, j);
       const auto rotatedState = Rotate::get(pGasStates[gridIndex], normal.x, normal.y);
       const auto characteristicsVariables = PrimitiveCharacteristicVariables::get(leftEigenVectors, rotatedState);
-      rhsMatrix.row(rowIndex) = characteristicsVariables;
+      setRow(rhsMatrix, rowIndex, characteristicsVariables);
     }
   }
 

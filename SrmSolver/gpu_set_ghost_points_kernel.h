@@ -8,18 +8,19 @@
 #include "get_coordinates_matrix.h"
 #include "get_extrapolated_ghost_value.h"
 #include "linear_system_solver.h"
+#include "matrix_operations.h"
 
 template <class T>
 using DevicePtr = thrust::device_ptr<T>;
 
 template <class ElemT, unsigned order>
-using LhsMatrix = Eigen::Matrix<ElemT, order* order, order* (order + 1U) / 2U>;
+using LhsMatrix = kae::Matrix<ElemT, order* order, order* (order + 1U) / 2U>;
 
 template <class ElemT, unsigned order>
-using RhsMatrix = Eigen::Matrix<ElemT, order* order, 4U>;
+using RhsMatrix = kae::Matrix<ElemT, order* order, 4U>;
 
 template <class ElemT, unsigned order>
-using SquareMatrix = Eigen::Matrix<ElemT, order, order>;
+using SquareMatrix = kae::Matrix<ElemT, order, order>;
 
 namespace kae {
 
@@ -51,13 +52,13 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
   const auto boundaryCondition   = pBoundaryConditions[ghostIdx];
   const auto closestSonic        = SonicSpeed::get(rotatedClosestState);
 
-  if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
+  /*if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
   {
     const auto indexMatrix = pIndexMatrix[ghostIdx];
     const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
     const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
-    const auto A = lhsMatrix.transpose() * lhsMatrix;
-    const auto b = lhsMatrix.transpose() * rhsMatrix;
+    const auto A = transpose(lhsMatrix) * lhsMatrix;
+    const auto b = transpose(lhsMatrix) * rhsMatrix;
     const auto x = choleskySolve(A, b);
 
     const auto ghostI = ghostIdx % GpuGridT::nx;
@@ -75,8 +76,8 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
     const auto indexMatrix = pIndexMatrix[ghostIdx];
     const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
     const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
-    const auto A = lhsMatrix.transpose() * lhsMatrix;
-    const auto b = lhsMatrix.transpose() * rhsMatrix;
+    const auto A = transpose(lhsMatrix) * lhsMatrix;
+    const auto b = transpose(lhsMatrix) * rhsMatrix;
     const auto x = choleskySolve(A, b);
 
     const auto ghostI = ghostIdx % GpuGridT::nx;
@@ -99,7 +100,7 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
     const auto p    = p_0    + p_1 * dn    + x(3, 3) * dn * dn;
     pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
   }
-  else
+  else*/
   {
     const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedClosestState,
       boundaryCondition);

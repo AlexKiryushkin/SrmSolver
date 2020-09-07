@@ -9,7 +9,7 @@ namespace detail {
 struct AbsMinComparator
 {
   template <class ElemT>
-  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const
+  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const noexcept
   {
     return std::fabs(lhsValue) < std::fabs(rhsValue);
   }
@@ -18,9 +18,18 @@ struct AbsMinComparator
 struct AbsMaxComparator
 {
   template <class ElemT>
-  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const
+  HOST_DEVICE bool operator()(ElemT lhsValue, ElemT rhsValue) const noexcept
   {
     return std::fabs(lhsValue) > std::fabs(rhsValue);
+  }
+};
+
+struct AbsFunctor
+{
+  template <class ElemT>
+  HOST_DEVICE ElemT operator()(ElemT value) const noexcept
+  {
+    return std::fabs(value);
   }
 };
 

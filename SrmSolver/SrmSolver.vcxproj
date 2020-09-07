@@ -16,7 +16,7 @@
     <ClInclude Include="cuda_includes.h" />
     <ClInclude Include="delta_dirac_function.h" />
     <ClInclude Include="discretization_order.h" />
-    <ClInclude Include="eigen_includes.h" />
+    <ClInclude Include="elemwise_result.h" />
     <ClInclude Include="empty_callback.h" />
     <ClInclude Include="filesystem.h" />
     <ClInclude Include="float4_arithmetics.h" />
@@ -49,7 +49,6 @@
     <ClInclude Include="matrix.h" />
     <ClInclude Include="matrix_def.h" />
     <ClInclude Include="matrix_operations.h" />
-    <ClInclude Include="matrix_traits.h" />
     <ClInclude Include="multiply_result.h" />
     <ClInclude Include="physical_properties.h" />
     <ClInclude Include="shapes.h" />
@@ -114,6 +113,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(EIGEN_INCLUDE_DIR);$(GCEM_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -138,7 +138,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;WIN32;WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(BOOST_ROOT);$(EIGEN_INCLUDE_DIR);$(GCEM_INCLUDE_DIR);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions> -Xcompiler /Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>

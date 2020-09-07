@@ -10,7 +10,7 @@ int main()
   try
   {
     using ElemType               = float;
-    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eWithUmbrellaShape, ElemType>;
+    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eNozzleLessShape, ElemType>;
     using ShapeType              = ShapeSolverType::ShapeType;
     using SrmSolverType          = ShapeSolverType::SrmSolverType;
     using PhysicalPropertiesType = ShapeSolverType::PhysicalPropertiesType;

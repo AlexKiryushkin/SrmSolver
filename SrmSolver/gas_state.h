@@ -1,13 +1,14 @@
 #pragma once
 
 #include "cuda_includes.h"
-#include "eigen_includes.h"
+
 #pragma warning(push, 0)
 #include <gcem.hpp>
 #pragma warning(pop)
 
 #include "cuda_float_types.h"
 #include "math_utilities.h"
+#include "matrix.h"
 
 namespace kae {
 
@@ -513,19 +514,20 @@ struct EigenValuesX
 struct EigenValuesMatrixX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     const auto c = SonicSpeed::get(state);
-
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix = Eigen::Matrix<ElemT, 4, 4>::Zero();
-    resultMatrix.diagonal() << state.ux - c, state.ux, state.ux, state.ux + c;
-    return resultMatrix;
+    constexpr auto zero = static_cast<ElemT>(0);
+    return kae::Matrix<ElemT, 4, 4>{ state.ux - c, zero,     zero,     zero,
+                                     zero,         state.ux, zero,     zero,
+                                     zero,         zero,     state.ux, zero,
+                                     zero,         zero,     zero,     state.ux + c };
   }
 };
 
@@ -533,13 +535,13 @@ template <bool uyIsZero>
 struct LeftPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto half = static_cast<ElemT>(0.5);
@@ -547,13 +549,11 @@ struct LeftPrimitiveEigenVectorsX
     const auto cReciprocal = 1 / SonicSpeed::get(state);
     const auto rhoReciprocal = 1 / state.rho;
 
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
-    resultMatrix
-      << zero,                          -half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal,
+    return kae::Matrix<ElemT, 4, 4>{
+         zero,                          -half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal,
         -half * state.uy *rhoReciprocal, zero,               half,  half * state.uy * rhoReciprocal * cReciprocal * cReciprocal,
          half * state.uy *rhoReciprocal, zero,               half, -half * state.uy * rhoReciprocal * cReciprocal * cReciprocal,
-         zero,                           half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal;
-    return resultMatrix;
+         zero,                           half * cReciprocal, zero,  half * rhoReciprocal * cReciprocal * cReciprocal};
   }
 };
 
@@ -561,13 +561,13 @@ template<>
 struct LeftPrimitiveEigenVectorsX<true>
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto half = static_cast<ElemT>(0.5);
@@ -578,26 +578,24 @@ struct LeftPrimitiveEigenVectorsX<true>
     const auto rho = state.rho;
     const auto mult = 1 / (1 - rho * uy);
 
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
-    resultMatrix
-      << zero,     -cRec / 2, zero,        cRecSqr / rho / 2,
+    return kae::Matrix<ElemT, 4, 4>{
+         zero,     -cRec / 2, zero,        cRecSqr / rho / 2,
          mult,      zero,    -rho * mult, -cRecSqr * mult,
-        -uy * mult, zero,     mult,        uy * cRecSqr* mult,
-         zero,      cRec / 2, zero,        cRecSqr / rho / 2;
-    return resultMatrix;
+        -uy * mult, zero,     mult,        uy * cRecSqr * mult,
+         zero,      cRec / 2, zero,        cRecSqr / rho / 2 };
   }
 };
 
 struct DispatchedLeftPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto eps = std::numeric_limits<ElemT>::epsilon();
     return std::fabs(state.uy) > eps ? LeftPrimitiveEigenVectorsX<false>::get(state) :
@@ -609,24 +607,23 @@ template <bool uyIsZero>
 struct RightPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto one = static_cast<ElemT>(1.0);
 
     const auto c = SonicSpeed::get(state);
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
-    resultMatrix << state.rho,        -state.rho / state.uy, state.rho / state.uy, state.rho,
-                   -c,                 zero,                 zero,                  c,
-                    zero,              one,                  one,                   zero,
-                    state.rho * c * c, zero,                 zero,                  state.rho * c * c;
-    return resultMatrix;
+    return kae::Matrix<ElemT, 4, 4>{
+      state.rho,        -state.rho / state.uy, state.rho / state.uy, state.rho,
+     -c,                 zero,                 zero,                  c,
+      zero,              one,                  one,                   zero,
+      state.rho * c * c, zero,                 zero,                  state.rho * c * c };
   }
 };
 
@@ -634,38 +631,37 @@ template <>
 struct RightPrimitiveEigenVectorsX<true>
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
     constexpr auto one = static_cast<ElemT>(1.0);
 
     const auto c  = SonicSpeed::get(state);
     const auto uy = state.uy;
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
-    resultMatrix << state.rho,         one,  state.rho, state.rho,
-                   -c,                 zero, zero,      c,
-                    zero,              uy,   one,       zero,
-                    state.rho * c * c, zero, zero,      state.rho * c * c;
-    return resultMatrix;
+    return kae::Matrix<ElemT, 4, 4>{
+      state.rho,         one,  state.rho, state.rho,
+     -c,                 zero, zero,      c,
+      zero,              uy,   one,       zero,
+      state.rho * c * c, zero, zero,      state.rho * c * c };
   }
 };
 
 struct DispatchedRightPrimitiveEigenVectorsX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT& state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT& state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto eps = std::numeric_limits<ElemT>::epsilon();
     return std::fabs(state.uy) > eps ? RightPrimitiveEigenVectorsX<false>::get(state) :
@@ -676,23 +672,22 @@ struct DispatchedRightPrimitiveEigenVectorsX
 struct PrimitiveJacobianMatrixX
 {
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE auto operator()(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     return get(state);
   }
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 4>
+  HOST_DEVICE static auto get(const GasStateT & state) -> kae::Matrix<ElemT, 4, 4>
   {
     constexpr auto zero = static_cast<ElemT>(0.0);
 
     const auto c = SonicSpeed::get(state);
-    Eigen::Matrix<ElemT, 4, 4> resultMatrix;
-    resultMatrix << state.ux, state.rho,         zero,     zero,
-                    zero,     state.ux,          zero,     1 / state.rho,
-                    zero,     zero,              state.ux, zero,
-                    zero,     state.rho * c * c, zero,     state.ux;
-    return resultMatrix;
+    return kae::Matrix<ElemT, 4, 4>{
+      state.ux, state.rho,         zero,     zero,
+      zero,     state.ux,          zero,     1 / state.rho,
+      zero,     zero,              state.ux, zero,
+      zero,     state.rho * c * c, zero,     state.ux};
   }
 };
 
@@ -700,11 +695,10 @@ struct PrimitiveCharacteristicVariables
 {
 
   template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-  HOST_DEVICE static auto get(const Eigen::Matrix<ElemT, 4, 4> & leftEigenVectors,
-                              const GasStateT & state) -> Eigen::Matrix<ElemT, 4, 1>
+  HOST_DEVICE static auto get(const kae::Matrix<ElemT, 4, 4> & leftEigenVectors,
+                              const GasStateT & state) -> kae::Matrix<ElemT, 4, 1>
   {
-    Eigen::Matrix<ElemT, 4, 1> characteristicVariables;
-    characteristicVariables << state.rho, state.ux, state.uy, state.p;
+    kae::Matrix<ElemT, 4, 1> characteristicVariables{ state.rho, state.ux, state.uy, state.p };
     return leftEigenVectors * characteristicVariables;
   }
 };

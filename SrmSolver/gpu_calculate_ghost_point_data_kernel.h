@@ -2,8 +2,6 @@
 
 #include "cuda_includes.h"
 
-#include <Eigen/Core>
-
 #include "boundary_condition.h"
 #include "cuda_float_types.h"
 #include "get_closest_index.h"
@@ -11,6 +9,8 @@
 #include "get_extrapolated_ghost_value.h"
 #include "level_set_derivatives.h"
 #include "math_utilities.h"
+#include "matrix.h"
+#include "matrix_operations.h"
 
 namespace kae {
 
@@ -22,7 +22,7 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
                                         thrust::device_ptr<EBoundaryCondition>                 pBoundaryConditions,
                                         thrust::device_ptr<CudaFloat2T<ElemT>>                 pNormals,
                                         thrust::device_ptr<CudaFloat2T<ElemT>>                 pSurfacePoints,
-                                        thrust::device_ptr<Eigen::Matrix<unsigned, order, order>> pStencilIndices)
+                                        thrust::device_ptr<kae::Matrix<unsigned, order, order>> pStencilIndices)
 {
   const unsigned i         = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j         = threadIdx.y + blockDim.y * blockIdx.y;
@@ -87,7 +87,7 @@ void calculateGhostPointDataWrapper(thrust::device_ptr<const ElemT>             
                                     thrust::device_ptr<EBoundaryCondition>                 pBoundaryConditions,
                                     thrust::device_ptr<CudaFloat2T<ElemT>>                 pNormals,
                                     thrust::device_ptr<CudaFloat2T<ElemT>>                 pSurfacePoints,
-                                    thrust::device_ptr<Eigen::Matrix<unsigned, order, order>> pStencilIndices)
+                                    thrust::device_ptr<kae::Matrix<unsigned, order, order>> pStencilIndices)
 {
   calculateGhostPointData<GpuGridT, ShapeT, order><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
     (pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, pSurfacePoints, pStencilIndices);

@@ -62,7 +62,7 @@ private:
 private:
 
   constexpr static unsigned order{ 3U };
-  using IndexMatrixT = Eigen::Matrix<unsigned, order, order>;
+  using IndexMatrixT = kae::Matrix<unsigned, order, order>;
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;
   GpuMatrix<GpuGridT, CudaFloat2T<ElemType>>    m_normals;

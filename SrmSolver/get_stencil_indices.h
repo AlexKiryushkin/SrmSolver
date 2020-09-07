@@ -1,7 +1,5 @@
 #pragma once
 
-#include "eigen_includes.h"
-
 #include "cuda_float_types.h"
 #include "float4_arithmetics.h"
 
@@ -11,7 +9,7 @@ namespace detail {
 
 namespace impl {
 
-template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
+template <class GpuGridT, unsigned order, class ElemT, class ReturnT = kae::Matrix<unsigned, order, order>>
 HOST_DEVICE ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
                                                   CudaFloat2T<ElemT> scaledSurfacePoint,
                                                   CudaFloat2T<ElemT> scaledNormal)
@@ -102,7 +100,7 @@ HOST_DEVICE ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
 
 } // namespace impl
 
-template <class GpuGridT, unsigned order, class ElemT, class ReturnT = Eigen::Matrix<unsigned, order, order>>
+template <class GpuGridT, unsigned order, class ElemT, class ReturnT = kae::Matrix<unsigned, order, order>>
 HOST_DEVICE ReturnT getStencilIndices(const ElemT *      pCurrPhi,
                                               CudaFloat2T<ElemT> surfacePoint,
                                               CudaFloat2T<ElemT> normal)

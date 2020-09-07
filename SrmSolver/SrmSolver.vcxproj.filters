@@ -36,9 +36,6 @@
     <ClInclude Include="cuda_includes.h">
       <Filter>Headers\Third Party Includes</Filter>
     </ClInclude>
-    <ClInclude Include="eigen_includes.h">
-      <Filter>Headers\Third Party Includes</Filter>
-    </ClInclude>
     <ClInclude Include="std_includes.h">
       <Filter>Headers\Third Party Includes</Filter>
     </ClInclude>
@@ -171,7 +168,7 @@
     <ClInclude Include="matrix_operations.h">
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
-    <ClInclude Include="matrix_traits.h">
+    <ClInclude Include="elemwise_result.h">
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
   </ItemGroup>
