@@ -4,6 +4,8 @@
 #include <SrmSolver/cuda_float_types.h>
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
+#include <SrmSolver/matrix.h>
+#include <SrmSolver/matrix_operations.h>
 
 namespace kae_tests {
 
@@ -15,7 +17,7 @@ public:
   constexpr static unsigned nPoints{ 3U };
   using ElemType        = T;
   using Real2Type       = kae::CudaFloat2T<T>;
-  using IndexMatrixType = Eigen::Matrix<unsigned, nPoints, nPoints>;
+  using IndexMatrixType = kae::Matrix<unsigned, nPoints, nPoints>;
 
   constexpr static unsigned nx{ 201U };
   constexpr static unsigned ny{ 101U };
@@ -57,7 +59,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_1)
     const auto list2       = (nList == 2) ? list : InitList{ 6475U, 6274U, 6676U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -67,7 +69,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_1)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -115,7 +117,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_2)
     const auto list2       = (nList == 2) ? list : InitList{ 7279U, 7078U, 7480U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -125,7 +127,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_2)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -173,7 +175,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_3)
     const auto list2       = (nList == 2) ? list : InitList{ 6480U, 6279U, 6681U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -183,7 +185,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_3)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -231,7 +233,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_4)
     const auto list2 = (nList == 2) ? list : InitList{ 7083U, 7284U, 6882U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -241,7 +243,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_4)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -289,7 +291,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_5)
     const auto list2 = (nList == 2) ? list : InitList{ 6275U, 6274U, 6276U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -299,7 +301,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_5)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -347,7 +349,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_6)
     const auto list2 = (nList == 2) ? list : InitList{ 6279U, 6278U, 6280U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -357,7 +359,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_6)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };
@@ -405,7 +407,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_7)
     const auto list2 = (nList == 2) ? list : InitList{ 7280U, 7279U, 7281U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -415,7 +417,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_7)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
     phiValues.at(index) = negativeValue;
   };
 
@@ -462,7 +464,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_8)
     const auto list2 = (nList == 2) ? list : InitList{ 7284U, 7283U, 7285U };
     const IndexMatrixType goldMatrix{ list0, list1, list2 };
     const IndexMatrixType diffMatrix = indexMatrix - goldMatrix;
-    if (diffMatrix.maxCoeff() != 0U)
+    if (maxCoeff(diffMatrix) != 0U)
     {
       std::cout << "\nCalculated matrix:\n" << indexMatrix << "\nGold matrix:\n" << goldMatrix << "\nInitializer lists:\n";
       std::copy(std::begin(list0), std::end(list0), std::ostream_iterator<unsigned>{ std::cout, " " });
@@ -472,7 +474,7 @@ TYPED_TEST(get_stencil_indices_tests, get_stencil_indices_tests_8)
       std::copy(std::begin(list2), std::end(list2), std::ostream_iterator<unsigned>{ std::cout, " " });
       std::cout << '\n';
     }
-    EXPECT_EQ(diffMatrix.maxCoeff(), 0U);
+    EXPECT_EQ(maxCoeff(diffMatrix), 0U);
 
     phiValues.at(index) = negativeValue;
   };

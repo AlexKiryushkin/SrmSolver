@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 
 #include <SrmSolver/cuda_float_types.h>
+#include <SrmSolver/matrix.h>
+#include <SrmSolver/matrix_operations.h>
 #include <SrmSolver/gas_state.h>
 
 #include "aliases.h"
@@ -959,15 +961,16 @@ TYPED_TEST(gas_state, gas_state_eigen_values_matrix_x)
 
   const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
 
-  const Eigen::Matrix<ElemType, 4, 1> goldEigenValuesX{ static_cast<ElemType>(1.8),
-                                                        static_cast<ElemType>(3.0),
-                                                        static_cast<ElemType>(3.0),
-                                                        static_cast<ElemType>(4.2) };
+  constexpr auto zero = static_cast<ElemType>(0);
+  const kae::Matrix<ElemType, 4, 4> goldEigenValuesX{
+    static_cast<ElemType>(1.8), zero,                       zero,                       zero,
+    zero,                       static_cast<ElemType>(3.0), zero,                       zero,
+    zero,                       zero,                       static_cast<ElemType>(3.0), zero,
+    zero,                       zero,                       zero,                       static_cast<ElemType>(4.2) };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
-  const auto thresholdVector = eigenValuesMatrixX.diagonal() - goldEigenValuesX;
-  EXPECT_TRUE(eigenValuesMatrixX.isDiagonal());
-  EXPECT_LE(thresholdVector.cwiseAbs().maxCoeff(), threshold);
+  const auto thresholdMatrix = eigenValuesMatrixX - goldEigenValuesX;
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 TYPED_TEST(gas_state, gas_state_primitive_jacobian_matrix_x)
@@ -984,15 +987,16 @@ TYPED_TEST(gas_state, gas_state_primitive_jacobian_matrix_x)
 
   const auto primitiveJacobianMatrixX = kae::PrimitiveJacobianMatrixX::get(gasState);
 
-  Eigen::Matrix<ElemType, 4, 4> goldPrimitiveJacobianMatrixX;
-  goldPrimitiveJacobianMatrixX << gasState.ux, gasState.rho,                  0,           0,
-                                  0,           gasState.ux,                   0,           1 / gasState.rho,
-                                  0,           0,                             gasState.ux, 0,
-                                  0,           GasStateT::kappa * gasState.p, 0,           gasState.ux;
+  constexpr auto zero = static_cast<ElemType>(0);
+  kae::Matrix<ElemType, 4, 4> goldPrimitiveJacobianMatrixX{
+    gasState.ux, gasState.rho,                  zero,        zero,
+    zero,        gasState.ux,                   zero,        1 / gasState.rho,
+    zero,        zero,                          gasState.ux, zero,
+    zero,        GasStateT::kappa * gasState.p, zero,        gasState.ux };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   const auto thresholdMatrix = primitiveJacobianMatrixX - goldPrimitiveJacobianMatrixX;
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 TYPED_TEST(gas_state, gas_state_eigen_vectors_x_1)
@@ -1015,8 +1019,9 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_1)
 
     constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                          static_cast<ElemType>(1e-14) };
-    const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
-    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    const auto identity = decltype(leftEigenVectorsX)::identity();
+    const auto thresholdMatrix = multiplyMatrix - identity;
+    EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold) << leftEigenVectorsX << rightEigenVectorsX;
   };
 
   test(std::true_type{});
@@ -1040,13 +1045,14 @@ TYPED_TEST(gas_state, gas_state_eigen_vectors_x_2)
     const auto leftEigenVectorsX  = kae::LeftPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
     const auto rightEigenVectorsX = kae::RightPrimitiveEigenVectorsX<uyIsZero>::get(gasState);
     const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
-    const auto multiplyMatrix     = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
+    const auto tmp = eigenValuesMatrixX * leftEigenVectorsX;
+    const auto multiplyMatrix     = rightEigenVectorsX * tmp;
 
     const auto goldMatrix = kae::PrimitiveJacobianMatrixX::get(gasState);
     constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                          static_cast<ElemType>(1e-14) };
     const auto thresholdMatrix = multiplyMatrix - goldMatrix;
-    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold) << leftEigenVectorsX << rightEigenVectorsX << eigenValuesMatrixX;
   };
 
   test(std::true_type{});
@@ -1079,8 +1085,9 @@ TYPED_TEST(gas_state, gas_state_dispatched_eigen_vectors_x_1)
 
     constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                          static_cast<ElemType>(1e-14) };
-    const auto thresholdMatrix = multiplyMatrix - decltype(multiplyMatrix)::Identity();
-    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    const auto identity = decltype(leftEigenVectorsX)::identity();
+    const auto thresholdMatrix = multiplyMatrix - identity;
+    EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold) << leftEigenVectorsX << rightEigenVectorsX;
   };
 
   test(gasState);
@@ -1112,13 +1119,14 @@ TYPED_TEST(gas_state, gas_state_dispatched_eigen_vectors_x_2)
     const auto leftEigenVectorsX = kae::DispatchedLeftPrimitiveEigenVectorsX::get(gasState);
     const auto rightEigenVectorsX = kae::DispatchedRightPrimitiveEigenVectorsX::get(gasState);
     const auto eigenValuesMatrixX = kae::EigenValuesMatrixX::get(gasState);
-    const auto multiplyMatrix = rightEigenVectorsX * eigenValuesMatrixX * leftEigenVectorsX;
+    const auto tmp = eigenValuesMatrixX * leftEigenVectorsX;
+    const auto multiplyMatrix = rightEigenVectorsX * tmp;
 
     const auto goldMatrix = kae::PrimitiveJacobianMatrixX::get(gasState);
     constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                          static_cast<ElemType>(1e-14) };
     const auto thresholdMatrix = multiplyMatrix - goldMatrix;
-    EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+    EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold) << leftEigenVectorsX << rightEigenVectorsX << eigenValuesMatrixX;
   };
 
   test(gasState);
@@ -1144,15 +1152,14 @@ TYPED_TEST(gas_state, gas_state_primitive_characteristic_variables)
   const auto leftEigenVectors = kae::LeftPrimitiveEigenVectorsX<false>::get(closestState);
   const auto characteristicVariables = kae::PrimitiveCharacteristicVariables::get(leftEigenVectors, gasState);
 
-  const Eigen::Matrix<ElemType, 4, 1> goldCharacteristicVariables{ static_cast<ElemType>(5.0),
+  const kae::Matrix<ElemType, 4, 1> goldCharacteristicVariables{ static_cast<ElemType>(5.0),
                                                                    static_cast<ElemType>(1.0),
                                                                    static_cast<ElemType>(1.0),
                                                                    static_cast<ElemType>(11.0) };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   const auto thresholdMatrix = characteristicVariables - goldCharacteristicVariables;
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
-
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 } // namespace kae_tests

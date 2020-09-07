@@ -1,4 +1,6 @@
 
+#include <SrmSolver/std_includes.h>
+
 #include <gtest/gtest.h>
 
 #include <SrmSolver/get_coordinates_matrix.h>
@@ -6,6 +8,8 @@
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
 #include <SrmSolver/linear_system_solver.h>  
+#include <SrmSolver/matrix.h>
+#include <SrmSolver/matrix_operations.h>
 
 #include "aliases.h"
 
@@ -19,7 +23,7 @@ public:
   constexpr static unsigned order{ 3U };
   using ElemType        = T;
   using Real2Type       = kae::CudaFloat2T<T>;
-  using IndexMatrixType = Eigen::Matrix<unsigned, order, order>;
+  using IndexMatrixType = kae::Matrix<unsigned, order, order>;
   constexpr static ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                               static_cast<ElemType>(1e-14) };
 
@@ -40,10 +44,34 @@ public:
   constexpr static Real2Type surfacePoint{ static_cast<ElemType>(0.45642), static_cast<ElemType>(0.33522) };
   constexpr static Real2Type normal{ static_cast<ElemType>(0.8), static_cast<ElemType>(0.6) };
 
-  constexpr static std::array<ElemType, 6U> rhoCoeffs{ 1.0, 2.0, 3.0, -4.0, 5.0, 6.0 };
-  constexpr static std::array<ElemType, 6U> uCoeffs{ 3.0, 1.0, -2.4, 3.1, 0.5, 5.0 };
-  constexpr static std::array<ElemType, 6U> vCoeffs{ 4.0, 3.0, 1.5, 2.6, 0.7, 4.0 };
-  constexpr static std::array<ElemType, 6U> pCoeffs{ 2.0, -1.0, 2.5, 3.0, 0.5, 1.5 };
+  constexpr static std::array<ElemType, 6U> rhoCoeffs{
+    static_cast<ElemType>(1.0), 
+    static_cast<ElemType>(2.0), 
+    static_cast<ElemType>(3.0), 
+    static_cast<ElemType>(-4.0), 
+    static_cast<ElemType>(5.0), 
+    static_cast<ElemType>(6.0) };
+  constexpr static std::array<ElemType, 6U> uCoeffs{
+    static_cast<ElemType>(3.0),
+    static_cast<ElemType>(1.0),
+    static_cast<ElemType>(-2.4),
+    static_cast<ElemType>(3.1),
+    static_cast<ElemType>(0.5),
+    static_cast<ElemType>(5.0) };
+  constexpr static std::array<ElemType, 6U> vCoeffs{
+    static_cast<ElemType>(4.0),
+    static_cast<ElemType>(3.0),
+    static_cast<ElemType>(1.5),
+    static_cast<ElemType>(2.6),
+    static_cast<ElemType>(0.7),
+    static_cast<ElemType>(4.0) };
+  constexpr static std::array<ElemType, 6U> pCoeffs{
+    static_cast<ElemType>(2.0),
+    static_cast<ElemType>(-1.0),
+    static_cast<ElemType>(2.5),
+    static_cast<ElemType>(3.0),
+    static_cast<ElemType>(0.5),
+    static_cast<ElemType>(1.5) };
 
   constexpr static std::array<ElemType, 6U> unCoeffs{
     std::get<0U>(uCoeffs) * normal.x + std::get<0U>(vCoeffs) * normal.y,
@@ -96,24 +124,24 @@ public:
     return gasStates;
   }
 
-  static Eigen::Matrix<ElemType, 6U, 4U> goldCoefficients()
+  static kae::Matrix<ElemType, 6U, 4U> goldCoefficients()
   {
-    Eigen::Matrix<ElemType, 6U, 4U> coefficients;
-    coefficients.col(0U) = Eigen::Matrix<ElemType, 6U, 1U>(rhoCoeffs.data());
-    coefficients.col(1U) = Eigen::Matrix<ElemType, 6U, 1U>(unCoeffs.data());
-    coefficients.col(2U) = Eigen::Matrix<ElemType, 6U, 1U>(utauCoeffs.data());
-    coefficients.col(3U) = Eigen::Matrix<ElemType, 6U, 1U>(pCoeffs.data());
+    kae::Matrix<ElemType, 6U, 4U> coefficients;
+    /*coefficients.col(0U) = kae::Matrix<ElemType, 6U, 1U>(rhoCoeffs.data());
+    coefficients.col(1U) = kae::Matrix<ElemType, 6U, 1U>(unCoeffs.data());
+    coefficients.col(2U) = kae::Matrix<ElemType, 6U, 1U>(utauCoeffs.data());
+    coefficients.col(3U) = kae::Matrix<ElemType, 6U, 1U>(pCoeffs.data());*/
 
     return coefficients;
   }
 
-  static Eigen::Matrix<ElemType, 6U, 4U> thresholdMatrix()
+  static kae::Matrix<ElemType, 6U, 4U> thresholdMatrix()
   {
-    Eigen::Matrix<ElemType, 6U, 4U> thresholds;
-    thresholds.col(0U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
-    thresholds.col(1U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
-    thresholds.col(2U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
-    thresholds.col(3U) = Eigen::Matrix<ElemType, 6U, 1U>(thresholdVector.data());
+    kae::Matrix<ElemType, 6U, 4U> thresholds;
+    kae::setCol(thresholds, 0U, kae::Matrix<ElemType, 6U, 1U>(thresholdVector.data()));
+    kae::setCol(thresholds, 1U, kae::Matrix<ElemType, 6U, 1U>(thresholdVector.data()));
+    kae::setCol(thresholds, 2U, kae::Matrix<ElemType, 6U, 1U>(thresholdVector.data()));
+    kae::setCol(thresholds, 3U, kae::Matrix<ElemType, 6U, 1U>(thresholdVector.data()));
     return thresholds;
   }
 }; 
@@ -147,9 +175,10 @@ TYPED_TEST(extrapolate_polynomial_tests, extrapolate_polynomial_tests_1)
                                                                                indexMatrix);
 
   const auto goldCoefficients = tf::goldCoefficients();
-  const auto maxDiff = ((goldCoefficients - coefficients).cwiseAbs() - tf::thresholdMatrix()).maxCoeff();
+  const auto thresholdMatrix = cwiseAbs(goldCoefficients - coefficients);
+  const auto maxDiff = maxCoeff(thresholdMatrix - tf::thresholdMatrix());
   EXPECT_LE(maxDiff, 0) << coefficients << "\n\n" << goldCoefficients << "\n\n"
-                        << (goldCoefficients - coefficients).cwiseAbs() << "\n\n"
+                        << cwiseAbs(goldCoefficients - coefficients) << "\n\n"
                         << tf::thresholdMatrix() << "\n\n";
 }
 

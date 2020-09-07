@@ -6,6 +6,8 @@
 
 #include "circle_shape.h"
 
+#ifndef _DEBUG
+
 namespace kae_tests {
 
 template <class T>
@@ -193,3 +195,5 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_b)
 }
 
 } // namespace kae_tests
+
+#endif

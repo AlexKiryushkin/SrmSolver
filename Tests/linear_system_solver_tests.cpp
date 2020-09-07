@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 
 #include <SrmSolver/linear_system_solver.h>
+#include <SrmSolver/matrix.h>
+#include <SrmSolver/matrix_operations.h>
 
 namespace kae_tests {
 
@@ -18,28 +20,31 @@ public:
   template <unsigned size>
   void testCholeskyDecomposition()
   {
-    using MatrixType = Eigen::Matrix<ElemType, size, size>;
+    using MatrixType = kae::Matrix<ElemType, size, size>;
 
-    MatrixType matrix = MatrixType::Random();
-    matrix = matrix.transpose() * matrix;
+    MatrixType matrix = MatrixType::random();
+    matrix = transpose(matrix) * matrix;
     const auto l = kae::detail::choleskyDecompositionL(matrix);
-    MatrixType calcMatrix = l * l.transpose();
-    const auto maxDiff = (matrix - calcMatrix).cwiseAbs().maxCoeff();
+    MatrixType calcMatrix = l * transpose(l);
+    const auto thresholdMatrix = matrix - calcMatrix;
+    const auto maxDiff = maxCoeff(cwiseAbs(thresholdMatrix));
     EXPECT_LE(maxDiff, threshold);
   }
 
   template <unsigned rows, unsigned cols>
   void testCholeskySolve()
   {
-    using LhsMatrixType = Eigen::Matrix<ElemType, rows, rows>;
-    using RhsMatrixType = Eigen::Matrix<ElemType, rows, cols>;
+    using LhsMatrixType = kae::Matrix<ElemType, rows, rows>;
+    using RhsMatrixType = kae::Matrix<ElemType, rows, cols>;
 
-    LhsMatrixType lhsMatrix = LhsMatrixType::Random();
-    lhsMatrix = lhsMatrix.transpose() * lhsMatrix;
-    RhsMatrixType rhsMatrix = RhsMatrixType::Random();
+    LhsMatrixType lhsMatrix = LhsMatrixType::random();
+    lhsMatrix = transpose(lhsMatrix) * lhsMatrix;
+    RhsMatrixType rhsMatrix = RhsMatrixType::random();
     const auto solution = kae::detail::choleskySolve(lhsMatrix, rhsMatrix);
-    const auto maxDiff = (lhsMatrix * solution - rhsMatrix).cwiseAbs().maxCoeff();
-    EXPECT_LE(maxDiff, threshold) << lhsMatrix << "\n\n" << rhsMatrix << "\n\n" << solution << "\n\n" << lhsMatrix * solution << "\n\n";
+    const auto calculatedRhsMatrix = lhsMatrix * solution;
+    const auto thresholdMatrix = calculatedRhsMatrix - rhsMatrix;
+    const auto maxDiff = maxCoeff(cwiseAbs(thresholdMatrix));
+    EXPECT_LE(maxDiff, threshold) << lhsMatrix << "\n\n" << rhsMatrix << "\n\n" << solution << "\n\n";
   }
 
 };

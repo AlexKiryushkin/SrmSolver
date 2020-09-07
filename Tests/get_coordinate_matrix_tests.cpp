@@ -2,10 +2,11 @@
 #include <gtest/gtest.h>
 
 #include <SrmSolver/cuda_float_types.h>
-#include <SrmSolver/eigen_includes.h>
 #include <SrmSolver/get_coordinates_matrix.h>
 #include <SrmSolver/get_stencil_indices.h>
 #include <SrmSolver/gpu_grid.h>
+#include <SrmSolver/matrix.h>
+#include <SrmSolver/matrix_operations.h>
 
 namespace kae_tests {
 
@@ -46,7 +47,11 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_1)
   const Real2Type normal{ static_cast<ElemType>(0.8), static_cast<ElemType>(0.6) };
   const auto indexMatrix = getStencilIndices<GpuGridType, 1U>(phiValues.data(), surfacePoint, normal);
   const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, 1U>(surfacePoint, normal, indexMatrix);
-  EXPECT_TRUE(coordinateMatrix.isOnes());
+  const decltype(coordinateMatrix) goldCoordinateMatrix{ static_cast<ElemType>(1) };
+  const decltype(coordinateMatrix) thresholdMatrix = coordinateMatrix - goldCoordinateMatrix;
+  constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
+                                                                       static_cast<ElemType>(1e-14) };
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_1)
@@ -69,12 +74,15 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_1)
   const auto indexMatrix = getStencilIndices<GpuGridType, order>(phiValues.data(), surfacePoint, normal);
   const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, order>(surfacePoint, normal, indexMatrix);
 
-  const decltype(coordinateMatrix) goldCoordinateMatrix{ { 1.0, -0.003, -0.002 }, { 1.0, -0.003, 0.008 },
-                                                         { 1.0, -0.013, -0.002 }, { 1.0, -0.013, 0.008 } };
+  const decltype(coordinateMatrix) goldCoordinateMatrix{
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.003), static_cast<ElemType>(-0.002) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.003), static_cast<ElemType>(0.008) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.013), static_cast<ElemType>(-0.002) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.013), static_cast<ElemType>(0.008) } };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   const decltype(coordinateMatrix) thresholdMatrix = coordinateMatrix - goldCoordinateMatrix;
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_2)
@@ -97,12 +105,15 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_2)
   const auto indexMatrix = getStencilIndices<GpuGridType, order>(phiValues.data(), surfacePoint, normal);
   const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, order>(surfacePoint, normal, indexMatrix);
 
-  const decltype(coordinateMatrix) goldCoordinateMatrix{ { 1.0, -0.002, 0.003 }, { 1.0, -0.002, -0.007 },
-                                                         { 1.0, -0.012, 0.003 }, { 1.0, -0.012, -0.007 } };
+  const decltype(coordinateMatrix) goldCoordinateMatrix{
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.002), static_cast<ElemType>(0.003) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.002), static_cast<ElemType>(-0.007) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.012), static_cast<ElemType>(0.003) },
+    { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.012), static_cast<ElemType>(-0.007) } };
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
                                                                        static_cast<ElemType>(1e-14) };
   const decltype(coordinateMatrix) thresholdMatrix = coordinateMatrix - goldCoordinateMatrix;
-  EXPECT_LE(thresholdMatrix.cwiseAbs().maxCoeff(), threshold);
+  EXPECT_LE(maxCoeff(cwiseAbs(thresholdMatrix)), threshold);
 }
 
 } // namespace kae_tests

@@ -16,6 +16,8 @@
 #include <SrmSolver/to_float.h>
 #include <SrmSolver/gpu_grid.h>
 
+#ifndef _DEBUG
+
 namespace kae_tests {
 
 template <class ValueT>
@@ -120,3 +122,5 @@ TYPED_TEST(gpu_matrix, gpu_matrix_values_const)
 }
 
 } // namespace kae_tests
+
+#endif
