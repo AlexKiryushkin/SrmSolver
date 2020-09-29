@@ -49,14 +49,32 @@ void srmIntegrateTVDSubStepWrapper(DevicePtr<GasStateT>                         
                                    DevicePtr<IndexMatrixT>                           pIndexMatrices,
                                    unsigned nClosestIndexElems, ElemT dt, CudaFloat2T<ElemT> lambda, ElemT prevWeight)
 {
-  detail::setGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT, order>(
-    pPrevValue,
-    pClosestIndicesMap,
-    pBoundaryConditions,
-    pNormals,
-    pSurfacePoints,
-    pIndexMatrices,
-    nClosestIndexElems);
+  constexpr std::uint64_t startIdx{ 200000U };
+  static thread_local std::uint64_t counter{};
+
+  if (counter > startIdx)
+  {
+    detail::setGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT, order>(
+      pPrevValue,
+      pClosestIndicesMap,
+      pBoundaryConditions,
+      pNormals,
+      pSurfacePoints,
+      pIndexMatrices,
+      nClosestIndexElems);
+  }
+  else
+  {
+    ++counter;
+    detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT>(
+      pPrevValue,
+      pCurrentPhi,
+      pClosestIndicesMap,
+      pBoundaryConditions,
+      pNormals,
+      nClosestIndexElems);
+  }
+
 
   detail::gasDynamicIntegrateTVDSubStepWrapper<GpuGridT, ShapeT, GasStateT>(
     pPrevValue,

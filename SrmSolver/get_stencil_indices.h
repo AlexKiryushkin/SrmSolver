@@ -11,8 +11,8 @@ namespace impl {
 
 template <class GpuGridT, unsigned order, class ElemT, class ReturnT = kae::Matrix<unsigned, order, order>>
 HOST_DEVICE ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
-                                                  CudaFloat2T<ElemT> scaledSurfacePoint,
-                                                  CudaFloat2T<ElemT> scaledNormal)
+                                          CudaFloat2T<ElemT> scaledSurfacePoint,
+                                          CudaFloat2T<ElemT> scaledNormal)
 {
   ReturnT indicesMatrix{};
   const auto alongX = std::fabs(scaledNormal.x) > std::fabs(scaledNormal.y);
@@ -102,8 +102,8 @@ HOST_DEVICE ReturnT getStencilIndicesImpl(const ElemT *      pCurrPhi,
 
 template <class GpuGridT, unsigned order, class ElemT, class ReturnT = kae::Matrix<unsigned, order, order>>
 HOST_DEVICE ReturnT getStencilIndices(const ElemT *      pCurrPhi,
-                                              CudaFloat2T<ElemT> surfacePoint,
-                                              CudaFloat2T<ElemT> normal)
+                                      CudaFloat2T<ElemT> surfacePoint,
+                                      CudaFloat2T<ElemT> normal)
 {
   constexpr auto hxRec = GpuGridT::hxReciprocal;
   constexpr auto hyRec = GpuGridT::hyReciprocal;

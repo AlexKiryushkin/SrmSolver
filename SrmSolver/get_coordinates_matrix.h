@@ -65,14 +65,16 @@ public:
 
 } // namespace impl
 
-template <class GpuGridT, unsigned order, class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT        = kae::Matrix<unsigned, order, order>,
+template <class GpuGridT, class InputMatrixT, class ElemT = typename GpuGridT::ElemType,
+          unsigned order = InputMatrixT::rows,
           unsigned degreesOfFreedom = order * (order + 1U) / 2,
           class ReturnT             = kae::Matrix<ElemT, order * order, degreesOfFreedom>>
 HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
                                          const CudaFloat2T<ElemT> normal,
                                          const InputMatrixT &     indexMatrix)
 {
+  static_assert(InputMatrixT::rows == InputMatrixT::cols, "");
+
   ReturnT coordinateMatrix;
   for (unsigned i{}; i < order; ++i)
   {
@@ -90,14 +92,16 @@ HOST_DEVICE ReturnT getCoordinatesMatrix(const CudaFloat2T<ElemT> surfacePoint,
   return coordinateMatrix;
 }
 
-template <class GpuGridT, unsigned order, class GasState,
-          class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT = kae::Matrix<ElemT, order, order>,
-          class ReturnT      = kae::Matrix<ElemT, order * order, 4U>>
+template <class GpuGridT, class InputMatrixT, class GasState,
+          class ElemT    = typename GpuGridT::ElemType,
+          unsigned order = InputMatrixT::rows,
+          class ReturnT  = kae::Matrix<ElemT, order * order, 4U>>
 HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
                                            const GasState *         pGasStates,
                                            const InputMatrixT &     indexMatrix)
 {
+  static_assert(InputMatrixT::rows == InputMatrixT::cols, "");
+
   ReturnT rhsMatrix;
   for (unsigned i{}; i < order; ++i)
   {
@@ -114,15 +118,17 @@ HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
   return rhsMatrix;
 }
 
-template <class GpuGridT, unsigned order, class GasState,
+template <class GpuGridT, class InputMatrixT, class GasState,
           class ElemT = typename GpuGridT::ElemType,
-          class InputMatrixT = kae::Matrix<ElemT, order, order>,
+          unsigned order = InputMatrixT::rows,
           class ReturnT      = kae::Matrix<ElemT, order * order, 4U>>
 HOST_DEVICE ReturnT getRightHandSideMatrix(const CudaFloat2T<ElemT> normal,
                                            const GasState *         pGasStates,
                                            const GasState &         rotatedClosestState,
                                            const InputMatrixT &     indexMatrix)
 {
+  static_assert(InputMatrixT::rows == InputMatrixT::cols, "");
+
   ReturnT rhsMatrix;
   const auto leftEigenVectors = DispatchedLeftPrimitiveEigenVectorsX::get(rotatedClosestState);
   for (unsigned i{}; i < order; ++i)

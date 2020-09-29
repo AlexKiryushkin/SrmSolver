@@ -17,12 +17,12 @@ namespace kae {
 namespace detail {
 
 template <class GpuGridT, class ShapeT, unsigned order, class ElemT>
-__global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>                        pCurrPhi,
-                                        thrust::device_ptr<thrust::pair<unsigned, unsigned>>   pClosestIndices,
-                                        thrust::device_ptr<EBoundaryCondition>                 pBoundaryConditions,
-                                        thrust::device_ptr<CudaFloat2T<ElemT>>                 pNormals,
-                                        thrust::device_ptr<CudaFloat2T<ElemT>>                 pSurfacePoints,
-                                        thrust::device_ptr<kae::Matrix<unsigned, order, order>> pStencilIndices)
+__global__ void calculateGhostPointData(const ElemT *                         pCurrPhi,
+                                        thrust::pair<unsigned, unsigned> *    pClosestIndices,
+                                        EBoundaryCondition *                  pBoundaryConditions,
+                                        CudaFloat2T<ElemT> *                  pNormals,
+                                        CudaFloat2T<ElemT> *                  pSurfacePoints,
+                                        kae::Matrix<unsigned, order, order> * pStencilIndices)
 {
   const unsigned i         = threadIdx.x + blockDim.x * blockIdx.x;
   const unsigned j         = threadIdx.y + blockDim.y * blockIdx.y;
@@ -37,8 +37,8 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
     return;
   }
 
-  ElemT nx = getLevelSetDerivative<GpuGridT, 1U>(pCurrPhi.get(), globalIdx, true);
-  ElemT ny = getLevelSetDerivative<GpuGridT, GpuGridT::nx>(pCurrPhi.get(), globalIdx, true);
+  ElemT nx = getLevelSetDerivative<GpuGridT, 1U>(pCurrPhi, globalIdx, true);
+  ElemT ny = getLevelSetDerivative<GpuGridT, GpuGridT::nx>(pCurrPhi, globalIdx, true);
   const ElemT length = std::hypot(nx, ny);
   nx /= length;
   ny /= length;
@@ -73,12 +73,10 @@ __global__ void calculateGhostPointData(thrust::device_ptr<const ElemT>         
     }
   }
 
-  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT>(pCurrPhi.get(), i, j, nx, ny);
+  const unsigned closestGlobalIdx = getClosestIndex<GpuGridT>(pCurrPhi, i, j, nx, ny);
   pClosestIndices[globalIdx]      = thrust::make_pair(globalIdx, closestGlobalIdx);
   pBoundaryConditions[globalIdx]  = boundaryCondition;
-  pStencilIndices[globalIdx]      = detail::getStencilIndices<GpuGridT, order>(pCurrPhi.get(), 
-                                                                               surfacePoint, 
-                                                                               { nx, ny });
+  pStencilIndices[globalIdx]      = getStencilIndices<GpuGridT, order>(pCurrPhi, surfacePoint, { nx, ny });
 }
 
 template <class GpuGridT, class ShapeT, unsigned order, class ElemT>
@@ -90,7 +88,8 @@ void calculateGhostPointDataWrapper(thrust::device_ptr<const ElemT>             
                                     thrust::device_ptr<kae::Matrix<unsigned, order, order>> pStencilIndices)
 {
   calculateGhostPointData<GpuGridT, ShapeT, order><<<GpuGridT::gridSize, GpuGridT::blockSize>>>
-    (pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, pSurfacePoints, pStencilIndices);
+    (pCurrPhi.get(), pClosestIndices.get(), pBoundaryConditions.get(), 
+     pNormals.get(), pSurfacePoints.get(), pStencilIndices.get());
   cudaDeviceSynchronize();
 }
 

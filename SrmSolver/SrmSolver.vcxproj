@@ -61,6 +61,7 @@
     <ClInclude Include="srm_shape_with_umbrella.h" />
     <ClInclude Include="srm_shape_with_umbrella_def.h" />
     <ClInclude Include="std_includes.h" />
+    <ClInclude Include="submatrix.h" />
     <ClInclude Include="to_float.h" />
     <ClInclude Include="transpose_view.h" />
     <ClInclude Include="tube_shape.h" />

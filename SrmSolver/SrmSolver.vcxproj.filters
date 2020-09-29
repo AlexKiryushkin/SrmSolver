@@ -153,9 +153,6 @@
     <ClInclude Include="matrix_def.h">
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
-    <ClInclude Include="get_polynomial.h">
-      <Filter>Headers\Kernels</Filter>
-    </ClInclude>
     <ClInclude Include="transpose_view.h">
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
@@ -169,6 +166,12 @@
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
     <ClInclude Include="elemwise_result.h">
+      <Filter>Headers\Linear Algebra</Filter>
+    </ClInclude>
+    <ClInclude Include="get_polynomial.h">
+      <Filter>Headers\Ghost Points Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="submatrix.h">
       <Filter>Headers\Linear Algebra</Filter>
     </ClInclude>
   </ItemGroup>

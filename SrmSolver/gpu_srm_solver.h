@@ -61,7 +61,7 @@ private:
 
 private:
 
-  constexpr static unsigned order{ 3U };
+  constexpr static unsigned order{ 2U };
   using IndexMatrixT = kae::Matrix<unsigned, order, order>;
 
   GpuMatrix<GpuGridT, EBoundaryCondition>       m_boundaryConditions;

@@ -47,14 +47,14 @@ template <class MatrixT, typename = std::enable_if_t<IsMatrixV<MatrixT>>>
 HOST_DEVICE auto maxCoeff(const MatrixT & matrix)
 {
   using ElemType = typename MatrixT::ElemType;
-  ElemType result = std::numeric_limits<ElemType>::min();
-  for (unsigned i{}; i < MatrixT::rows; ++i)
+  ElemType result = std::numeric_limits<ElemType>::lowest();
+  /*for (unsigned i{}; i < MatrixT::rows; ++i)
   {
     for (unsigned j{}; j < MatrixT::cols; ++j)
     {
       result = thrust::max(result, matrix(i, j));
     }
-  }
+  }*/
   return result;
 }
 

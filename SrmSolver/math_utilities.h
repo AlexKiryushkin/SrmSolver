@@ -61,7 +61,7 @@ HOST_DEVICE T absmax(T value, Rest... restValues)
 }
 
 template <class ElemT>
-HOST_DEVICE ElemT sqr(ElemT value)
+constexpr HOST_DEVICE ElemT sqr(ElemT value)
 {
   return value * value;
 }

@@ -46,7 +46,7 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_1)
   const Real2Type surfacePoint{ static_cast<ElemType>(0.45642), static_cast<ElemType>(0.33522) };
   const Real2Type normal{ static_cast<ElemType>(0.8), static_cast<ElemType>(0.6) };
   const auto indexMatrix = getStencilIndices<GpuGridType, 1U>(phiValues.data(), surfacePoint, normal);
-  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, 1U>(surfacePoint, normal, indexMatrix);
+  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType>(surfacePoint, normal, indexMatrix);
   const decltype(coordinateMatrix) goldCoordinateMatrix{ static_cast<ElemType>(1) };
   const decltype(coordinateMatrix) thresholdMatrix = coordinateMatrix - goldCoordinateMatrix;
   constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(1e-6) :
@@ -72,7 +72,7 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_1)
   const Real2Type surfacePoint{ static_cast<ElemType>(0.453), static_cast<ElemType>(0.332) };
   const Real2Type normal{ static_cast<ElemType>(1.0), static_cast<ElemType>(0.0) };
   const auto indexMatrix = getStencilIndices<GpuGridType, order>(phiValues.data(), surfacePoint, normal);
-  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, order>(surfacePoint, normal, indexMatrix);
+  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType>(surfacePoint, normal, indexMatrix);
 
   const decltype(coordinateMatrix) goldCoordinateMatrix{
     { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.003), static_cast<ElemType>(-0.002) },
@@ -103,7 +103,7 @@ TYPED_TEST(get_coordinate_matrix, get_coordinate_matrix_2_2)
   const Real2Type surfacePoint{ static_cast<ElemType>(0.453), static_cast<ElemType>(0.332) };
   const Real2Type normal{ static_cast<ElemType>(0.0), static_cast<ElemType>(1.0) };
   const auto indexMatrix = getStencilIndices<GpuGridType, order>(phiValues.data(), surfacePoint, normal);
-  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType, order>(surfacePoint, normal, indexMatrix);
+  const auto coordinateMatrix = getCoordinatesMatrix<GpuGridType>(surfacePoint, normal, indexMatrix);
 
   const decltype(coordinateMatrix) goldCoordinateMatrix{
     { static_cast<ElemType>(1.0), static_cast<ElemType>(-0.002), static_cast<ElemType>(0.003) },

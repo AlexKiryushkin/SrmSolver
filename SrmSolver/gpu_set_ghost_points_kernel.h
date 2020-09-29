@@ -7,6 +7,7 @@
 #include "gas_state.h"
 #include "get_coordinates_matrix.h"
 #include "get_extrapolated_ghost_value.h"
+#include "get_polynomial.h"
 #include "linear_system_solver.h"
 #include "matrix_operations.h"
 
@@ -52,33 +53,27 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
   const auto boundaryCondition   = pBoundaryConditions[ghostIdx];
   const auto closestSonic        = SonicSpeed::get(rotatedClosestState);
 
-  /*if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
+  if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
   {
     const auto indexMatrix = pIndexMatrix[ghostIdx];
-    const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
-    const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
-    const auto A = transpose(lhsMatrix) * lhsMatrix;
-    const auto b = transpose(lhsMatrix) * rhsMatrix;
-    const auto x = choleskySolve(A, b);
+    const auto x = getWenoPolynomial<GpuGridT>(surfacePoint, normal, pGasValues, indexMatrix);
+    static_assert(decltype(x)::rows == 3U, "Number of rows is incorrect");
+    static_assert(decltype(x)::cols == 4U, "Number of cols is incorrect");
 
     const auto ghostI = ghostIdx % GpuGridT::nx;
     const auto ghostJ = ghostIdx / GpuGridT::nx;
     const auto dn = std::hypot(ghostI * GpuGridT::hx - surfacePoint.x, ghostJ * GpuGridT::hy - surfacePoint.y);
 
-    const auto rho  = x(0, 0) + x(1, 0) * dn + x(3, 0) * dn * dn;
-    const auto un   = x(0, 1) + x(1, 1) * dn + x(3, 1) * dn * dn;
-    const auto utau = x(0, 2) + x(1, 2) * dn + x(3, 2) * dn * dn;
-    const auto p    = x(0, 3) + x(1, 3) * dn + x(3, 3) * dn * dn;
+    const auto rho = x(0, 0);// +x(1, 0) * dn;
+    const auto un = x(0, 1);// +x(1, 1) * dn;
+    const auto utau = x(0, 2);// +x(1, 2) * dn;
+    const auto p = x(0, 3);// +x(1, 3) * dn;
     pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
   }
-  else if (boundaryCondition == EBoundaryCondition::eWall && rotatedClosestState.p > 0.5f)
+  /*else if (boundaryCondition == EBoundaryCondition::eWall && rotatedClosestState.p > 0.5f)
   {
     const auto indexMatrix = pIndexMatrix[ghostIdx];
-    const auto lhsMatrix = getCoordinatesMatrix<GpuGridT, order>(surfacePoint, normal, indexMatrix);
-    const auto rhsMatrix = getRightHandSideMatrix<GpuGridT, order>(normal, pGasValues, indexMatrix);
-    const auto A = transpose(lhsMatrix) * lhsMatrix;
-    const auto b = transpose(lhsMatrix) * rhsMatrix;
-    const auto x = choleskySolve(A, b);
+    const auto x = getWenoPolynomial<GpuGridT>(surfacePoint, normal, pGasValues, indexMatrix);
 
     const auto ghostI = ghostIdx % GpuGridT::nx;
     const auto ghostJ = ghostIdx / GpuGridT::nx;
@@ -94,13 +89,13 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
     const ElemT un_1 = x(1, 1) + 1 / rotatedClosestState.rho / closestSonic * (x(1, 3) - p_1);
     const ElemT utau_1 = x(1, 2);
 
-    const auto rho  = rho_0  + rho_1 * dn  + x(3, 0) * dn * dn;
-    const auto un   = un_0   + un_1 * dn   + x(3, 1) * dn * dn;
-    const auto utau = utau_0 + utau_1 * dn + x(3, 2) * dn * dn;
-    const auto p    = p_0    + p_1 * dn    + x(3, 3) * dn * dn;
+    const auto rho = rho_0;//  +rho_1 * dn + x(3, 0) * dn * dn;
+    const auto un = un_0;//   +un_1 * dn + x(3, 1) * dn * dn;
+    const auto utau = utau_0;// +utau_1 * dn + x(3, 2) * dn * dn;
+    const auto p = p_0;//    +p_1 * dn + x(3, 3) * dn * dn;
     pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
-  }
-  else*/
+  }*/
+  else
   {
     const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedClosestState,
       boundaryCondition);
