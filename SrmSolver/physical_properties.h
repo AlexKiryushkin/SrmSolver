@@ -61,4 +61,22 @@ struct BurningRate
   }
 };
 
+template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class KappaT, class CpT,
+          class ShapeT, class ElemT>
+std::ostream& operator<<(std::ostream& os, PhysicalProperties<NuT, MtT, TBurnT, RhoPT, P0T, KappaT, CpT, ShapeT, ElemT> p)
+{
+  using PhysicalPropertiesT = PhysicalProperties<NuT, MtT, TBurnT, RhoPT, P0T, KappaT, CpT, ShapeT, ElemT>;
+  os << "kappa: "         << PhysicalPropertiesT::kappa        << "\n";
+  os << "gamma complex: " << PhysicalPropertiesT::gammaComplex << "\n";
+  os << "nu: "            << PhysicalPropertiesT::nu           << "\n";
+  os << "mt: "            << PhysicalPropertiesT::mt           << "\n";
+  os << "TBurn: "         << PhysicalPropertiesT::TBurn        << "\n";
+  os << "rhoP: "          << PhysicalPropertiesT::rhoP         << "\n";
+  os << "P0: "            << PhysicalPropertiesT::P0           << "\n";
+  os << "Cp: "            << PhysicalPropertiesT::Cp           << "\n";
+  os << "R: "             << PhysicalPropertiesT::R            << "\n";
+  os << "H0: "            << PhysicalPropertiesT::H0           << "\n";
+  return os;
+}
+
 } // namespace kae

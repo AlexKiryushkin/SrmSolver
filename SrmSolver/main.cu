@@ -10,7 +10,8 @@ int main()
   try
   {
     using ElemType               = float;
-    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eNozzleLessShape, ElemType>;
+    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eFlushMountedNozzle, ElemType>;
+    using GpuGridType            = ShapeSolverType::GpuGridType;
     using ShapeType              = ShapeSolverType::ShapeType;
     using SrmSolverType          = ShapeSolverType::SrmSolverType;
     using PhysicalPropertiesType = ShapeSolverType::PhysicalPropertiesType;
@@ -19,8 +20,11 @@ int main()
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
     kae::WriteToFolderCallback<ElemType> callback{ currentPath };
 
+    const auto burnRate = kae::BurningRate<PhysicalPropertiesType>::get(static_cast<ElemType>(1));
+    const auto dt = GpuGridType::hx / 2 / burnRate;
+    std::cout << dt << '\n';
     SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U, static_cast<ElemType>(0.6) };
-    srmSolver.dynamicIntegrate(1000U, 2.5f, kae::ETimeDiscretizationOrder::eTwo, callback);
+    srmSolver.quasiStationaryDynamicIntegrate(2000U, dt, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)
   {

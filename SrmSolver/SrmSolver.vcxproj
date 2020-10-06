@@ -56,6 +56,8 @@
     <ClInclude Include="shape_types.h" />
     <ClInclude Include="solver_callbacks.h" />
     <ClInclude Include="solver_reduction_functions.h" />
+    <ClInclude Include="srm_flush_mounted_nozzle.h" />
+    <ClInclude Include="srm_flush_mounted_nozzle_def.h" />
     <ClInclude Include="srm_shape_nozzle_less.h" />
     <ClInclude Include="srm_shape_nozzle_less_def.h" />
     <ClInclude Include="srm_shape_with_umbrella.h" />

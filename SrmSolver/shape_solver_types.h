@@ -82,4 +82,38 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
                                                  PhysicalPropertiesType::P0 };
 };
 
+template<class ElemT>
+struct ShapeSolverTypes<EShapeType::eFlushMountedNozzle, ElemT>
+{
+  constexpr static unsigned nx{ 2000U + 1U };
+  constexpr static unsigned ny{ 1000U + 1U };
+  using LxToType = std::ratio<2000, 1000>;
+  using LyToType = std::ratio<1000, 1000>;
+  using GpuGridType = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
+  using ShapeType = kae::SrmFlushMountedNozzle<GpuGridType>;
+  constexpr static ElemT hx = GpuGridType::hx;
+  constexpr static ElemT hy = GpuGridType::hy;
+  constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
+  static_assert(stepsAreSame, "Grid steps are different!");
+
+  using NuType = std::ratio<5, 10>;
+  using MtType = std::ratio<-534, 100000>;
+  using TBurnType = std::ratio<3900, 1>;
+  using RhoPType = std::ratio<1700, 1>;
+  using P0Type = std::ratio<101325, 1>;
+  using KappaType = std::ratio<118, 100>;
+  using CpType = std::ratio<2628, 1>;
+  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
+
+  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+
+  using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
+  using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PhysicalPropertiesType>;
+
+  constexpr static GasStateType initialGasState{ static_cast<ElemT>(0.5),
+                                                 static_cast<ElemT>(0.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 PhysicalPropertiesType::P0 };
+};
+
 } // namespace kae

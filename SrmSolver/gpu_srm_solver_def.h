@@ -52,7 +52,7 @@ void srmIntegrateTVDSubStepWrapper(DevicePtr<GasStateT>                         
   constexpr std::uint64_t startIdx{ 200000U };
   static thread_local std::uint64_t counter{};
 
-  if (counter > startIdx)
+  /*if (counter > startIdx)
   {
     detail::setGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT, order>(
       pPrevValue,
@@ -63,9 +63,9 @@ void srmIntegrateTVDSubStepWrapper(DevicePtr<GasStateT>                         
       pIndexMatrices,
       nClosestIndexElems);
   }
-  else
+  else*/
   {
-    ++counter;
+    //++counter;
     detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT>(
       pPrevValue,
       pCurrentPhi,

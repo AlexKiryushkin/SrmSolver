@@ -48,13 +48,13 @@ HOST_DEVICE auto maxCoeff(const MatrixT & matrix)
 {
   using ElemType = typename MatrixT::ElemType;
   ElemType result = std::numeric_limits<ElemType>::lowest();
-  /*for (unsigned i{}; i < MatrixT::rows; ++i)
+  for (unsigned i{}; i < MatrixT::rows; ++i)
   {
     for (unsigned j{}; j < MatrixT::cols; ++j)
     {
       result = thrust::max(result, matrix(i, j));
     }
-  }*/
+  }
   return result;
 }
 

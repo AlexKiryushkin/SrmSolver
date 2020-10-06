@@ -13,7 +13,7 @@ namespace detail {
 
 template <class GpuGridT, class MatrixT, class ElemT = typename MatrixT::ElemType,
           class = std::enable_if_t<MatrixT::rows == 1U || MatrixT::rows == 3U || MatrixT::rows == 6U>>
-kae::Matrix<ElemT, MatrixT::cols, 1U> getPolynomialWeight(const MatrixT & matrix)
+HOST_DEVICE kae::Matrix<ElemT, MatrixT::cols, 1U> getPolynomialWeight(const MatrixT & matrix)
 {
   kae::Matrix<ElemT, MatrixT::cols, 1U> weightMatrix{};
   constexpr auto hSqr = sqr(GpuGridT::hx);
@@ -48,9 +48,9 @@ kae::Matrix<ElemT, MatrixT::cols, 1U> getPolynomialWeight(const MatrixT & matrix
 
 template <class GpuGridT, class MatrixT, class ElemT = typename MatrixT::ElemType,
           class = std::enable_if_t<MatrixT::cols == 1U>>
-kae::Matrix<ElemT, MatrixT::rows, 3U> getWenoCoefficients(const MatrixT & bettas0, 
-                                                          const MatrixT & bettas1, 
-                                                          const MatrixT & bettas2)
+HOST_DEVICE kae::Matrix<ElemT, MatrixT::rows, 3U> getWenoCoefficients(const MatrixT & bettas0, 
+                                                                      const MatrixT & bettas1, 
+                                                                      const MatrixT & bettas2)
 {
   kae::Matrix<ElemT, MatrixT::rows, 3U> wenoCoefficients{};
 
@@ -74,8 +74,8 @@ kae::Matrix<ElemT, MatrixT::rows, 3U> getWenoCoefficients(const MatrixT & bettas
 
 template <class GpuGridT, class MatrixT, class ElemT = typename MatrixT::ElemType,
           class = std::enable_if_t<MatrixT::cols == 1U>>
-kae::Matrix<ElemT, MatrixT::rows, 2U> getWenoCoefficients(const MatrixT & bettas0, 
-                                                          const MatrixT & bettas1)
+HOST_DEVICE kae::Matrix<ElemT, MatrixT::rows, 2U> getWenoCoefficients(const MatrixT & bettas0, 
+                                                                      const MatrixT & bettas1)
 {
   kae::Matrix<ElemT, MatrixT::rows, 2U> wenoCoefficients{};
 
