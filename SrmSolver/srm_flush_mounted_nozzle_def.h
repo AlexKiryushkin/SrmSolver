@@ -129,19 +129,19 @@ HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, E
   {
     const auto dxSqr = sqr(x - xLeft - rRound);
     const auto dySqr = sqr(y - yBottom - yEndPropellant + rRound);
-    return (y - yBottom <= yEndPropellant - rRound) || (dxSqr + dySqr <= rRound * rRound);
+    return (y - yBottom <= yEndPropellant - rRound) || (dxSqr + dySqr < rRound * rRound);
   }
 
   if (x - xLeft > rRound && x - xLeft < xEndPropellant - rRound)
   {
-    return y - yBottom <= yEndPropellant;
+    return y - yBottom < yEndPropellant;
   }
 
   if (x - xLeft >= xEndPropellant - rRound && x - xLeft < xEndPropellant)
   {
     const auto dxSqr = sqr(x - xLeft - xEndPropellant + rRound);
     const auto dySqr = sqr(y - yBottom - yEndPropellant + rRound);
-    const auto isOnRoundedCorner = dxSqr + dySqr <= rRound * rRound;
+    const auto isOnRoundedCorner = dxSqr + dySqr < rRound * rRound;
     if (x - xLeft < xStartNozzle)
     {
       return (y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner;

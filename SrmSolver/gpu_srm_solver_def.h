@@ -177,7 +177,7 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStatio
     desiredIntegrateTime -= gasDynamicDeltaT;
 
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
-    if (i % 5 == 0)
+    if (i % 100 == 0)
     {
       callback(m_currState, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{});
     }

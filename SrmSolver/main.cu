@@ -21,7 +21,7 @@ int main()
     kae::WriteToFolderCallback<ElemType> callback{ currentPath };
 
     const auto burnRate = kae::BurningRate<PhysicalPropertiesType>::get(static_cast<ElemType>(1));
-    const auto dt = GpuGridType::hx / 2 / burnRate;
+    const auto dt = GpuGridType::hx / 20 / burnRate;
     std::cout << dt << '\n';
     SrmSolverType srmSolver{ {}, ShapeSolverType::initialGasState, 100U, static_cast<ElemType>(0.6) };
     srmSolver.quasiStationaryDynamicIntegrate(2000U, dt, kae::ETimeDiscretizationOrder::eTwo, callback);
