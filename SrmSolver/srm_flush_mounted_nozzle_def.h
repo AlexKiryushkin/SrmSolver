@@ -157,7 +157,7 @@ template <class GpuGridT>
 bool SrmFlushMountedNozzle<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 {
   return (j * GpuGridT::hy - yBottom >= static_cast<ElemType>(0.5) * rkr) &&
-         (i * GpuGridT::hx - xLeft <= xEndPropellant);
+         (i * GpuGridT::hx - xLeft <= xEndPropellant + 20 * GpuGridT::hx);
 }
 
 template <class GpuGridT>
