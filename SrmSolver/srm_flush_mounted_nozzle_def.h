@@ -118,8 +118,9 @@ template <class GpuGridT>
 HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, ElemType y) -> ElemType
 {
   constexpr auto threshold = static_cast<ElemType>(0.1) * GpuGridT::hx;
-  const auto yIsUpper = y - yBottom >= yStartPropellant - threshold;
-  if (!yIsUpper)
+  const auto yIsLower = y - yBottom < yStartPropellant - threshold;
+  const auto xIsLefter = x - xLeft <= 0;
+  if (yIsLower || xIsLefter)
   {
     return false;
   }
