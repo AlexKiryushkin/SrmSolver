@@ -55,7 +55,7 @@ private:
   constexpr static ElemType xStartNozzle = static_cast<ElemType>(1.5008);
   constexpr static ElemType yMinNozzlePropellant = static_cast<ElemType>(0.1936);
   constexpr static ElemType yStartPropellant = static_cast<ElemType>(0.152);
-  constexpr static ElemType yEndPropellant = static_cast<ElemType>(0.672);
+  constexpr static ElemType yEndPropellant = static_cast<ElemType>(0.55);
   constexpr static ElemType rRound = static_cast<ElemType>(0.25);
   constexpr static ElemType rkr = static_cast<ElemType>(0.1049);
   constexpr static ElemType R0 = static_cast<ElemType>(0.152);
