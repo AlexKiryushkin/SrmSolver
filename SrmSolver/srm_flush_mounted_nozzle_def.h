@@ -147,7 +147,8 @@ HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, E
       return (y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner;
     }
 
-    return ((y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner) && (y - yBottom > yMinNozzlePropellant);
+    return ((y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner) && 
+            (y - yBottom > yMinNozzlePropellant + 10 * GpuGridT::hx);
   }
 
   return false;
