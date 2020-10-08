@@ -53,7 +53,7 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
   const auto boundaryCondition   = pBoundaryConditions[ghostIdx];
   const auto closestSonic        = SonicSpeed::get(rotatedClosestState);
 
-  if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (2 * closestSonic < rotatedClosestState.ux))
+  if ((boundaryCondition == EBoundaryCondition::ePressureOutlet) && (closestSonic < rotatedClosestState.ux))
   {
     const auto indexMatrix = pIndexMatrix[ghostIdx];
     const auto x = getWenoPolynomial<GpuGridT>(surfacePoint, normal, pGasValues, indexMatrix);
@@ -64,13 +64,13 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
     const auto ghostJ = ghostIdx / GpuGridT::nx;
     const auto dn = std::hypot(ghostI * GpuGridT::hx - surfacePoint.x, ghostJ * GpuGridT::hy - surfacePoint.y);
 
-    const auto rho = x(0, 0);// +x(1, 0) * dn;
-    const auto un = x(0, 1);// +x(1, 1) * dn;
-    const auto utau = x(0, 2);// +x(1, 2) * dn;
-    const auto p = x(0, 3);// +x(1, 3) * dn;
+    const auto rho  = x(0, 0) + x(1, 0) * dn;
+    const auto un   = x(0, 1) + x(1, 1) * dn;
+    const auto utau = x(0, 2) + x(1, 2) * dn;
+    const auto p    = x(0, 3) + x(1, 3) * dn;
     pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
   }
-  /*else if (boundaryCondition == EBoundaryCondition::eWall && rotatedClosestState.p > 0.5f)
+  else if (boundaryCondition == EBoundaryCondition::eWall)
   {
     const auto indexMatrix = pIndexMatrix[ghostIdx];
     const auto x = getWenoPolynomial<GpuGridT>(surfacePoint, normal, pGasValues, indexMatrix);
@@ -79,21 +79,25 @@ __global__ void setGhostValues(GasStateT *                              pGasValu
     const auto ghostJ = ghostIdx / GpuGridT::nx;
     const auto dn = std::hypot(ghostI * GpuGridT::hx - surfacePoint.x, ghostJ * GpuGridT::hy - surfacePoint.y);
 
-    const ElemT rho_0 = x(0, 0) + rotatedClosestState.rho / closestSonic * x(0, 1);
-    const ElemT un_0 = 0;
+    const ElemT rho_0  = x(0, 0) + rotatedClosestState.rho / closestSonic * x(0, 1);
+    const ElemT un_0   = 0;
     const ElemT utau_0 = x(0, 2);
-    const ElemT p_0 = x(0, 3) + rotatedClosestState.rho * closestSonic * x(0, 1);
+    const ElemT p_0    = x(0, 3) + rotatedClosestState.rho * closestSonic * x(0, 1);
 
-    const ElemT p_1 = -rho_0 * utau_0 * x(2, 1);
-    const ElemT rho_1 = x(1, 0) - 1 / closestSonic / closestSonic * (x(1, 3) - p_1);
-    const ElemT un_1 = x(1, 1) + 1 / rotatedClosestState.rho / closestSonic * (x(1, 3) - p_1);
+    const ElemT p_1    = -rho_0 * utau_0 * x(2, 1);
+    const ElemT rho_1  = x(1, 0) - 1 / closestSonic / closestSonic * (x(1, 3) - p_1);
+    const ElemT un_1   = x(1, 1) + 1 / rotatedClosestState.rho / closestSonic * (x(1, 3) - p_1);
     const ElemT utau_1 = x(1, 2);
 
-    const auto rho = rho_0;//  +rho_1 * dn + x(3, 0) * dn * dn;
-    const auto un = un_0;//   +un_1 * dn + x(3, 1) * dn * dn;
-    const auto utau = utau_0;// +utau_1 * dn + x(3, 2) * dn * dn;
-    const auto p = p_0;//    +p_1 * dn + x(3, 3) * dn * dn;
+    const auto rho  = rho_0  + rho_1  * dn;// +x(3, 0) * dn * dn;
+    const auto un   = un_0   + un_1   * dn;// +x(3, 1) * dn * dn;
+    const auto utau = utau_0 + utau_1 * dn;// +x(3, 2) * dn * dn;
+    const auto p    = p_0    + p_1    * dn;// +x(3, 3) * dn * dn;
     pGasValues[ghostIdx] = ReverseRotate::get(GasStateT{ rho, un, utau, p }, normal.x, normal.y);
+  }
+  /*else if (boundaryCondition == EBoundaryCondition::eMassFlowInlet)
+  {
+    
   }*/
   else
   {

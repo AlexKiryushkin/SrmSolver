@@ -39,12 +39,11 @@ __global__ void findClosestIndices(thrust::device_ptr<const ElemT>              
   pNormals[globalIdx] = { nx, ny };
 
   const ElemT level = pCurrPhi[globalIdx];
-  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 4 * GpuGridT::hx);
+  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 5 * GpuGridT::hx);
   if (!pointIsGhost)
   {
     return;
   }
-
   const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(i * GpuGridT::hx - nx * level, 
                                                                             j * GpuGridT::hy - ny * level);
   if (boundaryCondition == EBoundaryCondition::eWall)

@@ -45,7 +45,7 @@ __global__ void calculateGhostPointData(const ElemT *                         pC
   pNormals[globalIdx] = { nx, ny };
 
   const ElemT level = pCurrPhi[globalIdx];
-  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 4 * GpuGridT::hx);
+  const bool pointIsGhost = (level >= 0) && (std::fabs(level) < 5 * GpuGridT::hx);
   if (!pointIsGhost)
   {
     return;
@@ -55,7 +55,7 @@ __global__ void calculateGhostPointData(const ElemT *                         pC
   pSurfacePoints[globalIdx] = surfacePoint;
 
   const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(surfacePoint.x ,surfacePoint.y);
-  if (boundaryCondition == EBoundaryCondition::eWall)
+  if (boundaryCondition == EBoundaryCondition::eWall && level > GpuGridT::hx / 4)
   {
     const ElemT iMirror = i - 2 * nx * level * GpuGridT::hxReciprocal;
     const ElemT jMirror = j - 2 * ny * level * GpuGridT::hxReciprocal;
@@ -64,7 +64,7 @@ __global__ void calculateGhostPointData(const ElemT *                         pC
     const int jMirrorInt = std::round(jMirror);
 
     const ElemT sum = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
-    if (sum < static_cast<ElemT>(0.01) * GpuGridT::hx)
+    if (sum < sqr(GpuGridT::hx))
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
       pClosestIndices[globalIdx]     = thrust::make_pair(globalIdx, mirrorGlobalIdx);;
