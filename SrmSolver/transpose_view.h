@@ -18,11 +18,11 @@ public:
   using CastMatrixType = Matrix<ElemType, rows, cols>;
   using BaseType       = WrapperBase<TransposeView<MatrixT>>;
 
-  explicit TransposeView(const MatrixT & matrix) noexcept : m_matrix{ matrix } {}
+  explicit HOST_DEVICE TransposeView(const MatrixT & matrix) noexcept : m_matrix{ matrix } {}
 
-  const ElemType& operator()(unsigned i, unsigned j) const noexcept { return m_matrix(j, i); }
+  HOST_DEVICE const ElemType& operator()(unsigned i, unsigned j) const noexcept { return m_matrix(j, i); }
 
-  operator CastMatrixType() const noexcept { return BaseType::template cast<CastMatrixType>(); }
+  HOST_DEVICE operator CastMatrixType() const noexcept { return BaseType::template cast<CastMatrixType>(); }
 
 private:
   const MatrixT& m_matrix;

@@ -8,7 +8,7 @@ class WrapperBase
 protected:
 
   template <class T>
-  T cast() const noexcept
+  HOST_DEVICE T cast() const noexcept
   {
     T matrix;
     for (unsigned i{}; i < T::rows; ++i)
@@ -21,11 +21,11 @@ protected:
     return matrix;
   }
 private:
-  Derived& self()
+  HOST_DEVICE Derived& self()
   {
     return *static_cast<Derived*>(this);
   }
-  const Derived& self() const
+  HOST_DEVICE const Derived& self() const
   {
     return *static_cast<const Derived*>(this);
   }

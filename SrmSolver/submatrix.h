@@ -20,7 +20,7 @@ public:
   static_assert(MatrixT::rows >= nRows + startRow, "");
   static_assert(MatrixT::cols >= nCols + startCol, "");
 
-  explicit Submatrix(const MatrixT & matrix) : m_matrix(matrix) {}
+  explicit HOST_DEVICE Submatrix(const MatrixT & matrix) : m_matrix(matrix) {}
 
   HOST_DEVICE ElemType operator()(unsigned i, unsigned j) const { return m_matrix(startRow + i, startCol + j); }
   HOST_DEVICE operator CastMatrixType() const noexcept { return BaseType::template cast<CastMatrixType>(); }
