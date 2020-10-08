@@ -23,6 +23,8 @@ public:
 
   HOST_DEVICE static ElemType getRadius(unsigned i, unsigned j);
 
+  HOST_DEVICE static ElemType getRadius(ElemType x, ElemType y);
+
   HOST_DEVICE constexpr static ElemType getInitialSBurn();
 
   HOST_DEVICE constexpr static ElemType getFCritical();

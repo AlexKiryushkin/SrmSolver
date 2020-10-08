@@ -20,9 +20,15 @@ EBoundaryCondition SrmFlushMountedNozzle<GpuGridT>::getBoundaryCondition(ElemTyp
 }
 
 template <class GpuGridT>
-auto SrmFlushMountedNozzle<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
+HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
 {
-  return j * GpuGridT::hy - yBottom;
+  return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
+}
+
+template <class GpuGridT>
+HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::getRadius(ElemType x, ElemType y) -> ElemType
+{
+  return y - yBottom;
 }
 
 template <class GpuGridT>

@@ -74,7 +74,13 @@ HOST_DEVICE bool SrmShapeWithUmbrella<GpuGridT>::shouldApplyScheme(unsigned i, u
 template <class GpuGridT>
 HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
 {
-  return j * GpuGridT::hy - y_bottom;
+  return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
+}
+
+template <class GpuGridT>
+HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(ElemType x, ElemType y) -> ElemType
+{
+  return y - y_bottom;
 }
 
 template <class GpuGridT>
