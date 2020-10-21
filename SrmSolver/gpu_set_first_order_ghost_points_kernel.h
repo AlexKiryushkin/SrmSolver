@@ -32,7 +32,8 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   const auto normal            = pNormals.get()[globalIdx];
   const auto rotatedState      = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
   const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedState, 
-                                                                                            boundaryCondition);
+                                                                                          rotatedState,
+                                                                                          boundaryCondition);
   pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
 }
 

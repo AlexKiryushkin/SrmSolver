@@ -4,6 +4,8 @@
 
 #include "types.h"
 
+namespace kae {
+
 template <class ElemType>
 ElemType sqr(ElemType value)
 {
@@ -103,3 +105,5 @@ struct WaveSpeed
     return SonicSpeed::get(state) + std::fabs(U::get(state));
   }
 };
+
+}

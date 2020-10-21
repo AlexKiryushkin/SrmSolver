@@ -12,15 +12,16 @@ namespace kae {
 namespace detail {
 
 template <class PhysicalPropertiesT, class GasStateT>
-HOST_DEVICE GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasStateT & gasState,
+                                                                  const GasStateT& closestGasState)
 {
   using ElemType = typename GasStateT::ElemType;
-  const auto c = SonicSpeed::get(gasState);
+  const auto c = SonicSpeed::get(closestGasState);
 
   constexpr auto kappa    = GasStateT::kappa;
   constexpr auto nu       = PhysicalPropertiesT::nu;
-  const auto coefficient1 = gasState.ux + c / kappa;
-  const auto coefficient2 = -1 / gasState.rho / c;
+  const auto coefficient1 = gasState.ux + 1 / closestGasState.rho / c * gasState.p;
+  const auto coefficient2 = -1 / closestGasState.rho / c;
   const auto coefficient3 = kappa / (kappa - 1) / PhysicalPropertiesT::mt;
 
   ElemType p1 = 10 * gasState.p;
@@ -51,52 +52,56 @@ HOST_DEVICE GasStateT getFirstOrderMassFlowExtrapolatedGhostValue(const GasState
 }
 
 template <class PhysicalPropertiesT, class GasStateT>
-HOST_DEVICE GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const GasStateT & gasState,
+                                                                        const GasStateT & closestGasState)
 {
-  const auto c = SonicSpeed::get(gasState);
-  if (gasState.ux >= c)
+  const auto c = SonicSpeed::get(closestGasState);
+  if (closestGasState.ux >= c)
   {
     return gasState;
   }
 
   constexpr auto P0    = PhysicalPropertiesT::P0;
   constexpr auto kappa = GasStateT::kappa;
-  return GasStateT{ P0 / c / c - (1 - kappa) / kappa * gasState.rho,
-                    gasState.ux + c / kappa - P0 / gasState.rho / c,
+  return GasStateT{ gasState.rho - 1 / c / c * (gasState.p - P0),
+                    gasState.ux + 1 / closestGasState.rho / c * (gasState.p - P0),
                     gasState.uy,
                     P0 };
 }
 
 template <class GasStateT>
-HOST_DEVICE GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderWallExtrapolatedGhostValue(const GasStateT & gasState,
+                                                              const GasStateT& closestGasState)
 {
-  const auto c = SonicSpeed::get(gasState);
-  return GasStateT{ gasState.rho * (1 + gasState.ux / c),
+  const auto c = SonicSpeed::get(closestGasState);
+  return GasStateT{ gasState.rho + closestGasState.rho / c * gasState.ux,
                     0,
                     gasState.uy,
-                    gasState.p * (1 + GasStateT::kappa * gasState.ux / c) };
+                    gasState.p + c * closestGasState.rho * gasState.ux };
 }
 
 template <class GasStateT>
-HOST_DEVICE GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const GasStateT & gasState)
+HOST_DEVICE GasStateT getFirstOrderMirrorExtrapolatedGhostValue(const GasStateT & gasState,
+                                                                const GasStateT& closestGasState)
 {
   return kae::MirrorState::get(gasState);
 }
 
 template <class PhysicalPropertiesT, class GasStateT>
-HOST_DEVICE GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState, 
-                                                                  EBoundaryCondition boundaryCondition)
+HOST_DEVICE GasStateT getFirstOrderExtrapolatedGhostValue(const GasStateT & gasState,
+                                                          const GasStateT & closestGasState,
+                                                          EBoundaryCondition boundaryCondition)
 {
   switch (boundaryCondition)
   {
   case EBoundaryCondition::eMassFlowInlet:
-    return getFirstOrderMassFlowExtrapolatedGhostValue<PhysicalPropertiesT>(gasState);
+    return getFirstOrderMassFlowExtrapolatedGhostValue<PhysicalPropertiesT>(gasState, closestGasState);
   case EBoundaryCondition::ePressureOutlet:
-    return getFirstOrderPressureOutletExtrapolatedGhostValue<PhysicalPropertiesT>(gasState);
+    return getFirstOrderPressureOutletExtrapolatedGhostValue<PhysicalPropertiesT>(gasState, closestGasState);
   case EBoundaryCondition::eWall:
-    return getFirstOrderWallExtrapolatedGhostValue(gasState);
+    return getFirstOrderWallExtrapolatedGhostValue(gasState, closestGasState);
   case EBoundaryCondition::eMirror:
-    return getFirstOrderMirrorExtrapolatedGhostValue(gasState);
+    return getFirstOrderMirrorExtrapolatedGhostValue(gasState, closestGasState);
   default:
     return GasStateT{};
   }

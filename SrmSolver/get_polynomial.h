@@ -3,6 +3,7 @@
 #include "cuda_includes.h"
 
 #include "cuda_float_types.h"
+#include "linear_system_solver.h"
 #include "matrix.h"
 #include "matrix_operations.h"
 #include "submatrix.h"
@@ -85,8 +86,8 @@ HOST_DEVICE kae::Matrix<ElemT, MatrixT::rows, 2U> getWenoCoefficients(const Matr
 
   for (unsigned i{}; i < MatrixT::rows; ++i)
   {
-    const auto alpha0 = d0 / sqr(bettas0(i) + epsilon);
-    const auto alpha1 = d1 / sqr(bettas1(i) + epsilon);
+    const auto alpha0 = d0 / sqr(sqr(bettas0(i) + epsilon));
+    const auto alpha1 = d1 / sqr(sqr(bettas1(i) + epsilon));
     const auto sum = alpha0 + alpha1;
     wenoCoefficients(i, 0U) = alpha0 / sum;
     wenoCoefficients(i, 1U) = alpha1 / sum;

@@ -28,15 +28,18 @@ public:
 };
 
 using TypeParams = ::testing::Types<
-  std::tuple<float,  std::integral_constant<unsigned, 100U>  >,
+  /*std::tuple<float,  std::integral_constant<unsigned, 100U>  >,
   std::tuple<float,  std::integral_constant<unsigned, 500U>  >,
-  std::tuple<float,  std::integral_constant<unsigned, 1000U> >,
+  std::tuple<float,  std::integral_constant<unsigned, 1000U> >,*/
   std::tuple<double, std::integral_constant<unsigned, 100U>  >,
-  std::tuple<double, std::integral_constant<unsigned, 500U>  >
+  std::tuple<double, std::integral_constant<unsigned, 200U>  >,
+  std::tuple<double, std::integral_constant<unsigned, 400U>  >,
+  std::tuple<double, std::integral_constant<unsigned, 800U>  >,
+  std::tuple<double, std::integral_constant<unsigned, 1600U>  >
 >;
 TYPED_TEST_SUITE(gpu_level_set_solver, TypeParams);
 
-TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_simple)
+/*TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_simple)
 {
   using tf              = TestFixture;
   using ElemT           = typename tf::ElemType;
@@ -61,7 +64,7 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_simple)
       EXPECT_NEAR(hostValues[index], value, threshold);
     }
   }
-}
+}*/
 
 TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_reinitialize)
 {
@@ -78,22 +81,25 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_reinitialize)
   std::vector<ElemT> hostValues(matrixSize);
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
+  ElemT totalError{};
   for (unsigned i = 0U; i < tf::nx; ++i)
   {
     for (unsigned j = 0U; j < tf::ny; ++j)
     {
       const auto index = j * tf::nx + i;
-      if (std::fabs(hostValues[index]) < 10 * GpuGridT::hx)
+      if (std::fabs(hostValues[index]) < 5 * GpuGridT::hx)
       {
         const auto value = ShapeT::reinitializedValue(i, j);
-        const auto threshold = 5 * std::max(static_cast<ElemT>(1.0), value) * GpuGridT::hx * GpuGridT::hx;
-        EXPECT_NEAR(hostValues[index], value, threshold);
+        totalError += std::fabs(value - hostValues[index]) * GpuGridT::hx * GpuGridT::hy;
+        /*const auto threshold = 5 * std::max(static_cast<ElemT>(1.0), value) * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx;
+        EXPECT_NEAR(hostValues[index], value, threshold);*/
       }
     }
   }
+  std::cout << totalError << "\n";
 }
 
-TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_reinitialize)
+/*TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_reinitialize)
 {
   using tf              = TestFixture;
   using ElemT           = typename tf::ElemType;
@@ -192,7 +198,7 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_b)
       }
     }
   }
-}
+}*/
 
 } // namespace kae_tests
 

@@ -63,7 +63,7 @@ HOST_DEVICE ElemT getLevelSetDerivative(const ElemT * arr, const unsigned i)
     WC<ElemT>[0] * sqr(v[1] - 2 * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
     WC<ElemT>[0] * sqr(v[2] - 2 * v[3] + v[4]) + WC<ElemT>[1] * sqr(3 * v[2] - 4 * v[3] + v[4]) };
 
-  constexpr ElemT epsilon = std::is_same<ElemT, float>::value ? static_cast<ElemT>(1e-12) : static_cast<ElemT>(1e-24);
+  constexpr ElemT epsilon = sqr(GpuGridT::hx);
   const ElemT alpha[fluxesCount] = {
     a<ElemT>[0] / sqr(s[0] + epsilon),
     a<ElemT>[1] / sqr(s[1] + epsilon),

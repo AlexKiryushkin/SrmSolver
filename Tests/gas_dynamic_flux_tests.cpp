@@ -22,10 +22,11 @@ public:
   using GasStateT = GasStateType<KappaT, CpT, ElemType>;
 
   constexpr static unsigned bias{ 5U };
-  constexpr static ElemType startPoint{ static_cast<ElemType>(0.99) };
+  constexpr static ElemType startPoint{ static_cast<ElemType>(0.5) };
   constexpr static ElemType endPoint{ static_cast<ElemType>(1.0) };
   constexpr static unsigned pointsCount{ 201U };
   constexpr static ElemType step{ (endPoint - startPoint) / static_cast<ElemType>(pointsCount - 1U) };
+  constexpr static ElemType hx{ step };
   constexpr static ElemType lambda{ static_cast<ElemType>(2.5) };
 
   static ElemType xCoordinate(unsigned pointNumber) { return startPoint + step * pointNumber; }
@@ -71,16 +72,19 @@ TYPED_TEST(gas_dynamic_flux, gas_dynamic_flux_mass_flux)
     {
       auto index = j * tf::pointsCount + i;
 
-      const auto calculatedFluxX = kae::getXFluxes<1U>(pGasState, index, tf::lambda);
-      const auto calculatedFluxY = kae::getYFluxes<tf::pointsCount>(pGasState, index, tf::lambda);
+      const auto calculatedFluxX = kae::getXFluxes<1U, tf>(pGasState, index, tf::lambda);
+      const auto calculatedFluxY = kae::getYFluxes<tf::pointsCount, tf>(pGasState, index, tf::lambda);
 
       const auto goldFluxX = kae::XFluxes::get(tf::gasState(tf::xCoordinatePlus(i), tf::yCoordinate(j)));
       const auto goldFluxY = kae::YFluxes::get(tf::gasState(tf::xCoordinate(i), tf::yCoordinatePlus(j)));
 
-      constexpr ElemType threshold{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(4e-7) :
+      constexpr ElemType threshold1 = 10 * tf::step * tf::step * tf::step;
+      constexpr ElemType threshold2{ std::is_same<ElemType, float>::value ? static_cast<ElemType>(4e-7) :
                                                                            static_cast<ElemType>(4e-11) };
-      EXPECT_FLOAT4_NEAR(calculatedFluxX, goldFluxX, threshold);
-      EXPECT_FLOAT4_NEAR(calculatedFluxY, goldFluxY, threshold);
+      constexpr ElemType maxThreshold{ std::max(threshold1, threshold2) };
+
+      EXPECT_FLOAT4_NEAR(calculatedFluxX, goldFluxX, maxThreshold);
+      EXPECT_FLOAT4_NEAR(calculatedFluxY, goldFluxY, maxThreshold);
     }
   }
 }

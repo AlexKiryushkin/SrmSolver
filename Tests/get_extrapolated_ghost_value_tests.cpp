@@ -43,7 +43,8 @@ TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_wall)
                                static_cast<ElemType>(1.5),
                                static_cast<ElemType>(0.5),
                                static_cast<ElemType>(1.2) };
-  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(gasState, kae::EBoundaryCondition::eWall);
+  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(
+    gasState, gasState, kae::EBoundaryCondition::eWall);
 
   const GasStateType goldExtrapolatedState{ static_cast<ElemType>(2.25),
                                             static_cast<ElemType>(0.0),
@@ -64,7 +65,8 @@ TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_o
                                static_cast<ElemType>(1.5),
                                static_cast<ElemType>(0.5),
                                static_cast<ElemType>(1.2) };
-  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(gasState, kae::EBoundaryCondition::ePressureOutlet);
+  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(
+    gasState, gasState, kae::EBoundaryCondition::ePressureOutlet);
 
   const GasStateType goldExtrapolatedState{ static_cast<ElemType>(1.0),
                                             static_cast<ElemType>(1.5),
@@ -85,7 +87,8 @@ TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_pressure_o
                                static_cast<ElemType>(0.2),
                                static_cast<ElemType>(0.5),
                                static_cast<ElemType>(1.44) };
-  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(gasState, kae::EBoundaryCondition::ePressureOutlet);
+  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(
+    gasState, gasState, kae::EBoundaryCondition::ePressureOutlet);
 
   const GasStateType goldExtrapolatedState{ static_cast<ElemType>(0.3),
                                             static_cast<ElemType>(1.1),
@@ -106,7 +109,8 @@ TYPED_TEST(get_extrapolated_ghost_value, get_extrapolated_ghost_value_massflow_i
                                static_cast<ElemType>(-0.3),
                                static_cast<ElemType>(0.1),
                                static_cast<ElemType>(1.0) };
-  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(gasState, kae::EBoundaryCondition::eMassFlowInlet);
+  const auto extrapolatedState = kae::detail::getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesType>(
+    gasState,  gasState, kae::EBoundaryCondition::eMassFlowInlet);
 
   const GasStateType goldExtrapolatedState{ static_cast<ElemType>(1.0),
                                             static_cast<ElemType>(-0.3),

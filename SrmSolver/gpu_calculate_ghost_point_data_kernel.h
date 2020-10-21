@@ -64,7 +64,7 @@ __global__ void calculateGhostPointData(const ElemT *                         pC
     const int jMirrorInt = std::round(jMirror);
 
     const ElemT sum = std::fabs(iMirror - iMirrorInt) + std::fabs(jMirror - jMirrorInt);
-    if (sum < sqr(GpuGridT::hx))
+    if (sum < static_cast<ElemT>(0.005) * GpuGridT::hx)
     {
       const unsigned mirrorGlobalIdx = jMirrorInt * GpuGridT::nx + iMirrorInt;
       pClosestIndices[globalIdx]     = thrust::make_pair(globalIdx, mirrorGlobalIdx);;

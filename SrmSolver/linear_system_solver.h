@@ -3,6 +3,7 @@
 #include "cuda_includes.h"
 
 #include "math_utilities.h"
+#include "matrix.h"
 
 namespace kae {
 
@@ -40,7 +41,7 @@ template <class LhsMatrixT,
 template <class LhsMatrixT,
           class RhsMatrixT,
           class ElemT = typename LhsMatrixT::ElemType,
-          class ReturnT = kae::Matrix<ElemT, RhsMatrixT::rows, RhsMatrixT::cols>>
+          class ReturnT = Matrix<ElemT, RhsMatrixT::rows, RhsMatrixT::cols>>
   HOST_DEVICE ReturnT choleskySolve(const LhsMatrixT& lhsMatrix, const RhsMatrixT & rhsMatrix)
 {
   static_assert(LhsMatrixT::rows == LhsMatrixT::cols, "");

@@ -20,6 +20,44 @@ class extrapolate_polynomial_tests : public ::testing::Test
 {
 public:
 
+  void test()
+  {
+    using kae::detail::getStencilIndices;
+    using kae::detail::getCoordinatesMatrix;
+    using kae::detail::getRightHandSideMatrix;
+
+    using tf = extrapolate_polynomial_tests<T>;
+    using ElemType = typename tf::ElemType;
+    using Real2Type = typename tf::Real2Type;
+    using IndexMatrixType = typename tf::IndexMatrixType;
+    using GpuGridType = typename tf::GpuGridType;
+    using InitList = std::initializer_list<unsigned>;
+
+    const auto negativeValue = static_cast<ElemType>(-0.1);
+    std::vector<ElemType> phiValues(GpuGridType::nx * GpuGridType::ny, negativeValue);
+    const auto gasStates = this->generateGasStates();
+    const auto pGasValues = gasStates.data();
+
+    std::cout.precision(9);
+    std::cout << std::setw(25);
+    const auto indexMatrix = getStencilIndices<GpuGridType, tf::order>(phiValues.data(), tf::surfacePoint, tf::normal);
+    const auto coefficients = kae::detail::getWenoPolynomial<GpuGridType>(tf::surfacePoint,
+      tf::normal,
+      pGasValues,
+      indexMatrix);
+
+    const auto goldCoefficients = tf::goldCoefficients();
+    const auto thresholdMatrix = cwiseAbs(goldCoefficients - coefficients);
+    const auto goldThresholdMatrix = tf::thresholdMatrix();
+    const auto diffMatrix = thresholdMatrix - goldThresholdMatrix;
+    const auto maxDiff = maxCoeff(diffMatrix);
+    EXPECT_LE(maxDiff, 0) << coefficients << "\n\n" << goldCoefficients << "\n\n"
+      << cwiseAbs(goldCoefficients - coefficients) << "\n\n"
+      << diffMatrix << "\n\n";
+  }
+
+private:
+
   constexpr static unsigned order{ 2U };
   constexpr static unsigned nCoefficients{ order * (order + 1U) / 2U };
   using ElemType        = T;
@@ -129,38 +167,7 @@ TYPED_TEST_SUITE(extrapolate_polynomial_tests, TypeParams);
 
 TYPED_TEST(extrapolate_polynomial_tests, extrapolate_polynomial_tests_1)
 {
-  using kae::detail::getStencilIndices;
-  using kae::detail::getCoordinatesMatrix;
-  using kae::detail::getRightHandSideMatrix;
-
-  using tf              = TestFixture;
-  using ElemType        = typename tf::ElemType;
-  using Real2Type       = typename tf::Real2Type;
-  using IndexMatrixType = typename tf::IndexMatrixType;
-  using GpuGridType     = typename tf::GpuGridType;
-  using InitList        = std::initializer_list<unsigned>;
-
-  const auto negativeValue = static_cast<ElemType>(-0.1);
-  std::vector<ElemType> phiValues(GpuGridType::nx * GpuGridType::ny, negativeValue);
-  const auto gasStates = this->generateGasStates();
-  const auto pGasValues = gasStates.data();
-
-  std::cout.precision(9);
-  std::cout << std::setw(25);
-  const auto indexMatrix = getStencilIndices<GpuGridType, tf::order>(phiValues.data(), tf::surfacePoint, tf::normal);
-  const auto coefficients = kae::detail::getWenoPolynomial<GpuGridType>(tf::surfacePoint, 
-                                                                        tf::normal, 
-                                                                        pGasValues, 
-                                                                        indexMatrix);
-
-  const auto goldCoefficients = tf::goldCoefficients();
-  const auto thresholdMatrix = cwiseAbs(goldCoefficients - coefficients);
-  const auto goldThresholdMatrix = tf::thresholdMatrix();
-  const auto diffMatrix = thresholdMatrix - goldThresholdMatrix;
-  const auto maxDiff = maxCoeff(diffMatrix);
-  EXPECT_LE(maxDiff, 0) << coefficients << "\n\n" << goldCoefficients << "\n\n"
-                        << cwiseAbs(goldCoefficients - coefficients) << "\n\n"
-                        << diffMatrix << "\n\n";
+  this->test();
 }
 
 } // namespace kae_tests
