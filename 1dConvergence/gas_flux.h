@@ -8,7 +8,7 @@ namespace kae {
 template <class U, class F, unsigned Step = 1U>
 ElemT getFlux(const GasState* pState, std::size_t idx, ElemT lambda, ElemT h)
 {
-  const ElemT epsilon{ h * h };
+  /*const ElemT epsilon{ h * h };
   constexpr ElemT half = static_cast<ElemT>(0.5);
 
   const ElemT plusFluxes[3U] = {
@@ -46,8 +46,8 @@ ElemT getFlux(const GasState* pState, std::size_t idx, ElemT lambda, ElemT h)
   const ElemT fMinus = (alpha0Minus * (half * minusFluxes[0] + half * minusFluxes[1]) +
                        alpha1Minus * (3 * half * minusFluxes[1] - half * minusFluxes[2])) / (alpha0Minus + alpha1Minus);
 
-  return fPlus + fMinus;
-  /*constexpr ElemT epsilon{ static_cast<ElemT>(1e-6) };
+  return fPlus + fMinus;*/
+  const ElemT epsilon{ h * h };
   const ElemT plusFluxes[2U] = {
     F::get(pState[idx]) - F::get(pState[idx - Step]) + lambda * (U::get(pState[idx]) - U::get(pState[idx - Step])),
     F::get(pState[idx + Step]) - F::get(pState[idx]) + lambda * (U::get(pState[idx + Step]) - U::get(pState[idx])) };
@@ -66,7 +66,7 @@ ElemT getFlux(const GasState* pState, std::size_t idx, ElemT lambda, ElemT h)
 
   const ElemT r2 = s1 / (4 * s1 + 8 * s2);
 
-  return averageFlux - r1 * (plusFluxes[1U] - plusFluxes[0U]) - r2 * (minusFluxes[1U] - minusFluxes[0U]);*/
+  return averageFlux - r1 * (plusFluxes[1U] - plusFluxes[0U]) - r2 * (minusFluxes[1U] - minusFluxes[0U]);
 }
 
 } // namespace kae

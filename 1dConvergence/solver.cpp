@@ -47,27 +47,33 @@ void GasDynamicsSolver::rungeKuttaStep(std::vector<GasState> & prevGasValues,
     {
       m_pProblem->setGhostValues(prevGasValues, t, dt, 0U);
       rungeKuttaSubStep(prevGasValues, firstGasValues, currGasValues, lambda, dt, static_cast<ElemT>(1.0));
+      m_pProblem->updateBoundaries(prevGasValues, t, dt, 0U);
       break;
     }
     case 2U:
     {
       m_pProblem->setGhostValues(prevGasValues, t, dt, 0U);
       rungeKuttaSubStep(prevGasValues, currGasValues, firstGasValues, lambda, dt, static_cast<ElemT>(1.0));
+      m_pProblem->updateBoundaries(prevGasValues, t, dt, 0U);
 
       m_pProblem->setGhostValues(firstGasValues, t, dt, 1U);
       rungeKuttaSubStep(firstGasValues, prevGasValues, currGasValues, lambda, dt, static_cast<ElemT>(0.5));
+      m_pProblem->updateBoundaries(firstGasValues, t, dt, 1U);
       break;
     }
     case 3U:
     {
       m_pProblem->setGhostValues(prevGasValues, t, dt, 0U);
       rungeKuttaSubStep(prevGasValues, firstGasValues, currGasValues, lambda, dt, static_cast<ElemT>(1.0));
+      m_pProblem->updateBoundaries(prevGasValues, t, dt, 0U);
 
       m_pProblem->setGhostValues(currGasValues, t, dt, 1U);
       rungeKuttaSubStep(currGasValues, prevGasValues, firstGasValues, lambda, dt, static_cast<ElemT>(0.25));
+      m_pProblem->updateBoundaries(currGasValues, t, dt, 1U);
 
       m_pProblem->setGhostValues(firstGasValues, t, dt, 2U);
       rungeKuttaSubStep(firstGasValues, prevGasValues, currGasValues, lambda, dt, static_cast<ElemT>(2.0 / 3.0));
+      m_pProblem->updateBoundaries(firstGasValues, t, dt, 2U);
       break;
     }
     default:

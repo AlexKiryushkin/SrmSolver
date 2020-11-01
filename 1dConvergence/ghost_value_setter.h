@@ -19,8 +19,8 @@ public:
 
 private:
 
-  virtual GasState getLeftGhostValue(const Problem& problem, ElemT x, ElemT t, ElemT dt, unsigned rkStep) const = 0;
-  virtual GasState getRightGhostValue(const Problem& problem, ElemT x, ElemT t, ElemT dt, unsigned rkStep) const = 0;
+  virtual GasState getLeftGhostValue(std::vector<GasState>& gasStates, const Problem& problem, ElemT x, ElemT t, ElemT dt, unsigned rkStep) const = 0;
+  virtual GasState getRightGhostValue(std::vector<GasState>& gasStates, const Problem& problem, ElemT x, ElemT t, ElemT dt, unsigned rkStep) const = 0;
 
 };
 using IGhostValueSetterPtr = std::unique_ptr<IGhostValueSetter>;
@@ -28,7 +28,9 @@ using IGhostValueSetterPtr = std::unique_ptr<IGhostValueSetter>;
 class GhostValueSetterFactory
 {
 public:
+
   static IGhostValueSetterPtr makeExactGhostValueSetter();
+  static IGhostValueSetterPtr makeMassFlowGhostValueSetter(ElemT rhoPReciprocal = ElemT{});
 };
 
 } // namespace kae

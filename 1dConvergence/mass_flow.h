@@ -13,14 +13,15 @@ struct MassFlowParams
 
 inline GasState getMassFlowGhostValue(const GasState& gasState, 
                                       const GasState& closestGasState,
-                                      const MassFlowParams & massFlowParameters)
+                                      const MassFlowParams & massFlowParameters,
+                                      ElemT rhoPReciprocal)
 {
   const auto c = SonicSpeed::get(closestGasState);
 
   constexpr auto kappa = GasState::kappa;
   const auto coefficient1 = gasState.u + 1 / closestGasState.rho / c * gasState.p;
   const auto coefficient2 = -1 / closestGasState.rho / c;
-  const auto coefficient3 = kappa / (kappa - 1) / massFlowParameters.mt;
+  const auto coefficient3 = kappa / (kappa - 1) / massFlowParameters.mt * (1 + rhoPReciprocal);
 
   ElemT p1 = 10 * gasState.p;
 
@@ -54,14 +55,15 @@ inline Eigen::Matrix<ElemT, 3, 1> getMassFlowDerivatives(const GasState & massFl
                                                          ElemT goldRhoDerivative,
                                                          ElemT calcUDerivative,
                                                          ElemT calcPDerivative,
-                                                         const MassFlowParams & massFlowParams)
+                                                         const MassFlowParams & massFlowParams,
+                                                         ElemT rhoPReciprocal)
 {
   constexpr auto kappa = GasState::kappa;
   Eigen::Matrix<ElemT, 3, 3> lhs;
   lhs <<
     massFlowGasState.u * massFlowGasState.u,
-    (2 - kappa * massFlowParams.nu)* MassFlux::get(massFlowGasState),
-    1 - massFlowParams.nu * MassFlux::get(massFlowGasState) * massFlowGasState.u / massFlowGasState.p,
+    2 * MassFlux::get(massFlowGasState) - kappa * massFlowParams.nu * massFlowParams.mt * std::pow(massFlowGasState.p, massFlowParams.nu),
+    1 - massFlowParams.nu * massFlowParams.mt * std::pow(massFlowGasState.p, massFlowParams.nu - 1) * massFlowGasState.u,
 
     -kappa / (kappa - 1) * massFlowGasState.p * massFlowGasState.u / sqr(massFlowGasState.rho),
     sqr(SonicSpeed::get(massFlowGasState)) + sqr(massFlowGasState.u),
@@ -77,7 +79,7 @@ inline Eigen::Matrix<ElemT, 3, 1> getMassFlowDerivatives(const GasState & massFl
     static_cast<ElemT>(0.5) / SonicSpeed::get(closestState) * calcUDerivative + 
     static_cast<ElemT>(0.5) / kappa / closestState.p * calcPDerivative };
 
-  return lhs.ldlt().solve(rhs);
+  return (lhs.transpose() * lhs).llt().solve(lhs.transpose() * rhs);
 }
 
 } // namespace kae

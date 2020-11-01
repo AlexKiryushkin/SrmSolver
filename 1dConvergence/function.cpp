@@ -112,6 +112,11 @@ GasStateFunction::GasStateFunction(IFunctionPtr pRhoFunction, IFunctionPtr pUFun
 {
 }
 
+GasState GasStateFunction::getGasState(ElemT x, ElemT t, ElemT dt, unsigned rkStep) const
+{
+    return GasState{ getRho(x, t, dt, rkStep), getU(x, t, dt, rkStep), getP(x, t, dt, rkStep) };
+}
+
 ElemT GasStateFunction::getRho(ElemT x, ElemT t, ElemT dt, unsigned rkStep) const
 {
   return m_pRhoFunction->getRkValue(x, t, dt, rkStep);

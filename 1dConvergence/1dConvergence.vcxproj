@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="boundary.cpp" />
+    <ClCompile Include="cubic_solver.cpp" />
     <ClCompile Include="function.cpp" />
     <ClCompile Include="ghost_value_setter.cpp" />
     <ClCompile Include="grid.cpp" />
@@ -151,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="boundary.h" />
+    <ClInclude Include="cubic_solver.h" />
     <ClInclude Include="function.h" />
     <ClInclude Include="gas_flux.h" />
     <ClInclude Include="gas_state.h" />

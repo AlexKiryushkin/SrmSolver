@@ -17,6 +17,7 @@ public:
 
   std::vector<GasState> solve();
   std::vector<GasState> goldSolution() const { return m_pProblem->getIAnalyticalSolution(); }
+  const Problem& getProblem() const { return *m_pProblem; }
 
   ElemT getH() const { return  m_pProblem->getH(); }
 

@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "gas_state.h"
 #include "types.h"
 
 namespace kae {
@@ -29,6 +30,8 @@ class GasStateFunction
 public:
 
   GasStateFunction(IFunctionPtr pRhoFunction, IFunctionPtr pUFunction, IFunctionPtr pPFunction);
+
+  GasState getGasState(ElemT x, ElemT t, ElemT dt = 0, unsigned rkStep = 0) const;
 
   ElemT getRho(ElemT x, ElemT t, ElemT dt = 0, unsigned rkStep = 0) const;
   ElemT getU(ElemT x, ElemT t, ElemT dt = 0, unsigned rkStep = 0) const;
