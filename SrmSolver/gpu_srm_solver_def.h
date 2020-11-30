@@ -52,7 +52,7 @@ void srmIntegrateTVDSubStepWrapper(DevicePtr<GasStateT>                         
   constexpr std::uint64_t startIdx{ 200U };
   static thread_local std::uint64_t counter{};
 
-  if (counter > startIdx)
+  /*if (counter > startIdx)
   {
     detail::setGhostValuesWrapper<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT, order>(
       pPrevValue,
@@ -63,7 +63,7 @@ void srmIntegrateTVDSubStepWrapper(DevicePtr<GasStateT>                         
       pIndexMatrices,
       nClosestIndexElems);
   }
-  else
+  else*/
   {
     ++counter;
     detail::setFirstOrderGhostValuesWrapper<GpuGridT, GasStateT, PhysicalPropertiesT>(
@@ -172,13 +172,14 @@ void GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::quasiStatio
       detail::getTheoreticalBoriPressure<GpuGridT, ShapeT, PhysicalPropertiesT>(phiValues, m_normals.values()));
     const auto sBurn = detail::getBurningSurface<GpuGridT, ShapeT>(phiValues, m_normals.values());
     const auto chamberVolume = detail::getChamberVolume<GpuGridT, ShapeT>(phiValues);
-    desiredIntegrateTime += 900 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 50;
+    desiredIntegrateTime += 450 * std::fabs(prevP - currP) * chamberVolume + levelSetDeltaT / 100;
     const auto gasDynamicDeltaT = std::min(desiredIntegrateTime, levelSetDeltaT);
     desiredIntegrateTime -= gasDynamicDeltaT;
 
     staticIntegrate(gasDynamicDeltaT, timeOrder, callback);
     if (i % 100 == 0)
     {
+      cudaStreamSynchronize(nullptr);
       callback(m_currState, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{});
     }
     const auto dt = integrateInTime(levelSetDeltaT);
@@ -230,7 +231,8 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticInteg
 
     if (i % 200U == 0U)
     {
-      callback(m_currState);
+      cudaStreamSynchronize(nullptr);
+      callback(m_currState, currPhi());
     }
     if (i % 5000U == 0U)
     {
@@ -268,7 +270,7 @@ auto GpuSrmSolver<GpuGridT, ShapeT, GasStateT, PhysicalPropertiesT>::staticInteg
     ++i;
     if (i % 200U == 0U)
     {
-      callback(m_currState);
+      callback(m_currState, currPhi());
     }
     if (i % 5000U == 0U)
     {
