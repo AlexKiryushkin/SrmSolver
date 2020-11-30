@@ -36,7 +36,7 @@ Eigen::Matrix<ElemT, order, 1> getPolynomial(const kae::GasState* pState,
 
 template <class U>
 Eigen::Matrix<ElemT, 3, 1> getWenoPolynomial(const kae::GasState* pState,
-    std::size_t startIdx,
+                                             std::size_t startIdx,
                                              ElemT xBoundary,
                                              ElemT xLeft,
                                              ElemT h)
