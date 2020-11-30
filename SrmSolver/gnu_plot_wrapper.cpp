@@ -13,20 +13,26 @@ GnuPlotWrapper::~GnuPlotWrapper()
 {
 }
 
-void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<float>> & values)
+void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<std::tuple<float, float, float>>>& values)
 {
   auto && gp = *m_pImpl;
 
-  gp << "plot '-' binary" << gp.binFmt2d(values, "array") << "with image\n";
+  gp << "set terminal wxt size 1280, 660\n";
+  gp << "set title \"Pressure values\"\n";
+  gp << "plot '-' binary" << gp.binFmt2d(values, "record")
+    << " with image\n";
+
   gp.sendBinary2d(values);
 }
 
-void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<double>>& values)
+void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<std::tuple<double, double, double>>>& values)
 {
   auto&& gp = *m_pImpl;
-
-  gp << "plot '-' binary" << gp.binFmt2d(values, "array") << "with image\n";
-  gp.sendBinary2d(values);
+  auto plots = gnuplotio::Gnuplot::splotGroup();
+  plots.add_plot2d(values, "with lines title 'vec of vec of std::tuple'");
+  gp << plots;
+  //gp << "plot '-' binary" << gp.binFmt2d(values, "array") << "with image\n";
+  //gp.sendBinary2d(values);
 }
 
 } // namespace kae 
