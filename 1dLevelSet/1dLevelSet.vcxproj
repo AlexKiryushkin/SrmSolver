@@ -141,10 +141,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="level_set_integrate_step.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="quartic_solve.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="level_set_derivatives.h" />
+    <ClInclude Include="level_set_integrate_step.h" />
     <ClInclude Include="quartic_solve.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

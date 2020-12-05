@@ -15,7 +15,7 @@ FloatT cubicSolveImpl(FloatT a, FloatT b, FloatT c, FloatT d, std::size_t idx, F
 {
   constexpr auto pi = std::numbers::pi_v<FloatT>;
   constexpr auto inf = std::numeric_limits<FloatT>::infinity();
-  const auto eps = h * h * h * h;
+  const auto eps = h * h * h * h * h;
   constexpr auto zero = static_cast<FloatT>(0.0);
 
   if (std::fabs(d) < eps)
@@ -26,7 +26,7 @@ FloatT cubicSolveImpl(FloatT a, FloatT b, FloatT c, FloatT d, std::size_t idx, F
   {
     if (std::fabs(b) < eps)
     {
-      return idx * h - d / b;
+      return idx * h - d / c;
     }
 
     const FloatT disc = std::sqrt(c * c - 4 * b * d);
