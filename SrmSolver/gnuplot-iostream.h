@@ -1540,9 +1540,9 @@ private:
 
 private:
     std::string plotspec;
-    bool is_text;
-    bool is_inline;
-    bool has_data;
+    bool is_text = true;
+    bool is_inline = false;
+    bool has_data = false;
     std::string data;
     std::string filename;
     std::string arr_or_rec;
@@ -1946,7 +1946,7 @@ public:
         return send(PlotGroup(plot_group));
     }
 
-    Gnuplot &send(const PlotGroup &&plot_group) {
+    Gnuplot &send(PlotGroup &&plot_group) {
         for(const std::string &s : plot_group.preamble_lines) {
             *this << s << "\n";
         }
@@ -2555,6 +2555,7 @@ class ArrayTraits<T, typename std::enable_if_t<is_eigen_matrix<T>>> :
 
 } // namespace gnuplotio
 #endif // GNUPLOT_EIGEN_SUPPORT_LOADED
+
 #endif // EIGEN_CORE_H
 
 // }}}2

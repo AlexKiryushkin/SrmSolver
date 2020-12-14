@@ -8,10 +8,10 @@ namespace detail {
 
 template <class GpuGridT, class ElemT>
 HOST_DEVICE unsigned getClosestIndex(const ElemT * pCurrPhi,
-                                             unsigned      i,
-                                             unsigned      j,
-                                             ElemT         nx,
-                                             ElemT         ny)
+                                     unsigned      i,
+                                     unsigned      j,
+                                     ElemT         nx,
+                                     ElemT         ny)
 {
   const unsigned globalIdx = j * GpuGridT::nx + i;
   const ElemT level        = pCurrPhi[globalIdx];

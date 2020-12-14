@@ -56,11 +56,11 @@ void writeMatrixToFile(const GpuMatrix<GpuGridT, GasState<KappaT, ElemT>> & matr
       ElemT y = j * GpuGridT::hy;
 
       auto&& gasState = hostValues[j * GpuGridT::nx + i];
-      pFile << x << ';' << y << ';' << gasState.p << '\n';
-      uxFile << x << ';' << y << ';' << gasState.ux << '\n';
-      uyFile << x << ';' << y << ';' << gasState.uy << '\n';
-      machFile << x << ';' << y << ';' << Mach::get(gasState) << '\n';
-      tFile << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
+      pFile    << x << ';' << y << ';' << gasState.p                 << '\n';
+      uxFile   << x << ';' << y << ';' << gasState.ux                << '\n';
+      uyFile   << x << ';' << y << ';' << gasState.uy                << '\n';
+      machFile << x << ';' << y << ';' << Mach::get(gasState)        << '\n';
+      tFile    << x << ';' << y << ';' << Temperature::get(gasState) << '\n';
     }
   }
 }

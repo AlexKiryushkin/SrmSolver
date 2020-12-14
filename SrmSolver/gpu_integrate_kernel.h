@@ -65,10 +65,10 @@ __global__ void integrateEqTvdSubStep(thrust::device_ptr<const ElemT>  pPrevValu
   {
     const ElemT sgdValue = prevMatrix[sharedIdx];
 
-    const ElemT normalX  = getLevelSetDerivative<GpuGridT, 1U>(prevMatrix, sharedIdx, true);
-    const ElemT normalY  = getLevelSetDerivative<GpuGridT, smx>(prevMatrix, sharedIdx, true);
+    const ElemT un = pVelocities[globalIdx];
+    const ElemT normalX  = getLevelSetDerivative<GpuGridT, 1U>(prevMatrix, sharedIdx, (un > 0));
+    const ElemT normalY  = getLevelSetDerivative<GpuGridT, smx>(prevMatrix, sharedIdx, (un > 0));
 
-    const ElemT un                  = pVelocities[globalIdx];
     const ElemT grad                = ((un != 0) ? std::hypot(normalX, normalY) : 0);
     const ElemT val                 = sgdValue - dt * un * grad;
     if (prevWeight != 1)

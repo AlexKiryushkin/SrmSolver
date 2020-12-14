@@ -62,7 +62,6 @@ HOST_DEVICE GasStateT getFirstOrderPressureOutletExtrapolatedGhostValue(const Ga
   }
 
   constexpr auto P0    = PhysicalPropertiesT::P0;
-  constexpr auto kappa = GasStateT::kappa;
   return GasStateT{ gasState.rho - 1 / c / c * (gasState.p - P0),
                     gasState.ux + 1 / closestGasState.rho / c * (gasState.p - P0),
                     gasState.uy,
