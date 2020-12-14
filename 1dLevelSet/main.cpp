@@ -1,117 +1,168 @@
 
 #include <algorithm>
 #include <bit>
-#include <bitset>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <string>
 
+#include "get_state.h"
 #include "level_set_integrate_step.h"
 #include "quartic_solve.h"
 
-template <class FloatT>
-constexpr FloatT leftX = static_cast<FloatT>(0.0);
 
-template <class FloatT>
-constexpr FloatT rightX = static_cast<FloatT>(10.0);
-
-template <class FloatT, std::size_t nPoints>
-constexpr FloatT h = (rightX<FloatT> - leftX<FloatT>) / static_cast<FloatT>(nPoints - 1U);
-
-template <std::size_t nPoints, class FloatT>
-FloatT initialFunctionValue(FloatT x)
+template <class FloatT, std::size_t Nx, std::size_t Ny>
+std::pair<FloatT, FloatT> getResiduals()
 {
-  constexpr auto offset = static_cast<FloatT>(0.4)* h<FloatT, nPoints>;
-  return ((x - 5.0 - offset) * (x - 8.0 - offset) * (x + 7) / 2) / 8;
-}
+  constexpr auto hx = kae::h<FloatT, Nx>;
+  constexpr auto hy = kae::h<FloatT, Ny>;
+  constexpr auto shape = kae::EShape::eCircle;
 
-template <std::size_t nPoints, class FloatT>
-FloatT reinitializedGoldFunctionValue(FloatT x)
-{
-  constexpr auto offset = static_cast<FloatT>(0.4)* h<FloatT, nPoints>;
-  return std::fabs(x - static_cast<FloatT>(6.5) - offset) - static_cast<FloatT>(1.5);
-}
+  const std::vector<FloatT> initState = kae::initialState<FloatT, Nx, Ny>(shape);
+  const std::vector<FloatT> goldState = kae::reinitializedGoldState<FloatT, Nx, Ny>(shape);
 
-template <class FloatT, std::size_t nPoints>
-std::vector<FloatT> initialState()
-{
-  std::vector<FloatT> initState(nPoints);
-  for (std::size_t i{}; i < nPoints; ++i)
+  std::vector<FloatT> prevState = initState;
+  std::vector<FloatT> firstState = initState;
+  std::vector<FloatT> currState = initState;
+  std::vector<FloatT> xRoots(std::size(initState), std::numeric_limits<FloatT>::quiet_NaN());
+  std::vector<FloatT> yRoots(std::size(initState), std::numeric_limits<FloatT>::quiet_NaN());
+
+  for (std::size_t i{}; i < Nx - 1; ++i)
   {
-    const FloatT x = leftX<FloatT> + i * h<FloatT, nPoints>;
-    initState.at(i) = initialFunctionValue<nPoints>(x);
-  }
-  return initState;
-}
-
-template <class FloatT, std::size_t nPoints>
-std::vector<FloatT> reinitializedGoldState()
-{
-  std::vector<FloatT> goldState(nPoints);
-  for (std::size_t i{}; i < nPoints; ++i)
-  {
-    const FloatT x = leftX<FloatT> + i * h<FloatT, nPoints>;
-    goldState.at(i) = reinitializedGoldFunctionValue<nPoints>(x);
-  }
-  return goldState;
-}
-
-template <class FloatT, std::size_t nPoints>
-FloatT getResidual()
-{
-  const std::vector<double> initState = initialState<double, nPoints>();
-  const std::vector<double> goldState = reinitializedGoldState<double, nPoints>();
-
-  std::vector<double> prevState = initState;
-  std::vector<double> firstState = initState;
-  std::vector<double> currState = initState;
-  std::vector<double> roots(std::size(initState), std::numeric_limits<double>::infinity());
-
-  for (std::size_t idx{}; idx < nPoints - 1; ++idx)
-  {
-    if (initState[idx] * initState[idx + 1] <= 0)
+    for (std::size_t j{}; j < Ny - 1; ++j)
     {
-      roots[idx] = leftX<FloatT> +kae::quarticSolve(initState, idx, h<FloatT, nPoints>);
+      const auto idx = j * Nx + i;
+      const auto centralState = initState[idx];
+      const auto rightState = initState[idx + 1];
+      const auto upperState = initState[idx + Nx];
+      if ((centralState > 0 && rightState < 0) || (centralState < 0 && rightState > 0))
+      {
+        xRoots[idx] = kae::quarticSolve(initState, idx, hx, 1U);
+        const auto x = i * hx + xRoots[idx];
+        const auto y = j * hy;
+        const auto residual = std::fabs(kae::reinitializedGoldFunctionValue(x, y, shape));
+        if (residual > hx * hx * hx)
+        {
+          const auto root = kae::quarticSolve(initState, idx, hx, 1U);
+          std::cout << "x: " << hx * hx * hx << "  "
+                    << i               << "  "
+                    << j               << "  "
+                    << x + xRoots[idx] << "  "
+                    << y               << "  "
+                    << kae::reinitializedGoldFunctionValue(x, y, shape) << "\n";
+        }
+      }
+      if ((centralState > 0 && upperState < 0) || (centralState < 0 && upperState > 0))
+      {
+        yRoots[idx] = kae::quarticSolve(initState, idx, hy, Nx);
+        const auto x = i * hx;
+        const auto y = j * hy + yRoots[idx];
+        const auto residual = std::fabs(kae::reinitializedGoldFunctionValue(x, y, shape));
+        if (residual > hy * hy * hy)
+        {
+          const auto root = kae::quarticSolve(initState, idx, hy, Nx);
+          std::cout << "y: " << hy * hy * hy     << "  "
+                    << i               << "  "
+                    << j               << "  "
+                    << x               << "  "
+                    << y + yRoots[idx] << "  "
+                    << kae::reinitializedGoldFunctionValue(x, y, shape) << "\n";
+        }
+      }
     }
   }
 
-  constexpr auto iterationCount = nPoints;
+  constexpr auto iterationCount = 80U;
   for (std::size_t iteration{}; iteration < iterationCount; ++iteration)
   {
     std::swap(prevState, currState);
-    kae::reinitializeStep(prevState, firstState, currState, roots, h<double, nPoints>, kae::ETimeDiscretizationOrder::eThree);
+    kae::reinitializeStep2d(initState, prevState, firstState, currState, xRoots, yRoots, Nx, Ny,
+      hx, hy, kae::ETimeDiscretizationOrder::eThree);
   }
 
-  for (std::size_t idx{}; idx < nPoints - 1; ++idx)
+  std::ofstream outputFile("sgd_" + std::to_string(Nx) + ".dat");
+  for (std::size_t i{}; i < Nx; ++i)
   {
-    if (initState[idx] * initState[idx + 1] <= 0)
+    for (std::size_t j{}; j < Ny; ++j)
     {
-      const auto numericalRoot = leftX<FloatT> +kae::quarticSolve(currState, idx, h<FloatT, nPoints>);
-      std::cout << "gold root " << roots[idx] << ". numerical root " << numericalRoot
-                << ". diff " << std::fabs(roots[idx] - numericalRoot) << "\n";
+      const auto idx = j * Nx + i;
+      outputFile << i * hx << ";" << j * hy << ";" << currState[idx] << ";" << goldState[idx] << "\n";
     }
   }
 
-  constexpr auto offset = 20U;
-  const auto error = std::transform_reduce(
-    std::next(std::begin(goldState), offset),
-    std::prev(std::end(goldState), offset),
-    std::next(std::begin(currState), offset),
-    0.0, std::plus<>{},
-    [](auto&& lhs, auto&& rhs) { return std::fabs(lhs - rhs); });
-  return error;
+  auto l1Error = static_cast<FloatT>(0.0);
+  auto linfError = static_cast<FloatT>(0.0);
+  std::size_t nPoints{};
+  for (std::size_t i{ 10 }; i < Nx - 10; ++i)
+  {
+    for (std::size_t j{ 10 }; j < Ny - 10; ++j)
+    {
+      const auto idx = j * Nx + i;
+      const auto isGhost = std::fabs(goldState[idx]) < 4 * hx; /*(goldState[idx] >= 0) &&
+        (goldState[idx - 1] < 0 || goldState[idx - 2] < 0 || goldState[idx - 3] < 0 || goldState[idx - 4] < 0 ||
+         goldState[idx + 1] < 0 || goldState[idx + 2] < 0 || goldState[idx + 3] < 0 || goldState[idx + 4] < 0 || 
+         goldState[idx - Nx] < 0 || goldState[idx - 2 * Nx] < 0 || goldState[idx - 3 * Nx] < 0 || goldState[idx - 4 * Nx] < 0 ||
+         goldState[idx + Nx] < 0 || goldState[idx + 2 * Nx] < 0 || goldState[idx + 3 * Nx] < 0 || goldState[idx + 4 * Nx] < 0 );*/
+      if (isGhost)
+      {
+        const auto error = std::fabs(currState[idx] - goldState[idx]);
+        l1Error = (l1Error * nPoints + error) / ++nPoints;
+        linfError = std::max(error, linfError);
+      }
+    }
+  }
+
+  return { l1Error, linfError };
 }
 
 int main()
 {
-  const auto err100 = getResidual<double, 100>();
-  const auto err200 = getResidual<double, 200>();
-  const auto err400 = getResidual<double, 400>();
-  const auto err800 = getResidual<double, 800>();
+  using FloatT = double;
+  const auto [l1Err100, linfErr100] = getResiduals<FloatT, 100, 100>();
 
-  std::cout << "N = 100; " << "err = " << err100 << "; order = " << "\n";
-  std::cout << "N = 200; " << "err = " << err200 << "; order = " << std::log2(err100 / err200) << "\n";
-  std::cout << "N = 400; " << "err = " << err400 << "; order = " << std::log2(err200 / err400) << "\n";
-  std::cout << "N = 800; " << "err = " << err800 << "; order = " << std::log2(err400 / err800) << "\n";
+  std::cout << "N = 100; "
+            << "l1Err = "
+            << l1Err100
+            << "; order = "
+            << "; linfErr = "
+            << linfErr100
+            << "; order = "
+            << "\n";
+
+  const auto [l1Err200, linfErr200] = getResiduals<FloatT, 200, 200>();
+  std::cout << "N = 200; "
+            << "l1Err = "
+            << l1Err200
+            << "; order = "
+            << std::log2(l1Err100 / l1Err200)
+            << "; linfErr = "
+            << linfErr200
+            << "; order = "
+            << std::log2(linfErr100 / linfErr200)
+            << "\n";
+
+  const auto [l1Err400, linfErr400] = getResiduals<FloatT, 400, 400>();
+  std::cout << "N = 400; "
+            << "l1Err = "
+            << l1Err400
+            << "; order = "
+            << std::log2(l1Err200 / l1Err400)
+            << "; linfErr = "
+            << linfErr400
+            << "; order = "
+            << std::log2(linfErr200 / linfErr400)
+            << "\n";
+
+  const auto [l1Err800, linfErr800] = getResiduals<FloatT, 800, 800>();
+  std::cout << "N = 800; "
+            << "l1Err = "
+            << l1Err800
+            << "; order = "
+            << std::log2(l1Err400 / l1Err800)
+            << "; linfErr = "
+            << linfErr800
+            << "; order = "
+            << std::log2(linfErr400 / linfErr800)
+            << "\n";
 }

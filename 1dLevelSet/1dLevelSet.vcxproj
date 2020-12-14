@@ -141,11 +141,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="get_state.cpp" />
     <ClCompile Include="level_set_integrate_step.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="quartic_solve.cpp" />
+    <ClCompile Include="square_solve.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="get_state.h" />
     <ClInclude Include="level_set_derivatives.h" />
     <ClInclude Include="level_set_integrate_step.h" />
     <ClInclude Include="quartic_solve.h" />

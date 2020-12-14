@@ -6,140 +6,151 @@
 namespace kae
 {
 
-constexpr unsigned derivativesCount = 5U;
-constexpr unsigned fluxesCount = 3U;
+constexpr std::size_t derivativesCount = 5U;
+constexpr std::size_t fluxesCount = 3U;
 
-template <class ElemT>
-constexpr ElemT a[fluxesCount] = { 0.1, 0.6, 0.3 };
+template <class FloatT>
+constexpr FloatT a[fluxesCount] = { static_cast<FloatT>(0.1), static_cast<FloatT>(0.6), static_cast<FloatT>(0.3) };
 
-template <class ElemT>
-constexpr ElemT LC[fluxesCount][fluxesCount] =
-{  1.0 / 3.0, -7.0 / 6.0, 11.0 / 6.0,
-  -1.0 / 6.0,  5.0 / 6.0,  1.0 / 3.0,
-   1.0 / 3.0,  5.0 / 6.0, -1.0 / 6.0 };
+template <class FloatT>
+constexpr FloatT LC[fluxesCount][fluxesCount] =
+{ static_cast<FloatT>( 1.0 / 3.0), static_cast<FloatT>(-7.0 / 6.0), static_cast<FloatT>(11.0 / 6.0),
+  static_cast<FloatT>(-1.0 / 6.0), static_cast<FloatT>( 5.0 / 6.0), static_cast<FloatT>( 1.0 / 3.0),
+  static_cast<FloatT>( 1.0 / 3.0), static_cast<FloatT>( 5.0 / 6.0), static_cast<FloatT>(-1.0 / 6.0) };
 
-template <class ElemT>
-constexpr ElemT WC[2U] = { 13.0 / 12.0, 0.25 };
+template <class FloatT>
+constexpr FloatT WC[2U] = { static_cast<FloatT>(13.0 / 12.0), static_cast<FloatT>(0.25) };
 
-template <class ElemT>
-ElemT sqr(ElemT value)
+template <class FloatT>
+FloatT sqr(FloatT value)
 {
   return value * value;
 }
 
 template <class FloatT>
-constexpr FloatT ctAbs(FloatT value)
+FloatT absmax(FloatT lhs, FloatT rhs)
 {
-  return value > 0 ? value : -value;
+  return std::max(lhs, rhs, [](auto left, auto right) { return std::fabs(left) < std::fabs(right); });
 }
 
-template <unsigned Step, bool IsPlus>
-struct Derivative
+template <class FloatT>
+FloatT absmin(FloatT lhs, FloatT rhs)
 {
-  template <class ElemT>
-  static ElemT get(const ElemT* arr, const ElemT* roots, const unsigned i, const int offset, ElemT h)
-  {
-    const auto rightValue = arr[i + (offset + 1) * Step];
-    const auto leftValue = arr[i + offset * Step];
-    const auto defaultDerivative = (rightValue - leftValue) / h;
-    if (rightValue * leftValue < 0)
-    {
-      const auto root = roots[i + offset * Step];
-      const auto delta = root - (i + offset * Step) * h;
-      return -leftValue / delta;
-    }
-
-    return defaultDerivative;
-  }
-};
-
-template <unsigned Step>
-struct Derivative<Step, false>
-{
-  template <class ElemT>
-  static ElemT get(const ElemT* arr, const ElemT* roots, const unsigned i, const int offset, ElemT h)
-  {
-    const auto rightValue = arr[i - offset * Step];
-    const auto leftValue = arr[i - (offset + 1) * Step];
-    const auto defaultDerivative = (rightValue - leftValue) / h;
-    if (rightValue * leftValue < 0)
-    {
-      const auto root = roots[i - (offset + 1) * Step];
-      const auto delta = root - (i - offset * Step) * h;
-      return -rightValue / delta;
-    }
-
-    return defaultDerivative;
-  }
-};
-
-template <unsigned Step, bool IsPlus, class ElemT>
-ElemT getLevelSetDerivative(const ElemT* arr, const ElemT * roots, const unsigned i, ElemT h)
-{
-  using Derivative = Derivative<Step, IsPlus>;
-  constexpr auto largeWeight = static_cast<ElemT>(1000.0);
-
-  const auto midIdx = IsPlus ? i : i - 1;
-  const ElemT v[derivativesCount] = { Derivative::get(arr, roots, i,  2, h),
-                                      Derivative::get(arr, roots, i,  1, h),
-                                      Derivative::get(arr, roots, i,  0, h),
-                                      Derivative::get(arr, roots, i, -1, h),
-                                      Derivative::get(arr, roots, i, -2, h) };
-
-  const ElemT flux[fluxesCount] =
-  { LC<ElemT>[0][0] * v[0] + LC<ElemT>[0][1] * v[1] + LC<ElemT>[0][2] * v[2],
-    LC<ElemT>[1][0] * v[1] + LC<ElemT>[1][1] * v[2] + LC<ElemT>[1][2] * v[3],
-    LC<ElemT>[2][0] * v[2] + LC<ElemT>[2][1] * v[3] + LC<ElemT>[2][2] * v[4] };
-
-  ElemT s[fluxesCount] =
-  { WC<ElemT>[0] * sqr(v[0] - 2 * v[1] + v[2]) + WC<ElemT>[1] * sqr(v[0] - 4 * v[1] + 3 * v[2]),
-    WC<ElemT>[0] * sqr(v[1] - 2 * v[2] + v[3]) + WC<ElemT>[1] * sqr(v[1] - v[3]),
-    WC<ElemT>[0] * sqr(v[2] - 2 * v[3] + v[4]) + WC<ElemT>[1] * sqr(3 * v[2] - 4 * v[3] + v[4]) };
-  if (!std::isinf(roots[midIdx - 1]))
-  {
-    s[0] = largeWeight;
-  }
-  if (!std::isinf(roots[midIdx]))
-  {
-    s[1] = largeWeight;
-  }
-  if (!std::isinf(roots[midIdx + 1]))
-  {
-    s[2] = largeWeight;
-  }
-
-  const ElemT epsilon = h * h;
-  const ElemT alpha[fluxesCount] = {
-    a<ElemT>[0] / sqr(s[0] + epsilon),
-    a<ElemT>[1] / sqr(s[1] + epsilon),
-    a<ElemT>[2] / sqr(s[2] + epsilon) };
-
-  return (alpha[0] * flux[0] + alpha[1] * flux[1] + alpha[2] * flux[2]) / (alpha[0] + alpha[1] + alpha[2]);
+  return std::min(lhs, rhs, [](auto left, auto right) { return std::fabs(left) < std::fabs(right); });
 }
 
-template <unsigned Nx, class ElemT>
-ElemT getLevelSetDerivative(const ElemT* arr, const ElemT * roots, unsigned i, bool isPositiveVelocity, ElemT h)
+template <class FloatT>
+FloatT minmod(FloatT lhs, FloatT rhs)
+{
+  if (lhs * rhs < 0)
+  {
+    return static_cast<FloatT>(0);
+  }
+
+  return absmin(lhs, rhs);
+}
+
+template <bool IsPlus, class FloatT>
+FloatT getLevelSetDerivative(const FloatT* arr, const FloatT * roots, const std::size_t i, FloatT h, std::size_t step)
+{
+  constexpr auto largeValue = static_cast<FloatT>(1000.0);
+  constexpr std::size_t nPoints = 7U;
+  FloatT xp[nPoints] = { 0, h, 2 * h, 3 * h, 4 * h, 5 * h, 6 * h };
+  FloatT fp[nPoints] = { arr[i - 3 * step], arr[i - 2 * step], arr[i - step], arr[i], arr[i + step], arr[i + 2 * step], arr[i + 3 * step] };
+
+  FloatT phi1[nPoints - 1] = { ( fp[1] - fp[0] ) / ( xp[1] - xp[0] ),
+                               ( fp[2] - fp[1] ) / ( xp[2] - xp[1] ),
+                               ( fp[3] - fp[2] ) / ( xp[3] - xp[2] ),
+                               ( fp[4] - fp[3] ) / ( xp[4] - xp[3] ),
+                               ( fp[5] - fp[4] ) / ( xp[5] - xp[4] ),
+                               ( fp[6] - fp[5] ) / ( xp[6] - xp[5] )};
+
+  FloatT phi2[nPoints - 2] = { ( phi1[1] - phi1[0] ) / ( xp[2] - xp[0] ),
+                               ( phi1[2] - phi1[1] ) / ( xp[3] - xp[1] ),
+                               ( phi1[3] - phi1[2] ) / ( xp[4] - xp[2] ),
+                               ( phi1[4] - phi1[3] ) / ( xp[5] - xp[3] ),
+                               ( phi1[5] - phi1[4] ) / ( xp[6] - xp[4] ) };
+
+  FloatT phi3[nPoints - 3] = { ( phi2[1] - phi2[0] ) / ( xp[3] - xp[0] ),
+                               ( phi2[2] - phi2[1] ) / ( xp[4] - xp[1] ),
+                               ( phi2[3] - phi2[2] ) / ( xp[5] - xp[2] ),
+                               ( phi2[4] - phi2[3] ) / ( xp[6] - xp[3] ) };
+
+  if (IsPlus)
+  {
+    const auto intersect = ( ( fp[3] < 0 ) && ( fp[4] > 0 ) ) || ( ( fp[3] > 0 ) && ( fp[4] < 0 ) );
+    const auto delta = intersect ? roots[i] : (xp[4] - xp[3]);
+    if (intersect && delta == 0)
+    {
+      return static_cast<FloatT>(0.0);
+    }
+
+    const FloatT a = intersect ? -fp[3] / delta : phi1[3];
+    const FloatT b = (std::fabs(phi2[2]) < std::fabs(phi2[3])) ?
+      - (xp[3] - xp[2]) * delta * absmin(phi3[1], phi3[2]) : 
+      - delta * (xp[3] - xp[5]) * absmin(phi3[2], phi3[3]);
+    
+    const FloatT c = minmod(phi2[2], phi2[3]);
+    return a - delta * c + b;
+  }
+  else
+  {
+    const auto intersect = ((fp[2] < 0) && (fp[3] > 0)) || ((fp[2] > 0) && (fp[3] < 0));
+    const auto delta = intersect ? h - roots[i - step] : (xp[3] - xp[2]);
+    if (intersect && delta == 0)
+    {
+      return static_cast<FloatT>(0.0);
+    }
+
+    const FloatT a = intersect ? fp[3] / delta : phi1[2];
+    const FloatT b = (std::fabs(phi2[1]) < std::fabs(phi2[2])) ?
+      delta * (xp[3] - xp[1]) * absmin(phi3[0], phi3[1]) :
+      delta * (xp[3] - xp[4]) * absmin(phi3[1], phi3[2]);
+    const FloatT c = minmod(phi2[1], phi2[2]);
+    return a + delta * c + b;
+  }
+  
+}
+
+template <class FloatT>
+FloatT getLevelSetDerivative(const FloatT* arr, const FloatT * roots, std::size_t i, bool isPositiveVelocity, FloatT h, std::size_t step)
 {
   if (isPositiveVelocity)
   {
-    ElemT val1 = std::max(getLevelSetDerivative<Nx, false>(arr, roots, i, h), static_cast<ElemT>(0.0));
-    ElemT val2 = std::min(getLevelSetDerivative<Nx, true>(arr, roots, i, h), static_cast<ElemT>(0.0));
+    FloatT val1 = std::max(getLevelSetDerivative<false>(arr, roots, i, h, step), static_cast<FloatT>(0.0));
+    FloatT val2 = std::min(getLevelSetDerivative<true>(arr, roots, i, h, step), static_cast<FloatT>(0.0));
 
-    return std::max(val1, val2, [](auto left, auto right) { return ctAbs(left) < ctAbs(right); });
+    return absmax(val1, val2);
   }
 
-  ElemT val1 = std::min(getLevelSetDerivative<Nx, false>(arr, roots, i, h), static_cast<ElemT>(0.0));
-  ElemT val2 = std::max(getLevelSetDerivative<Nx, true>(arr, roots, i, h), static_cast<ElemT>(0.0));
+  FloatT val1 = std::min(getLevelSetDerivative<false>(arr, roots, i, h, step), static_cast<FloatT>(0.0));
+  FloatT val2 = std::max(getLevelSetDerivative<true>(arr, roots, i, h, step), static_cast<FloatT>(0.0));
 
-  return std::max(val1, val2, [](auto left, auto right) { return ctAbs(left) < ctAbs(right); });
+  return absmax(val1, val2);
 }
 
-template <class ElemT>
-ElemT getLevelSetAbsGradient(const ElemT* arr, const ElemT * roots, unsigned i, bool isPositiveVelocity, ElemT h)
+template <class FloatT>
+FloatT getLevelSetAbsGradient(const FloatT* arr, const FloatT * roots, std::size_t i, bool isPositiveVelocity, FloatT h)
 {
-  ElemT derivativeX = getLevelSetDerivative<1>(arr, roots, i, isPositiveVelocity, h);
+  FloatT derivativeX = getLevelSetDerivative<1>(arr, roots, i, isPositiveVelocity, h);
 
   return std::fabs(derivativeX);
+}
+
+template <class FloatT>
+FloatT getLevelSetAbsGradient(const FloatT * arr, 
+                              const FloatT * xRoots, 
+                              const FloatT * yRoots, 
+                              std::size_t    i,
+                              std::size_t    nx,
+                              bool           isPositiveVelocity, 
+                              FloatT         hx, 
+                              FloatT         hy)
+{
+  FloatT derivativeX = getLevelSetDerivative(arr, xRoots, i, isPositiveVelocity, hx, 1);
+  FloatT derivativeY = getLevelSetDerivative(arr, yRoots, i, isPositiveVelocity, hy, nx);
+
+  return std::hypot(derivativeX, derivativeY);
 }
 
 } // namespace kae
