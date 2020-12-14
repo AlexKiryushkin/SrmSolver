@@ -28,7 +28,7 @@
     <ClInclude Include="comparators.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="circle_shape.h">
+    <ClInclude Include="shapes.h">
       <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>

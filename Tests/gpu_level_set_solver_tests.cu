@@ -4,7 +4,7 @@
 #include <SrmSolver/gpu_grid.h>
 #include <SrmSolver/gpu_level_set_solver.h>
 
-#include "circle_shape.h"
+#include "shapes.h"
 
 #ifndef _DEBUG
 
@@ -28,18 +28,17 @@ public:
 };
 
 using TypeParams = ::testing::Types<
-  /*std::tuple<float,  std::integral_constant<unsigned, 100U>  >,
-  std::tuple<float,  std::integral_constant<unsigned, 500U>  >,
-  std::tuple<float,  std::integral_constant<unsigned, 1000U> >,*/
-  std::tuple<double, std::integral_constant<unsigned, 100U>  >,
-  std::tuple<double, std::integral_constant<unsigned, 200U>  >,
-  std::tuple<double, std::integral_constant<unsigned, 400U>  >,
-  std::tuple<double, std::integral_constant<unsigned, 800U>  >,
-  std::tuple<double, std::integral_constant<unsigned, 1600U>  >
+  std::tuple<float,  std::integral_constant<unsigned, 100U> >,
+  std::tuple<float,  std::integral_constant<unsigned, 200U> >,
+  std::tuple<float,  std::integral_constant<unsigned, 400U> >,
+  std::tuple<double, std::integral_constant<unsigned, 100U> >,
+  std::tuple<double, std::integral_constant<unsigned, 200U> >,
+  std::tuple<double, std::integral_constant<unsigned, 400U> >,
+  std::tuple<double, std::integral_constant<unsigned, 800U> >
 >;
 TYPED_TEST_SUITE(gpu_level_set_solver, TypeParams);
 
-/*TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_simple)
+TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_simple)
 {
   using tf              = TestFixture;
   using ElemT           = typename tf::ElemType;
@@ -64,7 +63,7 @@ TYPED_TEST_SUITE(gpu_level_set_solver, TypeParams);
       EXPECT_NEAR(hostValues[index], value, threshold);
     }
   }
-}*/
+}
 
 TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_reinitialize)
 {
@@ -74,32 +73,38 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_reinitialize)
   using ShapeT          = typename tf::ShapeType;
   using LevelSetSolverT = typename tf::LevelSetSolverType;
 
-  LevelSetSolverT solver{ShapeT{}, tf::nx };
+  LevelSetSolverT solver{ShapeT{}, 40U };
   auto&& deviceValues = solver.currState().values();
   const auto matrixSize = deviceValues.size();
 
   std::vector<ElemT> hostValues(matrixSize);
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
-  ElemT totalError{};
+  ElemT averageError{};
+  ElemT maxError{};
+  unsigned nPoints{};
   for (unsigned i = 0U; i < tf::nx; ++i)
   {
     for (unsigned j = 0U; j < tf::ny; ++j)
     {
       const auto index = j * tf::nx + i;
-      if (std::fabs(hostValues[index]) < 5 * GpuGridT::hx)
+      const auto value = ShapeT::reinitializedValue(i, j);
+      if (std::fabs(value) < 5 * GpuGridT::hx)
       {
-        const auto value = ShapeT::reinitializedValue(i, j);
-        totalError += std::fabs(value - hostValues[index]) * GpuGridT::hx * GpuGridT::hy;
-        /*const auto threshold = 5 * std::max(static_cast<ElemT>(1.0), value) * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx;
-        EXPECT_NEAR(hostValues[index], value, threshold);*/
+        const auto error = std::fabs(value - hostValues[index]);
+
+        averageError = (averageError * nPoints + error) / (nPoints + 1);
+        ++nPoints;
+        maxError = std::max(maxError, error);
       }
     }
   }
-  std::cout << totalError << "\n";
+
+  EXPECT_LE(averageError, 2 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
+  EXPECT_LE(maxError, 5 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
 }
 
-/*TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_reinitialize)
+TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_reinitialize)
 {
   using tf              = TestFixture;
   using ElemT           = typename tf::ElemType;
@@ -108,27 +113,39 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_constructor_reinitialize)
   using LevelSetSolverT = typename tf::LevelSetSolverType;
 
   LevelSetSolverT solver{ ShapeT{} };
-  solver.reinitialize(tf::nx);
+  solver.reinitialize(40U);
   auto&& deviceValues = solver.currState().values();
   const auto matrixSize = deviceValues.size();
 
   std::vector<ElemT> hostValues(matrixSize);
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
+  ElemT averageError{};
+  ElemT maxError{};
+  unsigned nPoints{};
   for (unsigned i = 0U; i < tf::nx; ++i)
   {
     for (unsigned j = 0U; j < tf::ny; ++j)
     {
       const auto index = j * tf::nx + i;
-      if (std::fabs(hostValues[index]) < 10 * GpuGridT::hx)
+      const auto value = ShapeT::reinitializedValue(i, j);
+      if (std::fabs(value) < 5 * GpuGridT::hx)
       {
-        const auto value = ShapeT::reinitializedValue(i, j);
-        const auto threshold = 5 * std::max(static_cast<ElemT>(1.0), value) * GpuGridT::hx * GpuGridT::hx;
-        EXPECT_NEAR(hostValues[index], value, threshold);
+        const auto error = std::fabs(value - hostValues[index]);
+
+        averageError = (averageError * nPoints + error) / (nPoints + 1);
+        ++nPoints;
+        maxError = std::max(maxError, error);
       }
     }
   }
+
+  EXPECT_LE(averageError, 2 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
+  EXPECT_LE(maxError, 5 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
 }
+
+static double g_avgError;
+static double g_maxError;
 
 TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_a)
 {
@@ -141,7 +158,7 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_a)
 
   LevelSetSolverT solver{ ShapeT{}, tf::nx };
   GpuMatrixT velocities{ static_cast<ElemT>(1.0) };
-  const auto dt = solver.integrateInTime(velocities, tf::nx / 10U);
+  const auto dt = solver.integrateInTime(velocities, 10U);
 
   auto&& deviceValues = solver.currState().values();
   const auto matrixSize = deviceValues.size();
@@ -149,22 +166,35 @@ TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_a)
   std::vector<ElemT> hostValues(matrixSize);
   thrust::copy(std::begin(deviceValues), std::end(deviceValues), std::begin(hostValues));
 
+  ElemT averageError{};
+  ElemT maxError{};
+  unsigned nPoints{};
   for (unsigned i = 0U; i < tf::nx; ++i)
   {
     for (unsigned j = 0U; j < tf::ny; ++j)
     {
       const auto index = j * tf::nx + i;
-      if (std::fabs(hostValues[index]) < 10 * GpuGridT::hx)
+      const auto value = ShapeT::integratedValue(i, j, dt);
+      if (std::fabs(value) < 5 * GpuGridT::hx)
       {
-        const auto value = ShapeT::integratedValue(i, j, dt);
-        const auto threshold = 5 * std::max(static_cast<ElemT>(1.0), value) * GpuGridT::hx * GpuGridT::hx;
-        EXPECT_NEAR(hostValues[index], value, threshold);
+        const auto error = std::fabs(value - hostValues[index]);
+
+        averageError = (averageError * nPoints + error) / (nPoints + 1);
+        ++nPoints;
+        maxError = std::max(maxError, error);
       }
     }
   }
+
+  std::cout << averageError << "  " << std::log2(g_avgError / (double)averageError) << "  "
+            << maxError << "  " << std::log2(g_maxError / (double)maxError) << "\n";
+  g_avgError = averageError;
+  g_maxError = maxError;
+  //EXPECT_LE(averageError, 2 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
+  //EXPECT_LE(maxError, 5 * GpuGridT::hx * GpuGridT::hx * GpuGridT::hx);
 }
 
-TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_b)
+/*TYPED_TEST(gpu_level_set_solver, gpu_level_set_solver_integrate_overload_b)
 {
   using tf              = TestFixture;
   using ElemT           = typename tf::ElemType;
