@@ -180,6 +180,18 @@
     <ClInclude Include="srm_flush_mounted_nozzle_def.h">
       <Filter>Headers\Shapes</Filter>
     </ClInclude>
+    <ClInclude Include="gpu_find_level_set_roots_kernel.h">
+      <Filter>Headers\Kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="square_solve.h">
+      <Filter>Headers\Math Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_dual_thrust.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
+    <ClInclude Include="srm_dual_thrust_def.h">
+      <Filter>Headers\Shapes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">

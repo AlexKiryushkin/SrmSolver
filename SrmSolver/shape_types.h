@@ -2,6 +2,6 @@
 
 namespace kae {
 
-enum class EShapeType { eNozzleLessShape, eWithUmbrellaShape, eFlushMountedNozzle };
+enum class EShapeType { eNozzleLessShape, eWithUmbrellaShape, eFlushMountedNozzle, eDualThrustShape };
 
 } // namespace kae

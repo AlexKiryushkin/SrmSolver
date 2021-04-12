@@ -1,5 +1,6 @@
 #pragma once
 
+#include "srm_dual_thrust.h"
 #include "srm_flush_mounted_nozzle.h"
 #include "srm_shape_nozzle_less.h"
 #include "srm_shape_with_umbrella.h"

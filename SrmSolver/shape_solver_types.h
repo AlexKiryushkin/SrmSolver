@@ -15,10 +15,44 @@ template <EShapeType ShapeType, class ElemT>
 struct ShapeSolverTypes;
 
 template<class ElemT>
+struct ShapeSolverTypes<EShapeType::eDualThrustShape, ElemT>
+{
+  constexpr static unsigned nx{ 800U + 1U };
+  constexpr static unsigned ny{ 200U + 1U };
+  using LxToType = std::ratio<400, 1000>;
+  using LyToType = std::ratio<100, 1000>;
+  using GpuGridType = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
+  using ShapeType = kae::SrmDualThrust<GpuGridType>;
+  constexpr static ElemT hx = GpuGridType::hx;
+  constexpr static ElemT hy = GpuGridType::hy;
+  constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
+  static_assert(stepsAreSame, "Grid steps are different!");
+
+  using NuType = std::ratio<1052, 10000>;
+  using MtType = std::ratio<-31355, 10000>;
+  using TBurnType = std::ratio<2950, 1>;
+  using RhoPType = std::ratio<1580, 1>;
+  using P0Type = std::ratio<101325, 1>;
+  using KappaType = std::ratio<12, 10>;
+  using CpType = std::ratio<162913, 100>;
+  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
+
+  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+
+  using LevelSetSolverType = GpuLevelSetSolver<GpuGridType, ShapeType>;
+  using SrmSolverType = GpuSrmSolver<GpuGridType, ShapeType, GasStateType, PhysicalPropertiesType>;
+
+  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 static_cast<ElemT>(0.0),
+                                                 PhysicalPropertiesType::P0 };
+};
+
+template<class ElemT>
 struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
 {
-  constexpr static unsigned nx{ 1410U * 2U + 1U };
-  constexpr static unsigned ny{ 190U  * 2U + 1U };
+  constexpr static unsigned nx{ 1410U + 1U };
+  constexpr static unsigned ny{ 190U + 1U };
   using LxToType            = std::ratio<1410, 1000>;
   using LyToType            = std::ratio<190, 1000>;
   using GpuGridType         = GpuGrid<nx, ny, LxToType, LyToType, 3U, ElemT>;
