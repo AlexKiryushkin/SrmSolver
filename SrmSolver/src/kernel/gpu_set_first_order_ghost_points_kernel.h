@@ -16,7 +16,7 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
                                          thrust::device_ptr<const ElemT>                            pCurrPhi,
                                          thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndicesMap,
                                          thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                         thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals,
+                                         thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals, GasParameters<ElemT> gasParameters,
                                          unsigned                                                   nClosestIndexElems)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -32,7 +32,7 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   const auto normal            = pNormals.get()[globalIdx];
   const auto rotatedState      = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
   const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedState, 
-                                                                                          rotatedState,
+                                                                                          rotatedState, gasParameters,
                                                                                           boundaryCondition);
   pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
 }
@@ -42,13 +42,13 @@ void setFirstOrderGhostValuesWrapper(thrust::device_ptr<GasStateT>              
                                      thrust::device_ptr<const ElemT>                            pCurrPhi,
                                      thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndices,
                                      thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                     thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals,
+                                     thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals, GasParameters<ElemT> gasParameters,
                                      unsigned nClosestIndexElems)
 {
   constexpr unsigned blockSize = 256U;
   const unsigned gridSize = (nClosestIndexElems + blockSize - 1U) / blockSize;
   setFirstOrderGhostValues<GasStateT, PhysicalPropertiesT><<<gridSize, blockSize>>>
-  (pGasValues, pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, nClosestIndexElems);
+  (pGasValues, pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, gasParameters, nClosestIndexElems);
 }
 
 } // namespace detail

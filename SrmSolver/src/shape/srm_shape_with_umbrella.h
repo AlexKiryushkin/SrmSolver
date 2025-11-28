@@ -15,25 +15,25 @@ public:
 
   HOST_DEVICE ElemType operator()(unsigned i, unsigned j) const;
 
-  HOST_DEVICE static bool shouldApplyScheme(unsigned i, unsigned j);
+  DEVICE static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  HOST_DEVICE static bool isPointOnGrain(ElemType x, ElemType y);
+  DEVICE static bool isPointOnGrain(ElemType x, ElemType y);
 
-  HOST_DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
+  DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
 
-  HOST_DEVICE static ElemType getRadius(unsigned i, unsigned j);
+  DEVICE static ElemType getRadius(unsigned i, unsigned j);
 
-  HOST_DEVICE static ElemType getRadius(ElemType x, ElemType y);
+  DEVICE static ElemType getRadius(ElemType x, ElemType y);
 
-  HOST_DEVICE constexpr static ElemType getInitialSBurn();
+  DEVICE constexpr static ElemType getInitialSBurn();
 
-  HOST_DEVICE constexpr static ElemType getFCritical();
+  DEVICE constexpr static ElemType getFCritical();
 
-  HOST_DEVICE static bool isChamber(ElemType x, ElemType y);
+  DEVICE static bool isChamber(ElemType x, ElemType y);
 
-  HOST_DEVICE static bool isBurningSurface(ElemType x, ElemType y);
+  DEVICE static bool isBurningSurface(ElemType x, ElemType y);
 
-  HOST_DEVICE constexpr static ElemType getOutletCoordinate() { return x_right; }
+  DEVICE constexpr static ElemType getOutletCoordinate() { return x_right; }
 
 private:
 

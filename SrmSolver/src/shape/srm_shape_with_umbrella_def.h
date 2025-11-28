@@ -50,7 +50,7 @@ HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::F_prime(ElemType x) -> ElemType
 }
 
 template <class GpuGridT>
-HOST_DEVICE EBoundaryCondition SrmShapeWithUmbrella<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
+DEVICE EBoundaryCondition SrmShapeWithUmbrella<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
 {
   if ((x > x_left) && (x < x_junc) && (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y - y_bottom < Rk))
   {
@@ -66,25 +66,25 @@ HOST_DEVICE EBoundaryCondition SrmShapeWithUmbrella<GpuGridT>::getBoundaryCondit
 }
 
 template <class GpuGridT>
-HOST_DEVICE bool SrmShapeWithUmbrella<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 {
   return i * GpuGridT::hx <= x_junc + l_nozzle;
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
+DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
 {
   return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(ElemType x, ElemType y) -> ElemType
+DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(ElemType x, ElemType y) -> ElemType
 {
   return y - y_bottom;
 }
 
 template <class GpuGridT>
-HOST_DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getInitialSBurn() -> ElemType
+DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getInitialSBurn() -> ElemType
 {
   return 2 * static_cast<ElemType>(M_PI) * 
     (R0 * L +
@@ -95,26 +95,26 @@ HOST_DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getInitialSBurn() -> 
 }
 
 template <class GpuGridT>
-HOST_DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical() -> ElemType
+DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical() -> ElemType
 {
   return static_cast<ElemType>(M_PI) * rkr * rkr;
 }
 
 template <class GpuGridT>
-HOST_DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y)
 {
   return (x >= x_left) && (x <= x_junc);
 }
 
 template <class GpuGridT>
-HOST_DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemType x, ElemType y)
 {
   return (x > x_left) && (x < x_junc) && 
          (y >= y_bottom + R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
 }
 
 template <class GpuGridT>
-HOST_DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
 {
   return (x > x_left) && (x < x_junc) &&
          (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);

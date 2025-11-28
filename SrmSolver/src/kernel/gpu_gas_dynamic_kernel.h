@@ -20,7 +20,7 @@ __global__ void
 gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
                                               const GasStateT * __restrict__ pFirstValue,
                                               GasStateT *       __restrict__ pCurrValue,
-                                              const ElemT *     __restrict__ pCurrPhi,
+                                              const ElemT *     __restrict__ pCurrPhi, GasParameters<ElemT> gasParameters,
                                               ElemT dt, CudaFloat2T<ElemT> lambda, ElemT prevWeight, unsigned nx, unsigned ny, ElemT hx, ElemT hy, unsigned smx, unsigned smy, unsigned smExtension)
 {
   const auto levelThreshold = 4 * hx;
@@ -96,10 +96,10 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
     const auto transposedSharedIdx = ai * smx + aj - 1U;
     {
       const auto transFluxSharedIdx = (ti + 1U) * fluxSmx + tj;
-      xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX>(prevMatrix, transposedSharedIdx - 1U, lambda.x, hx, 1U);
-      xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx>(prevMatrix, transposedSharedIdx - 1U, lambda.x, hx, 1U);
-      xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy>(prevMatrix, transposedSharedIdx - 1U, lambda.x, hx, 1U);
-      xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX>(prevMatrix, transposedSharedIdx - 1U, lambda.x, hx, 1U);
+      xFlux1[transFluxSharedIdx - 1U] = getFlux<Rho, MassFluxX>(prevMatrix, gasParameters, transposedSharedIdx - 1U, lambda.x, hx, 1U);
+      xFlux2[transFluxSharedIdx - 1U] = getFlux<MassFluxX, MomentumFluxXx>(prevMatrix, gasParameters, transposedSharedIdx - 1U, lambda.x, hx, 1U);
+      xFlux3[transFluxSharedIdx - 1U] = getFlux<MassFluxY, MomentumFluxXy>(prevMatrix, gasParameters, transposedSharedIdx - 1U, lambda.x, hx, 1U);
+      xFlux4[transFluxSharedIdx - 1U] = getFlux<RhoEnergy, EnthalpyFluxX>(prevMatrix, gasParameters, transposedSharedIdx - 1U, lambda.x, hx, 1U);
     }
   }
 
@@ -109,21 +109,21 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
   {
     if (tj == 0U)
     {
-      yFlux1[fluxSharedIdx - fluxSmx] = getFlux<Rho, MassFluxY>(prevMatrix, sharedIdx - smx, lambda.y, hy, smx);
-      yFlux2[fluxSharedIdx - fluxSmx] = getFlux<MassFluxX, MomentumFluxXy>(prevMatrix, sharedIdx - smx, lambda.y, hy, smx);
-      yFlux3[fluxSharedIdx - fluxSmx] = getFlux<MassFluxY, MomentumFluxYy>(prevMatrix, sharedIdx - smx, lambda.y, hy, smx);
-      yFlux4[fluxSharedIdx - fluxSmx] = getFlux<RhoEnergy, EnthalpyFluxY>(prevMatrix, sharedIdx - smx, lambda.y, hy, smx);
+      yFlux1[fluxSharedIdx - fluxSmx] = getFlux<Rho, MassFluxY>(prevMatrix, gasParameters, sharedIdx - smx, lambda.y, hy, smx);
+      yFlux2[fluxSharedIdx - fluxSmx] = getFlux<MassFluxX, MomentumFluxXy>(prevMatrix, gasParameters, sharedIdx - smx, lambda.y, hy, smx);
+      yFlux3[fluxSharedIdx - fluxSmx] = getFlux<MassFluxY, MomentumFluxYy>(prevMatrix, gasParameters, sharedIdx - smx, lambda.y, hy, smx);
+      yFlux4[fluxSharedIdx - fluxSmx] = getFlux<RhoEnergy, EnthalpyFluxY>(prevMatrix, gasParameters, sharedIdx - smx, lambda.y, hy, smx);
     }
 
-    yFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxY>(prevMatrix, sharedIdx, lambda.y, hy, smx);
-    yFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXy>(prevMatrix, sharedIdx, lambda.y, hy, smx);
-    yFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxYy>(prevMatrix, sharedIdx, lambda.y, hy, smx);
-    yFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxY>(prevMatrix, sharedIdx, lambda.y, hy, smx);
+    yFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxY>(prevMatrix, gasParameters, sharedIdx, lambda.y, hy, smx);
+    yFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXy>(prevMatrix, gasParameters, sharedIdx, lambda.y, hy, smx);
+    yFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxYy>(prevMatrix, gasParameters, sharedIdx, lambda.y, hy, smx);
+    yFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxY>(prevMatrix, gasParameters, sharedIdx, lambda.y, hy, smx);
 
-    xFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxX>(prevMatrix, sharedIdx, lambda.x, hx, 1U);
-    xFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXx>(prevMatrix, sharedIdx, lambda.x, hx, 1U);
-    xFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxXy>(prevMatrix, sharedIdx, lambda.x, hx, 1U);
-    xFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxX>(prevMatrix, sharedIdx, lambda.x, hx, 1U);
+    xFlux1[fluxSharedIdx] = getFlux<Rho, MassFluxX>(prevMatrix, gasParameters, sharedIdx, lambda.x, hx, 1U);
+    xFlux2[fluxSharedIdx] = getFlux<MassFluxX, MomentumFluxXx>(prevMatrix, gasParameters, sharedIdx, lambda.x, hx, 1U);
+    xFlux3[fluxSharedIdx] = getFlux<MassFluxY, MomentumFluxXy>(prevMatrix, gasParameters, sharedIdx, lambda.x, hx, 1U);
+    xFlux4[fluxSharedIdx] = getFlux<RhoEnergy, EnthalpyFluxX>(prevMatrix, gasParameters, sharedIdx, lambda.x, hx, 1U);
   }
 
   __syncthreads();
@@ -136,32 +136,32 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
     GasStateT calculatedGasState = prevMatrix[sharedIdx];
     CudaFloat4T<ElemT> newConservativeVariables =
       {
-        Rho::get(calculatedGasState) -
+        Rho::get(calculatedGasState, gasParameters) -
           dt * hxReciprocal * (xFlux1[fluxSharedIdx] - xFlux1[fluxSharedIdx - 1U]) -
           dt * hyReciprocal * (yFlux1[fluxSharedIdx] - yFlux1[fluxSharedIdx - fluxSmx]) -
-          dt * rReciprocal * MassFluxY::get(calculatedGasState),
-        MassFluxX::get(calculatedGasState) -
+          dt * rReciprocal * MassFluxY::get(calculatedGasState, gasParameters),
+        MassFluxX::get(calculatedGasState, gasParameters) -
           dt * hxReciprocal * (xFlux2[fluxSharedIdx] - xFlux2[fluxSharedIdx - 1U]) -
           dt * hyReciprocal * (yFlux2[fluxSharedIdx] - yFlux2[fluxSharedIdx - fluxSmx]) -
-          dt * rReciprocal * MomentumFluxXy::get(calculatedGasState),
-        MassFluxY::get(calculatedGasState) -
+          dt * rReciprocal * MomentumFluxXy::get(calculatedGasState, gasParameters),
+        MassFluxY::get(calculatedGasState, gasParameters) -
           dt * hxReciprocal * (xFlux3[fluxSharedIdx] - xFlux3[fluxSharedIdx - 1U]) -
           dt * hyReciprocal * (yFlux3[fluxSharedIdx] - yFlux3[fluxSharedIdx - fluxSmx]) -
-          dt * rReciprocal * MassFluxY::get(calculatedGasState) * calculatedGasState.uy,
-        RhoEnergy::get(calculatedGasState) -
+          dt * rReciprocal * MassFluxY::get(calculatedGasState, gasParameters) * calculatedGasState.uy,
+        RhoEnergy::get(calculatedGasState, gasParameters) -
           dt * hxReciprocal * (xFlux4[fluxSharedIdx] - xFlux4[fluxSharedIdx - 1U]) -
           dt * hyReciprocal * (yFlux4[fluxSharedIdx] - yFlux4[fluxSharedIdx - fluxSmx]) -
-          dt * rReciprocal * EnthalpyFluxY::get(calculatedGasState)
+          dt * rReciprocal * EnthalpyFluxY::get(calculatedGasState, gasParameters)
       };
     if (prevWeight != 1)
     {
       const GasStateT firstGasState = pFirstValue[globalIdx];
-      newConservativeVariables.x = prevWeight * newConservativeVariables.x + (1 - prevWeight) * Rho::get(firstGasState);
-      newConservativeVariables.y = prevWeight * newConservativeVariables.y + (1 - prevWeight) * MassFluxX::get(firstGasState);
-      newConservativeVariables.z = prevWeight * newConservativeVariables.z + (1 - prevWeight) * MassFluxY::get(firstGasState);
-      newConservativeVariables.w = prevWeight * newConservativeVariables.w + (1 - prevWeight) * RhoEnergy::get(firstGasState);
+      newConservativeVariables.x = prevWeight * newConservativeVariables.x + (1 - prevWeight) * Rho::get(firstGasState, gasParameters);
+      newConservativeVariables.y = prevWeight * newConservativeVariables.y + (1 - prevWeight) * MassFluxX::get(firstGasState, gasParameters);
+      newConservativeVariables.z = prevWeight * newConservativeVariables.z + (1 - prevWeight) * MassFluxY::get(firstGasState, gasParameters);
+      newConservativeVariables.w = prevWeight * newConservativeVariables.w + (1 - prevWeight) * RhoEnergy::get(firstGasState, gasParameters);
     }
-    calculatedGasState = ConservativeToGasState::get<GasStateT>(newConservativeVariables);
+    calculatedGasState = ConservativeToGasState::get<GasStateT>(newConservativeVariables, gasParameters);
     pCurrValue[globalIdx] = calculatedGasState;
   }
 }
@@ -170,7 +170,7 @@ template <class ShapeT, class GasStateT, class ElemT>
 void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pPrevValue,
                                           thrust::device_ptr<const GasStateT> pFirstValue,
                                           thrust::device_ptr<GasStateT> pCurrValue,
-                                          thrust::device_ptr<const ElemT> pCurrPhi, GpuGridT<ElemT> grid,
+                                          thrust::device_ptr<const ElemT> pCurrPhi, GasParameters<ElemT> gasParameters, GpuGridT<ElemT> grid,
                                           ElemT dt, CudaFloat2T<ElemT> lambda, ElemT pPrevWeight)
 {
     const unsigned fluxSmx = grid.blockSize.x + 1U;
@@ -179,7 +179,7 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
 
     const auto smSize = grid.smSize * sizeof(GasStateT) + 8U * fluxSmSize * sizeof(ElemT);
     gasDynamicIntegrateTVDSubStep<ShapeT, GasStateT> << <grid.gridSize, grid.blockSize, smSize >> >
-        (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), dt, lambda, pPrevWeight, grid.nx, grid.ny, grid.hx, grid.hy, grid.sharedMemory.x, grid.sharedMemory.y, grid.smExtension);
+        (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), gasParameters, dt, lambda, pPrevWeight, grid.nx, grid.ny, grid.hx, grid.hy, grid.sharedMemory.x, grid.sharedMemory.y, grid.smExtension);
 }
 
 } // namespace detail

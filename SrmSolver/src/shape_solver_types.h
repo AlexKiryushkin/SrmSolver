@@ -37,7 +37,7 @@ struct ShapeSolverTypes<EShapeType::eDualThrustShape, ElemT>
   using CpType = std::ratio<162913, 100>;
   using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+  using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
   using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
@@ -72,7 +72,7 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
   using CpType                   = std::ratio<1800, 1>;
   using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+  using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
   using SrmSolverType      = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
@@ -108,7 +108,7 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
   using CpType    = std::ratio<2628, 1>;
   using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+  using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
   using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
@@ -144,7 +144,7 @@ struct ShapeSolverTypes<EShapeType::eFlushMountedNozzle, ElemT>
   using CpType = std::ratio<2628, 1>;
   using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
 
-  using GasStateType = GasState<PhysicalPropertiesType, ElemT>;
+  using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
   using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;

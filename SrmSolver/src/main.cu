@@ -24,7 +24,9 @@ int main()
     const auto burnRate = kae::BurningRate<PhysicalPropertiesType>::get(static_cast<ElemType>(1));
     const auto dt = shapeSolverType.grid.hx / 2 / burnRate;
     std::cout << dt << '\n';
-    SrmSolverType srmSolver{ shapeSolverType.grid, {}, ShapeSolverType::initialGasState, 100U, static_cast<ElemType>(0.8)};
+
+    kae::GasParameters<ElemType> gasParameters{ PhysicalPropertiesType::kappa, PhysicalPropertiesType::R };
+    SrmSolverType srmSolver{ shapeSolverType.grid, {}, ShapeSolverType::initialGasState, gasParameters, 100U, static_cast<ElemType>(0.8)};
     srmSolver.dynamicIntegrate(2000U, dt, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)

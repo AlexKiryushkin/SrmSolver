@@ -48,8 +48,8 @@ public:
 template <class PhysicalPropertiesT>
 struct BurningRate
 {
-  template <class GasStateT>
-  HOST_DEVICE auto operator()(const GasStateT & state) -> typename GasStateT::ElemType
+  template <class GasStateT, class ElemType = typename GasStateT::ElemType>
+  HOST_DEVICE auto operator()(const GasStateT& state) -> typename GasStateT::ElemType
   {
     return get(P::get(state));
   }

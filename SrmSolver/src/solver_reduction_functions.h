@@ -21,34 +21,38 @@ thrust::device_vector<ElemT> generateIndexMatrix(unsigned n)
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-CudaFloat2T<ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values)
+CudaFloat2T<ElemT> getMaxWaveSpeeds(const thrust::device_vector<GasStateT>& values, GasParameters<ElemT> gasParameters)
 {
-  const auto first = thrust::make_transform_iterator(std::begin(values), kae::WaveSpeedXY{});
-  const auto last = thrust::make_transform_iterator(std::end(values), kae::WaveSpeedXY{});
+    const auto waveSpeed = [gasParameters] __host__ __device__(const GasStateT & gasState) {
+        return kae::WaveSpeedXY::get(gasState, gasParameters);
+    };
+    const auto first = thrust::make_transform_iterator(std::begin(values), waveSpeed);
+  const auto last = thrust::make_transform_iterator(std::end(values), waveSpeed);
   return thrust::reduce(first, last, CudaFloat2T<ElemT>{ 0, 0 }, kae::ElemwiseMax{});
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
-ElemT getDeltaT(const thrust::device_vector<GasStateT>& values,
+ElemT getDeltaT(const thrust::device_vector<GasStateT>& values, GasParameters<ElemT> gasParameters,
                 ElemT courant, ElemT hx, ElemT hy)
 {
-  CudaFloat2T<ElemT> lambdas = detail::getMaxWaveSpeeds(values);
+  CudaFloat2T<ElemT> lambdas = detail::getMaxWaveSpeeds(values, gasParameters);
   return courant * hx * hy / (hx * lambdas.x + hy * lambdas.y);
 }
 
 template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 CudaFloat4T<ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStateT>& prevValues,
-                                                const thrust::device_vector<GasStateT>& currValues,
+                                                const thrust::device_vector<GasStateT>& currValues, GasParameters<ElemT> gasParameters,
                                                 ElemT dt)
 {
   const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(std::begin(prevValues), std::begin(currValues)));
   const auto zipLast = thrust::make_zip_iterator(thrust::make_tuple(std::end(prevValues), std::end(currValues)));
 
-  const auto toDerivatives = [] __host__ __device__(const thrust::tuple<GasStateT, GasStateT> & conservativeVariables)
+  const auto toDerivatives = [gasParameters] __host__ __device__(const thrust::tuple<GasStateT, GasStateT> & conservativeVariables)
   {
     const auto prevState = thrust::get<0U>(conservativeVariables);
     const auto currState = thrust::get<1U>(conservativeVariables);
-    return ConservativeVariables::get(currState) - ConservativeVariables::get(prevState);
+
+    return ConservativeVariables::get(currState, gasParameters) - ConservativeVariables::get(prevState, gasParameters);
   };
 
   return (1 / dt) * thrust::transform_reduce(zipFirst, zipLast, toDerivatives, CudaFloat4T<ElemT>{}, ElemwiseAbsMax{});
@@ -99,7 +103,7 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
     }
 
     return ((thrust::get<2U>(tuple) > 0) ? static_cast<ElemT>(0.0) : 
-      2 * static_cast<ElemT>(M_PI) * ShapeT::getRadius(i, j) * P::get(thrust::get<0U>(tuple)) * hx * hy);
+        2 * static_cast<ElemT>(M_PI) * ShapeT::getRadius(i, j) * P::get(thrust::get<0U>(tuple)) * hx * hy);
   };
 
   return thrust::transform_reduce(zipFirst, zipLast, toVolume, static_cast<ElemT>(0.0), thrust::plus<ElemT>{});

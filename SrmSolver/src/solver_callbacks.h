@@ -85,7 +85,8 @@ public:
 
   template <class GasStateT,
             class ShapeT>
-  void operator()(const GpuMatrix<GasStateT> & gasValues,
+  void operator()(const GpuMatrix<GasStateT> & gasValues, const GasParameters<ElemT>& gasParameters,
+
                   const GpuMatrix<ElemT> & currPhi,
                   unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives, ElemT sBurn, ShapeT, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
   {
@@ -98,7 +99,7 @@ public:
     const auto specificThrust = thrust / massFlowRate;
     m_meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn, thrust, specificThrust, velocity);
 
-    const auto writeToFile = [this, hx, hy](std::vector<IntegralDataT> meanPressureValues,
+    const auto writeToFile = [this, gasParameters, hx, hy](std::vector<IntegralDataT> meanPressureValues,
       GpuMatrix<GasStateT> gasValues,
       GpuMatrix<ElemT> currPhi,
       unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives)
@@ -125,7 +126,7 @@ public:
                          << std::get<6U>(elem) <<'\n';
       }
       writeMatrixToFile(currPhi, hx, hy, "sgd.dat");
-      writeMatrixToFile(gasValues, hx, hy, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
+      writeMatrixToFile(gasValues, gasParameters, hx, hy, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
     };
     std::thread writeAsync{ writeToFile, m_meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
     writeAsync.detach();
@@ -160,7 +161,7 @@ private:
       {
         const auto x = i * hx;
         const auto y = j * hy;
-        rowTemperatureValues[i] = std::make_tuple(x, y, P::get(hostGasStateValues[j * nx + i]));
+        rowTemperatureValues[i] = std::make_tuple(x, y, P::get(hostGasStateValues[j * nx + i], {}));
       };
       gridTemperatureValues.push_back(std::move(rowTemperatureValues));
     }

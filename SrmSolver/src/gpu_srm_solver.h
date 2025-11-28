@@ -3,6 +3,7 @@
 #include "boundary_condition.h"
 #include "cuda_float_types.h"
 #include "empty_callback.h"
+#include "gas_state.h"
 #include "gpu_level_set_solver.h"
 #include "gpu_matrix.h"
 
@@ -18,7 +19,8 @@ public:
   using ElemType                 = typename GasStateType::ElemType;
 
   GpuSrmSolver(GpuGridT<ElemType> grid, ShapeT    shape,
-               GasStateT initialState, 
+               GasStateT initialState,
+               GasParameters<ElemType> gasParameters,
                unsigned  iterationCount = 0U, 
                ElemType  courant = static_cast<ElemType>(0.8));
 
@@ -71,6 +73,8 @@ private:
   GpuMatrix<GasStateType>             m_firstState;
   GpuMatrix<GasStateType>             m_secondState;
   GpuLevelSetSolver<ElemType, ShapeT>           m_levelSetSolver;
+
+  GasParameters<ElemType> m_gasParameters;
 
   thrust::device_vector<thrust::pair<unsigned, unsigned>> m_closestIndicesMap;
   std::vector<int8_t> m_calculateBlocks;
