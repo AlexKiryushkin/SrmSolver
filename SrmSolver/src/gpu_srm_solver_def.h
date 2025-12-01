@@ -88,7 +88,7 @@ template <class ShapeT,
           class ElemT = typename GasStateT::ElemType>
 GpuMatrix<ElemT> getBurningRates(const GpuMatrix<GasStateT>            & currState,
                                            const GpuMatrix<ElemT>                & currPhi,
-                                           const GpuMatrix<CudaFloat2T<ElemT>>   & normals, PhysicalPropertiesData<ElemT> physicalProperties, unsigned nx, unsigned ny, unsigned hx, unsigned hy)
+                                           const GpuMatrix<CudaFloat2T<ElemT>>   & normals, PhysicalPropertiesData<ElemT> physicalProperties, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
   const static thread_local auto indices = generateIndexMatrix<unsigned>(nx * ny);
 
@@ -118,12 +118,13 @@ GpuMatrix<ElemT> getBurningRates(const GpuMatrix<GasStateT>            & currSta
     const auto normal = thrust::get<3U>(tuple);
     const auto isBurningSurface = ShapeT::isPointOnGrain(i * hx - level * normal.x,
                                                          j * hy - level * normal.y);
-    const auto burningRate = 0.01f;// BurningRate{}(thrust::get<0U>(tuple), physicalProperties.nu, physicalProperties.mt, physicalProperties.rhoP);
+    const auto burningRate = BurningRate{}(thrust::get<0U>(tuple), physicalProperties.nu, physicalProperties.mt, physicalProperties.rhoP);
     return (isBurningSurface ? burningRate : static_cast<ElemT>(0));
   };
 
   GpuMatrix<ElemT> burningRates{ nx, ny, ElemT{} };
   thrust::transform(zipFirst, zipLast, std::begin(burningRates.values()), toBurningRate);
+
   return burningRates;
 }
 
