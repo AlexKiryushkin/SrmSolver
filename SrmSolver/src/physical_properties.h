@@ -7,75 +7,87 @@
 
 namespace kae {
 
-template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class KappaT, class CpT,
-          class ShapeT, class ElemT = typename ShapeT::ElemType>
-struct PhysicalProperties
+template <class ElemT>
+struct PhysicalPropertiesData
 {
-private:
-  
-  constexpr static ElemT kappaDim        = detail::ToFloatV<KappaT, ElemT>;
-  constexpr static ElemT gammaComplexDim = gcem::sqrt(kappaDim * gcem::pow(2 / (kappaDim + 1), (kappaDim + 1) / (kappaDim - 1)));
-  constexpr static ElemT nuDim           = detail::ToFloatV<NuT, ElemT>;
-  constexpr static ElemT mtDim           = detail::ToFloatV<MtT, ElemT>;
-  constexpr static ElemT TBurnDim        = detail::ToFloatV<TBurnT, ElemT>;
-  constexpr static ElemT rhoPDim         = detail::ToFloatV<RhoPT, ElemT>;
-  constexpr static ElemT P0Dim           = detail::ToFloatV<P0T, ElemT>;
-  constexpr static ElemT CpDim           = detail::ToFloatV<CpT, ElemT>;
-  constexpr static ElemT RDim            = (kappaDim - static_cast<ElemT>(1.0)) / kappaDim * CpDim;
-  constexpr static ElemT H0Dim           = CpDim * TBurnDim;
+    PhysicalPropertiesData(ElemT nu_, ElemT mt_, ElemT TBurn_, ElemT rhoP_, ElemT P0_, ElemT kappa_, ElemT Cp_, ElemT fCritical_, ElemT initialSBurn_)
+    {
+        ElemT kappaDim = kappa_;
+        ElemT gammaComplexDim = gcem::sqrt(kappaDim * gcem::pow(2 / (kappaDim + 1), (kappaDim + 1) / (kappaDim - 1)));
+        ElemT nuDim = nu_;
+        ElemT mtDim = mt_;
+        ElemT TBurnDim = TBurn_;
+        ElemT rhoPDim = rhoP_;
+        ElemT P0Dim = P0_;
+        ElemT CpDim = Cp_;
+        ElemT RDim = (kappaDim - static_cast<ElemT>(1.0)) / kappaDim * CpDim;
+        ElemT H0Dim = CpDim * TBurnDim;
 
-  constexpr static ElemT uScale   = gcem::sqrt((kappaDim - 1) / kappaDim * H0Dim);
-  constexpr static ElemT pComplex = -ShapeT::getInitialSBurn() * mtDim * uScale / gammaComplexDim / ShapeT::getFCritical();
-  constexpr static ElemT pScale   = gcem::pow(pComplex, 1 / (1 - nuDim));
+        uScale = gcem::sqrt((kappaDim - 1) / kappaDim * H0Dim);
+        ElemT pComplex = -initialSBurn_ * mtDim * uScale / gammaComplexDim / fCritical_;
+        pScale = gcem::pow(pComplex, 1 / (1 - nuDim));
 
-  constexpr static ElemT rhoScale = pScale / uScale / uScale;
-  constexpr static ElemT TScale   = TBurnDim;
+        rhoScale = pScale / uScale / uScale;
+        TScale = TBurnDim;
 
-public:
+        kappa = kappaDim;
+        gammaComplex = gammaComplexDim;
+        nu = nuDim;
+        mt = mtDim * uScale / pComplex;
+        TBurn = TBurnDim / TScale;
+        rhoP = rhoPDim * uScale * uScale / pScale;
+        P0 = P0Dim / pScale;
+        Cp = CpDim * TScale / uScale / uScale;
+        R = RDim * TScale / uScale / uScale;
+        H0 = H0Dim / uScale / uScale;
+    }
 
-  constexpr static ElemT kappa = kappaDim;
-  constexpr static ElemT gammaComplex = gammaComplexDim;
-  constexpr static ElemT nu    = nuDim;
-  constexpr static ElemT mt    = mtDim * uScale / pComplex;
-  constexpr static ElemT TBurn = TBurnDim / TScale;
-  constexpr static ElemT rhoP  = rhoPDim * uScale * uScale / pScale;
-  constexpr static ElemT P0    = P0Dim / pScale;
-  constexpr static ElemT Cp    = CpDim * TScale / uScale / uScale;
-  constexpr static ElemT R     = RDim * TScale  / uScale / uScale;
-  constexpr static ElemT H0    = H0Dim / uScale / uScale;
+    ElemT uScale;
+    ElemT pScale;
+
+    ElemT rhoScale;
+    ElemT TScale;
+
+    ElemT kappa;
+    ElemT gammaComplex;
+    ElemT nu;
+    ElemT mt;
+    ElemT TBurn;
+    ElemT rhoP;
+    ElemT P0;
+    ElemT Cp;
+    ElemT R;
+    ElemT H0;
 };
 
-template <class PhysicalPropertiesT>
 struct BurningRate
 {
   template <class GasStateT, class ElemType = typename GasStateT::ElemType>
-  HOST_DEVICE auto operator()(const GasStateT& state) -> typename GasStateT::ElemType
+  HOST_DEVICE auto operator()(const GasStateT& state, ElemType nu, ElemType mt, ElemType rhoP) -> typename GasStateT::ElemType
   {
-    return get(P::get(state));
+    return get(P::get(state), nu, mt, rhoP);
   }
 
   template <class ElemT, class = std::enable_if_t<std::is_floating_point<ElemT>::value>>
-  HOST_DEVICE static ElemT get(ElemT p)
+  HOST_DEVICE static ElemT get(ElemT p, ElemT nu, ElemT mt, ElemT rhoP)
   {
-    return -PhysicalPropertiesT::mt * std::pow(p, PhysicalPropertiesT::nu) / PhysicalPropertiesT::rhoP;
+    return -mt * std::pow(p, nu) / rhoP;
   }
 };
 
-template <class NuT, class MtT, class TBurnT, class RhoPT, class P0T, class KappaT, class CpT,
-          class ShapeT, class ElemT>
-std::ostream& operator<<(std::ostream& os, PhysicalProperties<NuT, MtT, TBurnT, RhoPT, P0T, KappaT, CpT, ShapeT, ElemT> p)
+template <class ElemT>
+std::ostream& operator<<(std::ostream& os, PhysicalPropertiesData<ElemT> physicalParameters)
 {
-  using PhysicalPropertiesT = PhysicalProperties<NuT, MtT, TBurnT, RhoPT, P0T, KappaT, CpT, ShapeT, ElemT>;
-  os << "kappa: "         << PhysicalPropertiesT::kappa        << "\n";
-  os << "gamma complex: " << PhysicalPropertiesT::gammaComplex << "\n";
-  os << "nu: "            << PhysicalPropertiesT::nu           << "\n";
-  os << "mt: "            << PhysicalPropertiesT::mt           << "\n";
-  os << "TBurn: "         << PhysicalPropertiesT::TBurn        << "\n";
-  os << "rhoP: "          << PhysicalPropertiesT::rhoP         << "\n";
-  os << "P0: "            << PhysicalPropertiesT::P0           << "\n";
-  os << "Cp: "            << PhysicalPropertiesT::Cp           << "\n";
-  os << "R: "             << PhysicalPropertiesT::R            << "\n";
-  os << "H0: "            << PhysicalPropertiesT::H0           << "\n";
+  os << "kappa: "         << physicalParameters.kappa        << "\n";
+  os << "gamma complex: " << physicalParameters.gammaComplex << "\n";
+  os << "nu: "            << physicalParameters.nu           << "\n";
+  os << "mt: "            << physicalParameters.mt           << "\n";
+  os << "TBurn: "         << physicalParameters.TBurn        << "\n";
+  os << "rhoP: "          << physicalParameters.rhoP         << "\n";
+  os << "P0: "            << physicalParameters.P0           << "\n";
+  os << "Cp: "            << physicalParameters.Cp           << "\n";
+  os << "R: "             << physicalParameters.R            << "\n";
+  os << "H0: "            << physicalParameters.H0           << "\n";
   return os;
 }
 

@@ -40,7 +40,7 @@ struct GpuGridT
           hx{ lx / (nx - 1) }, hy{ ly / (ny - 1) }, hxReciprocal{ 1 / hx }, hyReciprocal{ 1 / hy },
           blockSize{ blockSizeX_, blockSizeY_ }, gridSize{ (nx + blockSize.x - 1) / blockSize.x, (ny + blockSize.y - 1) / blockSize.y },
         smExtension{smExtension_}, sharedMemory{ blockSize.x + 2 * smExtension, blockSize.y + 2 * smExtension },
-        smSize{ sharedMemory.x * sharedMemory.y }, smSizeBytes{smSize * sizeof(ElemT)}
+        smSize{ sharedMemory.x * sharedMemory.y }, smSizeBytes{static_cast<unsigned>(smSize * sizeof(ElemT))}
     {
     }
 

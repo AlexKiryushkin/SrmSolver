@@ -28,25 +28,25 @@ struct ShapeSolverTypes<EShapeType::eDualThrustShape, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
-  using NuType = std::ratio<1052, 10000>;
-  using MtType = std::ratio<-31355, 10000>;
-  using TBurnType = std::ratio<2950, 1>;
-  using RhoPType = std::ratio<1580, 1>;
-  using P0Type = std::ratio<101325, 1>;
-  using KappaType = std::ratio<12, 10>;
-  using CpType = std::ratio<162913, 100>;
-  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
-
   using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
-  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
+  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType>;
 
   GpuGridT<ElemT> grid = GpuGridT<ElemT>(nx, ny, detail::ToFloatV<LxToType, ElemT>, detail::ToFloatV<LyToType, ElemT>, 3U);
-  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 PhysicalPropertiesType::P0 };
+  PhysicalPropertiesData<ElemT> physicalProperties{ static_cast<ElemT>(0.1052),
+                                                    static_cast<ElemT>(-3.135),
+                                                    static_cast<ElemT>(2950.0),
+                                                    static_cast<ElemT>(1580),
+                                                    static_cast<ElemT>(101325),
+                                                    static_cast<ElemT>(1.2),
+                                                    static_cast<ElemT>(1629.13),
+                                                    ShapeType::getFCritical(),
+                                                    ShapeType::getInitialSBurn()};
+  GasStateType initialGasState{ static_cast<ElemT>(1.0),
+                                static_cast<ElemT>(0.0),
+                                static_cast<ElemT>(0.0),
+                                physicalProperties.P0 };
 };
 
 template<class ElemT>
@@ -63,26 +63,26 @@ struct ShapeSolverTypes<EShapeType::eNozzleLessShape, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
-  using NuType                   = std::ratio<41, 100>;
-  using MtType                   = std::ratio<-96446, 1000000>;
-  using TBurnType                = std::ratio<2950, 1>;
-  using RhoPType                 = std::ratio<1700, 1>;
-  using P0Type                   = std::ratio<101325, 1>;
-  using KappaType                = std::ratio<123, 100>;
-  using CpType                   = std::ratio<1800, 1>;
-  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
-
   using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
-  using SrmSolverType      = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
+  using SrmSolverType      = GpuSrmSolver<ShapeType, GasStateType>;
 
   GpuGridT<ElemT> grid = GpuGridT<ElemT>(nx, ny, detail::ToFloatV<LxToType, ElemT>, detail::ToFloatV<LyToType, ElemT>, 3U);
+  PhysicalPropertiesData<ElemT> physicalProperties{ static_cast<ElemT>(0.41),
+                                                  static_cast<ElemT>(-0.096446),
+                                                  static_cast<ElemT>(2950.0),
+                                                  static_cast<ElemT>(1700),
+                                                  static_cast<ElemT>(101325),
+                                                  static_cast<ElemT>(1.23),
+                                                  static_cast<ElemT>(1800),
+                                                  ShapeType::getFCritical(),
+                                                  ShapeType::getInitialSBurn() };
 
-  constexpr static GasStateType initialGasState{ static_cast<ElemT>(1.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 PhysicalPropertiesType::P0 };
+  GasStateType initialGasState{ static_cast<ElemT>(1.0),
+                                static_cast<ElemT>(0.0),
+                                static_cast<ElemT>(0.0),
+                                physicalProperties.P0 };
 };
 
 template<class ElemT>
@@ -99,26 +99,26 @@ struct ShapeSolverTypes<EShapeType::eWithUmbrellaShape, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
-  using NuType    = std::ratio<5, 10>;
-  using MtType    = std::ratio<-534, 100000>;
-  using TBurnType = std::ratio<3900, 1>;
-  using RhoPType  = std::ratio<1700, 1>;
-  using P0Type    = std::ratio<101325, 1>;
-  using KappaType = std::ratio<118, 100>;
-  using CpType    = std::ratio<2628, 1>;
-  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
-
   using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
-  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
+  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType>;
 
   GpuGridT<ElemT> grid = GpuGridT<ElemT>(nx, ny, detail::ToFloatV<LxToType, ElemT>, detail::ToFloatV<LyToType, ElemT>, 3U);
+  PhysicalPropertiesData<ElemT> physicalProperties{ static_cast<ElemT>(0.5),
+                                                    static_cast<ElemT>(-0.00534),
+                                                    static_cast<ElemT>(3900.0),
+                                                    static_cast<ElemT>(1700),
+                                                    static_cast<ElemT>(101325),
+                                                    static_cast<ElemT>(1.18),
+                                                    static_cast<ElemT>(2628),
+                                                    ShapeType::getFCritical(),
+                                                    ShapeType::getInitialSBurn() };
 
-  constexpr static GasStateType initialGasState{ static_cast<ElemT>(0.5),
-                                                 static_cast<ElemT>(0.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 PhysicalPropertiesType::P0 };
+  GasStateType initialGasState{ static_cast<ElemT>(0.5),
+                                static_cast<ElemT>(0.0),
+                                static_cast<ElemT>(0.0),
+                                physicalProperties.P0 };
 };
 
 template<class ElemT>
@@ -135,26 +135,26 @@ struct ShapeSolverTypes<EShapeType::eFlushMountedNozzle, ElemT>
   constexpr static bool stepsAreSame = ((hx > hy) ? (hx - hy < 1e-8f) : (hy - hx < 1e-8f));
   static_assert(stepsAreSame, "Grid steps are different!");
 
-  using NuType = std::ratio<5, 10>;
-  using MtType = std::ratio<-534, 100000>;
-  using TBurnType = std::ratio<3900, 1>;
-  using RhoPType = std::ratio<1700, 1>;
-  using P0Type = std::ratio<101325, 1>;
-  using KappaType = std::ratio<118, 100>;
-  using CpType = std::ratio<2628, 1>;
-  using PhysicalPropertiesType = PhysicalProperties<NuType, MtType, TBurnType, RhoPType, P0Type, KappaType, CpType, ShapeType>;
-
   using GasStateType = GasState<ElemT>;
 
   using LevelSetSolverType = GpuLevelSetSolver<ElemT, ShapeType>;
-  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType, PhysicalPropertiesType>;
+  using SrmSolverType = GpuSrmSolver<ShapeType, GasStateType>;
 
   GpuGridT<ElemT> grid = GpuGridT<ElemT>(nx, ny, detail::ToFloatV<LxToType, ElemT>, detail::ToFloatV<LyToType, ElemT>, 3U);
+  PhysicalPropertiesData<ElemT> physicalProperties{ static_cast<ElemT>(0.5),
+                                                  static_cast<ElemT>(-0.00534),
+                                                  static_cast<ElemT>(3900.0),
+                                                  static_cast<ElemT>(1700),
+                                                  static_cast<ElemT>(101325),
+                                                  static_cast<ElemT>(1.18),
+                                                  static_cast<ElemT>(2628),
+                                                  ShapeType::getFCritical(),
+                                                  ShapeType::getInitialSBurn() };
 
-  constexpr static GasStateType initialGasState{ static_cast<ElemT>(0.5),
-                                                 static_cast<ElemT>(0.0),
-                                                 static_cast<ElemT>(0.0),
-                                                 PhysicalPropertiesType::P0 };
+  GasStateType initialGasState{ static_cast<ElemT>(0.5),
+                                static_cast<ElemT>(0.0),
+                                static_cast<ElemT>(0.0),
+                                physicalProperties.P0 };
 };
 
 } // namespace kae

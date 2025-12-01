@@ -9,16 +9,15 @@
 
 namespace kae {
 
-template <class ShapeT, class GasStateT, class PhysicalPropertiesT>
+template <class ShapeT, class GasStateT>
 class GpuSrmSolver
 {
 public:
 
   using GasStateType             = GasStateT;
-  using PhysicalPropertiesType   = PhysicalPropertiesT;
   using ElemType                 = typename GasStateType::ElemType;
 
-  GpuSrmSolver(GpuGridT<ElemType> grid, ShapeT    shape,
+  GpuSrmSolver(GpuGridT<ElemType> grid, PhysicalPropertiesData<ElemType> physicalProperties, ShapeT    shape,
                GasStateT initialState,
                GasParameters<ElemType> gasParameters,
                unsigned  iterationCount = 0U, 
@@ -64,6 +63,7 @@ private:
   using IndexMatrixT = kae::Matrix<unsigned, order, order>;
 
   GpuGridT<ElemType> m_grid;
+  PhysicalPropertiesData<ElemType> m_physicalProperties;
   GpuMatrix<EBoundaryCondition>       m_boundaryConditions;
   GpuMatrix<CudaFloat2T<ElemType>>    m_normals;
   GpuMatrix<CudaFloat2T<ElemType>>    m_surfacePoints;

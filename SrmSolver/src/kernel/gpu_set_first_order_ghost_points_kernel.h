@@ -11,12 +11,14 @@ namespace kae {
 
 namespace detail {
 
-template <class GasStateT, class PhysicalPropertiesT, class ElemT = typename GasStateT::ElemType>
+template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>                              pGasValues,
                                          thrust::device_ptr<const ElemT>                            pCurrPhi,
                                          thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndicesMap,
                                          thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                         thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals, GasParameters<ElemT> gasParameters,
+                                         thrust::device_ptr<CudaFloat2T<ElemT>>                     pNormals,
+                                         GasParameters<ElemT> gasParameters,
+                                         PhysicalPropertiesData<ElemT> physicalProps,
                                          unsigned                                                   nClosestIndexElems)
 {
   const unsigned i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -31,24 +33,24 @@ __global__ void setFirstOrderGhostValues(thrust::device_ptr<GasStateT>          
   const auto boundaryCondition = pBoundaryConditions.get()[globalIdx];
   const auto normal            = pNormals.get()[globalIdx];
   const auto rotatedState      = Rotate::get(pGasValues.get()[closestGlobalIdx], normal.x, normal.y);
-  const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue<PhysicalPropertiesT>(rotatedState, 
-                                                                                          rotatedState, gasParameters,
-                                                                                          boundaryCondition);
+  const auto extrapolatedState = getFirstOrderExtrapolatedGhostValue(rotatedState,
+      rotatedState, gasParameters,
+      boundaryCondition, physicalProps.nu, physicalProps.mt, physicalProps.H0, physicalProps.P0);
   pGasValues[globalIdx]        = ReverseRotate::get(extrapolatedState, normal.x, normal.y);
 }
 
-template <class GasStateT, class PhysicalPropertiesT, class ElemT>
+template <class GasStateT, class ElemT>
 void setFirstOrderGhostValuesWrapper(thrust::device_ptr<GasStateT>                              pGasValues,
                                      thrust::device_ptr<const ElemT>                            pCurrPhi,
                                      thrust::device_ptr<const thrust::pair<unsigned, unsigned>> pClosestIndices,
                                      thrust::device_ptr<const EBoundaryCondition>               pBoundaryConditions,
-                                     thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals, GasParameters<ElemT> gasParameters,
+                                     thrust::device_ptr<CudaFloat2T<ElemT>>                  pNormals, GasParameters<ElemT> gasParameters, PhysicalPropertiesData<ElemT> physicalProps,
                                      unsigned nClosestIndexElems)
 {
   constexpr unsigned blockSize = 256U;
   const unsigned gridSize = (nClosestIndexElems + blockSize - 1U) / blockSize;
-  setFirstOrderGhostValues<GasStateT, PhysicalPropertiesT><<<gridSize, blockSize>>>
-  (pGasValues, pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, gasParameters, nClosestIndexElems);
+  setFirstOrderGhostValues<GasStateT><<<gridSize, blockSize>>>
+  (pGasValues, pCurrPhi, pClosestIndices, pBoundaryConditions, pNormals, gasParameters, physicalProps, nClosestIndexElems);
 }
 
 } // namespace detail

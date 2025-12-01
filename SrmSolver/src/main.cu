@@ -13,7 +13,6 @@ int main()
     using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eWithUmbrellaShape, ElemType>;
     using ShapeType              = ShapeSolverType::ShapeType;
     using SrmSolverType          = ShapeSolverType::SrmSolverType;
-    using PhysicalPropertiesType = ShapeSolverType::PhysicalPropertiesType;
 
     ShapeSolverType shapeSolverType{};
 
@@ -21,12 +20,14 @@ int main()
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
     kae::WriteToFolderCallback<ElemType> callback{ currentPath };
 
-    const auto burnRate = kae::BurningRate<PhysicalPropertiesType>::get(static_cast<ElemType>(1));
+    const auto physicalProperties = shapeSolverType.physicalProperties;
+    const auto burnRate = kae::BurningRate::get(static_cast<ElemType>(1), physicalProperties.nu, physicalProperties.mt, physicalProperties.rhoP);
     const auto dt = shapeSolverType.grid.hx / 2 / burnRate;
     std::cout << dt << '\n';
+    std::cout << physicalProperties;
 
-    kae::GasParameters<ElemType> gasParameters{ PhysicalPropertiesType::kappa, PhysicalPropertiesType::R };
-    SrmSolverType srmSolver{ shapeSolverType.grid, {}, ShapeSolverType::initialGasState, gasParameters, 100U, static_cast<ElemType>(0.8)};
+    kae::GasParameters<ElemType> gasParameters{ physicalProperties.kappa, physicalProperties.R };
+    SrmSolverType srmSolver{ shapeSolverType.grid, physicalProperties, {}, shapeSolverType.initialGasState, gasParameters, 100U, static_cast<ElemType>(0.8)};
     srmSolver.dynamicIntegrate(2000U, dt, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)

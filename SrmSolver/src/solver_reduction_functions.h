@@ -176,17 +176,15 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
 }
 
 template <class ShapeT,
-          class PhysicalPropertiesT,
           class ElemT>
 ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
     const thrust::device_vector<CudaFloat2T<ElemT>>& normals,
-    unsigned nx, unsigned ny, ElemT hx, ElemT hy)
+    unsigned nx, unsigned ny, ElemT hx, ElemT hy, ElemT kappa, ElemT mt, ElemT nu, ElemT H0, ElemT gammaComplex)
 {
-  constexpr auto kappa = PhysicalPropertiesT::kappa;
   const auto burningSurface = getBurningSurface<ShapeT>(currPhi, normals, nx, ny, hx, hy);
   const auto boriPressure = std::pow(
-    burningSurface * PhysicalPropertiesT::mt * std::sqrt((kappa - 1) / kappa * PhysicalPropertiesT::H0) /
-    PhysicalPropertiesT::gammaComplex / ShapeT::getFCritical(), 1 / (1 - PhysicalPropertiesT::nu));
+      burningSurface * mt * std::sqrt((kappa - 1) / kappa * H0) /
+      gammaComplex / ShapeT::getFCritical(), 1 / (1 - nu));
   return boriPressure;
 }
 
