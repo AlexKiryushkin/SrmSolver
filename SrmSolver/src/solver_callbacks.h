@@ -83,12 +83,11 @@ public:
     kae::current_path(m_folderPath);
   }
 
-  template <class GasStateT,
-            class ShapeT>
+  template <class ShapeT, class GasStateT>
   void operator()(const GpuMatrix<GasStateT> & gasValues, const GasParameters<ElemT>& gasParameters,
 
                   const GpuMatrix<ElemT> & currPhi,
-                  unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives, ElemT sBurn, ShapeT, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
+                  unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives, ElemT sBurn, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
   {
     const auto meanPressure   = detail::getCalculatedBoriPressure<ShapeT>(gasValues.values(), currPhi.values(), nx, ny, hx, hy);
     const auto maxPressure    = detail::getMaxChamberPressure<ShapeT>(gasValues.values(), currPhi.values(), nx, ny, hx, hy);

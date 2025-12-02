@@ -57,7 +57,7 @@ __global__ void calculateGhostPointData(const ElemT *                         pC
   const CudaFloat2T<ElemT> surfacePoint{ i * hx - normalX * level,  j * hy - normalY * level };
   pSurfacePoints[globalIdx] = surfacePoint;
 
-  const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(surfacePoint.x ,surfacePoint.y);
+  const EBoundaryCondition boundaryCondition = ShapeT::getBoundaryCondition(surfacePoint.x ,surfacePoint.y, hx);
   if (boundaryCondition == EBoundaryCondition::eWall && level > hx / 4)
   {
     const ElemT iMirror = i - 2 * normalX * level * hxReciprocal;

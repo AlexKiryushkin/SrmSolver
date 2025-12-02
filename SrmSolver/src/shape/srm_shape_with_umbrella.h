@@ -11,17 +11,17 @@ class SrmShapeWithUmbrella
 {
 public:
 
-  using ElemType = typename GpuGridT::ElemType;
+    using ElemType = typename GpuGridT::ElemType;
+
+    SrmShapeWithUmbrella(unsigned nx, unsigned ny, ElemType hx, ElemType hy);
 
   HOST_DEVICE ElemType operator()(unsigned i, unsigned j) const;
 
   DEVICE static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  DEVICE static bool isPointOnGrain(ElemType x, ElemType y);
+  DEVICE static bool isPointOnGrain(ElemType x, ElemType y, ElemType h);
 
-  DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
-
-  DEVICE static ElemType getRadius(unsigned i, unsigned j);
+  DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y, ElemType h);
 
   DEVICE static ElemType getRadius(ElemType x, ElemType y);
 
@@ -29,11 +29,13 @@ public:
 
   DEVICE constexpr static ElemType getFCritical();
 
-  DEVICE static bool isChamber(ElemType x, ElemType y);
+  DEVICE static bool isChamber(ElemType x, ElemType y, ElemType h);
 
-  DEVICE static bool isBurningSurface(ElemType x, ElemType y);
+  DEVICE static bool isBurningSurface(ElemType x, ElemType y, ElemType h);
 
   DEVICE constexpr static ElemType getOutletCoordinate() { return x_right; }
+
+  const thrust::host_vector<ElemType>& values() const;
 
 private:
 
@@ -78,6 +80,10 @@ private:
   HOST_DEVICE static ElemType b_normal_line() { return F(x_right - x_left) + (x_right - x_left) / k_line(); }
 
   constexpr static ElemType nozzle_lengthening = static_cast<ElemType>(0.2);
+
+private:
+
+    thrust::host_vector<ElemType> m_distances;
 };
 
 } // namespace kae

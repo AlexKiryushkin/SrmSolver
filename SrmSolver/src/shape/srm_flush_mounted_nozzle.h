@@ -17,15 +17,13 @@ public:
 
   using ElemType = typename GpuGridT::ElemType;
 
-  SrmFlushMountedNozzle();
+  SrmFlushMountedNozzle(unsigned nx, unsigned ny, ElemType hx, ElemType hy);
 
   HOST_DEVICE static bool shouldApplyScheme(unsigned i, unsigned j);
 
-  HOST_DEVICE static bool isPointOnGrain(ElemType x, ElemType y);
+  HOST_DEVICE static bool isPointOnGrain(ElemType x, ElemType y, ElemType h);
 
-  HOST_DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y);
-
-  HOST_DEVICE static ElemType getRadius(unsigned i, unsigned j);
+  HOST_DEVICE static EBoundaryCondition getBoundaryCondition(ElemType x, ElemType y, ElemType h);
 
   HOST_DEVICE static ElemType getRadius(ElemType x, ElemType y);
 
@@ -35,9 +33,9 @@ public:
 
   constexpr HOST_DEVICE static ElemType getOutletCoordinate() { return xRight; }
 
-  HOST_DEVICE static ElemType isChamber(ElemType x, ElemType y);
+  HOST_DEVICE static ElemType isChamber(ElemType x, ElemType y, ElemType h);
 
-  HOST_DEVICE static ElemType isBurningSurface(ElemType x, ElemType y);
+  HOST_DEVICE static ElemType isBurningSurface(ElemType x, ElemType y, ElemType h);
 
   const thrust::host_vector<ElemType>& values() const;
 

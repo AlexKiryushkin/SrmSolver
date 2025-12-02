@@ -131,7 +131,7 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
   const bool schemeShouldBeApplied = (levelValue < 0);
   if (schemeShouldBeApplied)
   {
-    const ElemT rReciprocal = 1 / ShapeT::getRadius(i, j);
+    const ElemT rReciprocal = 1 / ShapeT::getRadius(i * hx, j * hy);
 
     GasStateT calculatedGasState = prevMatrix[sharedIdx];
     CudaFloat4T<ElemT> newConservativeVariables =

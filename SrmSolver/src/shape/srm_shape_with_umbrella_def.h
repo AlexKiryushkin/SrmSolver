@@ -6,6 +6,20 @@
 
 namespace kae {
 
+    template <class GpuGridT>
+    SrmShapeWithUmbrella<GpuGridT>::SrmShapeWithUmbrella(unsigned nx, unsigned ny, ElemType hx, ElemType hy)
+        :m_distances(nx * ny)
+    {
+        for (unsigned i = 0U; i < nx; ++i)
+        {
+            for (unsigned j = 0U; j < ny; ++j)
+            {
+                const auto index = j * nx + i;
+                m_distances[index] = operator()(i, j);
+            }
+        }
+    }
+
 template <class GpuGridT>
 HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::F(ElemType x) -> ElemType
 {
@@ -50,14 +64,14 @@ HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::F_prime(ElemType x) -> ElemType
 }
 
 template <class GpuGridT>
-DEVICE EBoundaryCondition SrmShapeWithUmbrella<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
+DEVICE EBoundaryCondition SrmShapeWithUmbrella<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y, ElemType h)
 {
   if ((x > x_left) && (x < x_junc) && (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y - y_bottom < Rk))
   {
     return EBoundaryCondition::eMassFlowInlet;
   }
 
-  if (std::fabs(x - x_right) < static_cast<ElemType>(0.1) * GpuGridT::hx)
+  if (std::fabs(x - x_right) < static_cast<ElemType>(0.1) * h)
   {
     return EBoundaryCondition::ePressureOutlet;
   }
@@ -69,12 +83,6 @@ template <class GpuGridT>
 DEVICE bool SrmShapeWithUmbrella<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 {
   return i * GpuGridT::hx <= x_junc + l_nozzle;
-}
-
-template <class GpuGridT>
-DEVICE auto SrmShapeWithUmbrella<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
-{
-  return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
 }
 
 template <class GpuGridT>
@@ -101,20 +109,20 @@ DEVICE constexpr auto SrmShapeWithUmbrella<GpuGridT>::getFCritical() -> ElemType
 }
 
 template <class GpuGridT>
-DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isChamber(ElemType x, ElemType y, ElemType)
 {
   return (x >= x_left) && (x <= x_junc);
 }
 
 template <class GpuGridT>
-DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isBurningSurface(ElemType x, ElemType y, ElemType)
 {
   return (x > x_left) && (x < x_junc) && 
          (y >= y_bottom + R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
 }
 
 template <class GpuGridT>
-DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
+DEVICE bool SrmShapeWithUmbrella<GpuGridT>::isPointOnGrain(ElemType x, ElemType y, ElemType h)
 {
   return (x > x_left) && (x < x_junc) &&
          (y - y_bottom >= R0 - static_cast<ElemType>(1e-4)) && (y < y_bottom + Rk);
@@ -259,6 +267,12 @@ HOST_DEVICE auto SrmShapeWithUmbrella<GpuGridT>::operator()(unsigned i, unsigned
   }
 
   return 0;
+}
+
+template <class GpuGridT>
+auto SrmShapeWithUmbrella<GpuGridT>::values() const -> const thrust::host_vector<ElemType>&
+{
+    return m_distances;
 }
 
 } // namespace kae

@@ -70,7 +70,7 @@ ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi, unsigned nx
   {
     const auto i         = thrust::get<0U>(tuple) % nx;
     const auto j         = thrust::get<0U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy))
+    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
@@ -97,7 +97,7 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
   {
     const auto i = thrust::get<1U>(tuple) % nx;
     const auto j = thrust::get<1U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy))
+    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
@@ -124,7 +124,7 @@ ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
   {
     const auto i = thrust::get<1U>(tuple) % nx;
     const auto j = thrust::get<1U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy))
+    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
@@ -163,7 +163,7 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
     const auto j = thrust::get<0U>(tuple) / nx;
     const auto xSurface = i * hx - level * normals.x;
     const auto ySurface = j * hy - level * normals.y;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isBurningSurface(xSurface, ySurface))
+    if ((i >= nx) || (j >= ny) || !ShapeT::isBurningSurface(xSurface, ySurface, hx))
     {
       return static_cast<ElemT>(0.0);
     }

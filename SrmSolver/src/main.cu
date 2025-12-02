@@ -10,11 +10,12 @@ int main()
   try
   {
     using ElemType               = float;
-    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eWithUmbrellaShape, ElemType>;
+    using ShapeSolverType        = kae::ShapeSolverTypes<kae::EShapeType::eFlushMountedNozzle, ElemType>;
     using ShapeType              = ShapeSolverType::ShapeType;
     using SrmSolverType          = ShapeSolverType::SrmSolverType;
 
     ShapeSolverType shapeSolverType{};
+    ShapeType shape{ shapeSolverType.grid.nx, shapeSolverType.grid.ny, shapeSolverType.grid.hx, shapeSolverType.grid.hy };
 
     const std::wstring writeFolder{ L"data" };
     const std::wstring currentPath = kae::append(kae::current_path(), writeFolder);
@@ -27,7 +28,7 @@ int main()
     std::cout << physicalProperties;
 
     kae::GasParameters<ElemType> gasParameters{ physicalProperties.kappa, physicalProperties.R };
-    SrmSolverType srmSolver{ shapeSolverType.grid, physicalProperties, {}, shapeSolverType.initialGasState, gasParameters, 100U, static_cast<ElemType>(0.8)};
+    SrmSolverType srmSolver{ shapeSolverType.grid, physicalProperties, shape, shapeSolverType.initialGasState, gasParameters, 100U, static_cast<ElemType>(0.8)};
     srmSolver.dynamicIntegrate(2000U, dt, kae::ETimeDiscretizationOrder::eTwo, callback);
   }
   catch (const std::exception & e)

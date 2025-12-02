@@ -4,25 +4,19 @@ namespace kae {
 
 
 template <class GpuGridT>
-EBoundaryCondition SrmFlushMountedNozzle<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
+EBoundaryCondition SrmFlushMountedNozzle<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y, ElemType h)
 {
-  if (std::fabs(x - xRight) < static_cast<ElemType>(0.1) * GpuGridT::hx)
+  if (std::fabs(x - xRight) < static_cast<ElemType>(0.1) * h)
   {
     return EBoundaryCondition::ePressureOutlet;
   }
 
-  if (isPointOnGrain(x, y))
+  if (isPointOnGrain(x, y, h))
   {
     return EBoundaryCondition::eMassFlowInlet;
   }
 
   return EBoundaryCondition::eWall;
-}
-
-template <class GpuGridT>
-HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
-{
-  return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
 }
 
 template <class GpuGridT>
@@ -32,8 +26,8 @@ HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::getRadius(ElemType x, ElemType
 }
 
 template <class GpuGridT>
-SrmFlushMountedNozzle<GpuGridT>::SrmFlushMountedNozzle()
-  : m_distances{ GpuGridT::nx * GpuGridT::ny },
+SrmFlushMountedNozzle<GpuGridT>::SrmFlushMountedNozzle(unsigned nx, unsigned ny, ElemType hx, ElemType hy)
+  : m_distances( nx * ny ),
     m_linestring{}
 {
   namespace bg = boost::geometry;
@@ -52,17 +46,17 @@ SrmFlushMountedNozzle<GpuGridT>::SrmFlushMountedNozzle()
   Polygon2d polygon;
   std::copy(std::begin(m_linestring), std::end(m_linestring), std::back_inserter(polygon.outer()));
 
-  for (unsigned i = 0U; i < GpuGridT::nx; ++i)
+  for (unsigned i = 0U; i < nx; ++i)
   {
-    const auto x = i * GpuGridT::hx;
-    for (unsigned j = 0U; j < GpuGridT::ny; ++j)
+    const auto x = i * hx;
+    for (unsigned j = 0U; j < ny; ++j)
     {
-      const auto y = j * GpuGridT::hy;
+      const auto y = j * hy;
       const Point2d point{ x, y };
       const auto distance = static_cast<ElemType>(bg::distance(point, m_linestring));
       const auto isInside = bg::covered_by(point, polygon);
 
-      const auto index = j * GpuGridT::nx + i;
+      const auto index = j * nx + i;
       m_distances[index] = isInside ? -std::fabs(distance) : std::fabs(distance);
     }
   }
@@ -114,16 +108,16 @@ constexpr auto SrmFlushMountedNozzle<GpuGridT>::getFCritical() -> ElemType
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isChamber(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isChamber(ElemType x, ElemType y, ElemType h) -> ElemType
 {
-  return (xEndPropellant - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
-         (x - xLeft >= static_cast<ElemType>(0.1) * GpuGridT::hx);
+  return (xEndPropellant - x >= static_cast<ElemType>(0.1) * h) &&
+         (x - xLeft >= static_cast<ElemType>(0.1) * h);
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, ElemType y, ElemType h) -> ElemType
 {
-  constexpr auto threshold = static_cast<ElemType>(0.1) * GpuGridT::hx;
+  const auto threshold = static_cast<ElemType>(0.1) * h;
   const auto yIsLower = y - yBottom < yStartPropellant - threshold;
   const auto xIsLefter = x - xLeft <= 0;
   if (yIsLower || xIsLefter)
@@ -148,13 +142,13 @@ HOST_DEVICE auto SrmFlushMountedNozzle<GpuGridT>::isBurningSurface(ElemType x, E
     const auto dxSqr = sqr(x - xLeft - xEndPropellant + rRound);
     const auto dySqr = sqr(y - yBottom - yEndPropellant + rRound);
     const auto isOnRoundedCorner = dxSqr + dySqr < rRound * rRound;
-    if (x - xLeft < xStartNozzle - 2 * GpuGridT::hx)
+    if (x - xLeft < xStartNozzle - 2 * h)
     {
       return (y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner;
     }
 
     return ((y - yBottom <= yEndPropellant - rRound) || isOnRoundedCorner) && 
-            (y - yBottom > yMinNozzlePropellant + 2 * GpuGridT::hx);
+            (y - yBottom > yMinNozzlePropellant + 2 * h);
   }
 
   return false;
@@ -168,9 +162,9 @@ bool SrmFlushMountedNozzle<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 }
 
 template <class GpuGridT>
-bool SrmFlushMountedNozzle<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
+bool SrmFlushMountedNozzle<GpuGridT>::isPointOnGrain(ElemType x, ElemType y, ElemType h)
 {
-  return isBurningSurface(x, y);
+  return isBurningSurface(x, y, h);
 }
 
 template <class GpuGridT>

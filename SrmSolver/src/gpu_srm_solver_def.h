@@ -117,7 +117,7 @@ GpuMatrix<ElemT> getBurningRates(const GpuMatrix<GasStateT>            & currSta
     const auto level = thrust::get<2U>(tuple);
     const auto normal = thrust::get<3U>(tuple);
     const auto isBurningSurface = ShapeT::isPointOnGrain(i * hx - level * normal.x,
-                                                         j * hy - level * normal.y);
+                                                         j * hy - level * normal.y, hx);
     const auto burningRate = BurningRate{}(thrust::get<0U>(tuple), physicalProperties.nu, physicalProperties.mt, physicalProperties.rhoP);
     return (isBurningSurface ? burningRate : static_cast<ElemT>(0));
   };
@@ -202,7 +202,7 @@ void GpuSrmSolver<ShapeT, GasStateT>::dynamicIntegrate(
     const auto sBurn = detail::getBurningSurface<ShapeT>(currPhi().values(), m_normals.values(), m_grid.nx, m_grid.ny, m_grid.hx, m_grid.hy);
     if (i % 10 == 0)
     {
-      callback(m_currState, m_gasParameters, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, ShapeT{}, m_grid.nx, m_grid.ny, m_grid.hx, m_grid.hy);
+      callback.operator()<ShapeT>(m_currState, m_gasParameters, currPhi(), i, t, getMaxEquationDerivatives(), sBurn, m_grid.nx, m_grid.ny, m_grid.hx, m_grid.hy);
     }
     const auto dt = integrateInTime(deltaTGasDynamic);
     t += dt;

@@ -4,25 +4,19 @@ namespace kae {
 
 
 template <class GpuGridT>
-EBoundaryCondition SrmDualThrust<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y)
+EBoundaryCondition SrmDualThrust<GpuGridT>::getBoundaryCondition(ElemType x, ElemType y, ElemType h)
 {
-  if (std::fabs(x - xRight) < static_cast<ElemType>(0.1) * GpuGridT::hx)
+  if (std::fabs(x - xRight) < static_cast<ElemType>(0.1) * h)
   {
     return EBoundaryCondition::ePressureOutlet;
   }
 
-  if (isPointOnGrain(x, y))
+  if (isPointOnGrain(x, y, h))
   {
     return EBoundaryCondition::eMassFlowInlet;
   }
 
   return EBoundaryCondition::eWall;
-}
-
-template <class GpuGridT>
-HOST_DEVICE auto SrmDualThrust<GpuGridT>::getRadius(unsigned i, unsigned j) -> ElemType
-{
-  return getRadius(i * GpuGridT::hx, j * GpuGridT::hy);
 }
 
 template <class GpuGridT>
@@ -32,8 +26,8 @@ HOST_DEVICE auto SrmDualThrust<GpuGridT>::getRadius(ElemType x, ElemType y) -> E
 }
 
 template <class GpuGridT>
-SrmDualThrust<GpuGridT>::SrmDualThrust()
-  : m_distances(GpuGridT::nx * GpuGridT::ny ),
+SrmDualThrust<GpuGridT>::SrmDualThrust(unsigned nx, unsigned ny, ElemType hx, ElemType hy)
+  : m_distances(nx * ny),
     m_linestring{}
 {
   namespace bg = boost::geometry;
@@ -52,17 +46,17 @@ SrmDualThrust<GpuGridT>::SrmDualThrust()
   Polygon2d polygon;
   std::copy(std::begin(m_linestring), std::end(m_linestring), std::back_inserter(polygon.outer()));
 
-  for (unsigned i = 0U; i < GpuGridT::nx; ++i)
+  for (unsigned i = 0U; i < nx; ++i)
   {
-    const auto x = i * GpuGridT::hx;
-    for (unsigned j = 0U; j < GpuGridT::ny; ++j)
+    const auto x = i * hx;
+    for (unsigned j = 0U; j < ny; ++j)
     {
-      const auto y = j * GpuGridT::hy;
+      const auto y = j * hy;
       const Point2d point{ x, y };
       const auto distance = static_cast<ElemType>(bg::distance(point, m_linestring));
       const auto isInside = bg::covered_by(point, polygon);
 
-      const auto index = j * GpuGridT::nx + i;
+      const auto index = j * nx + i;
       m_distances[index] = isInside ? -std::fabs(distance) : std::fabs(distance);
     }
   }
@@ -103,16 +97,16 @@ constexpr auto SrmDualThrust<GpuGridT>::getFCritical() -> ElemType
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmDualThrust<GpuGridT>::isChamber(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmDualThrust<GpuGridT>::isChamber(ElemType x, ElemType y, ElemType h) -> ElemType
 {
-  return (chamberRight - x >= static_cast<ElemType>(0.1) * GpuGridT::hx) &&
-    (x - xLeft >= static_cast<ElemType>(0.1) * GpuGridT::hx);
+  return (chamberRight - x >= static_cast<ElemType>(0.1) * h) &&
+    (x - xLeft >= static_cast<ElemType>(0.1) * h);
 }
 
 template <class GpuGridT>
-HOST_DEVICE auto SrmDualThrust<GpuGridT>::isBurningSurface(ElemType x, ElemType y) -> ElemType
+HOST_DEVICE auto SrmDualThrust<GpuGridT>::isBurningSurface(ElemType x, ElemType y, ElemType h) -> ElemType
 {
-  constexpr auto eps = sqr(GpuGridT::hx);
+  constexpr auto eps = sqr(h);
   return (x- xLeft >= eps) &&
     (x - xLeft <= propellantRight + eps) &&
     (y - yBottom >= eps) &&
@@ -126,9 +120,9 @@ bool SrmDualThrust<GpuGridT>::shouldApplyScheme(unsigned i, unsigned j)
 }
 
 template <class GpuGridT>
-bool SrmDualThrust<GpuGridT>::isPointOnGrain(ElemType x, ElemType y)
+bool SrmDualThrust<GpuGridT>::isPointOnGrain(ElemType x, ElemType y, ElemType h)
 {
-  return isBurningSurface(x, y);
+  return isBurningSurface(x, y, h);
 }
 
 template <class GpuGridT>
