@@ -3,15 +3,17 @@
 #include "cuda_includes.h"
 
 #include "level_set_derivatives.h"
+#include "shape/shape.h"
 
 namespace kae {
 
 namespace detail {
 
-template <class ShapeT, class ElemT>
+template <class ElemT>
 __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValue,
                                        thrust::device_ptr<const ElemT> pFirstValue,
                                        thrust::device_ptr<ElemT>       pCurrValue,
+                                       Shape<ElemT> shape,
                                        ElemT dt, ElemT prevWeight, unsigned nx, unsigned ny, unsigned smExtension, unsigned smx, ElemT h)
 {
   const unsigned ti        = threadIdx.x;
@@ -62,7 +64,7 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
                                      (i < nx - smExtension - 2) && 
                                      (j > smExtension + 1) && 
                                      (j < ny - smExtension - 2) && 
-                                      ShapeT::shouldApplyScheme(i, j);
+      shape.shouldApplyScheme(i, j, h);
 
   if (schemeShouldBeApplied)
   {
@@ -82,15 +84,15 @@ __global__ void reinitializeTVDSubStep(thrust::device_ptr<const ElemT> pPrevValu
   }
 }
 
-template <class ShapeT, class ElemT>
+template <class ElemT>
 void reinitializeTVDSubStepWrapper(thrust::device_ptr<const ElemT> pPrevValue,
     thrust::device_ptr<const ElemT> pFirstValue,
-    thrust::device_ptr<ElemT>       pCurrValue,
+    thrust::device_ptr<ElemT>       pCurrValue, Shape<ElemT> shape,
     GpuGridT<ElemT> grid,
     ElemT dt, ElemT prevWeight)
 {
-    reinitializeTVDSubStep<ShapeT> << <grid.gridSize, grid.blockSize, grid.smSize * sizeof(ElemT) >> >
-        (pPrevValue, pFirstValue, pCurrValue, dt, prevWeight, grid.nx, grid.ny, grid.smExtension, grid.sharedMemory.x, grid.hx);
+    reinitializeTVDSubStep<< <grid.gridSize, grid.blockSize, grid.smSize * sizeof(ElemT) >> >
+        (pPrevValue, pFirstValue, pCurrValue, shape, dt, prevWeight, grid.nx, grid.ny, grid.smExtension, grid.sharedMemory.x, grid.hx);
     cudaDeviceSynchronize();
 }
 

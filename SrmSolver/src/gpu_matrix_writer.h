@@ -30,7 +30,7 @@ void writeMatrixToFile(const GpuMatrix<ElemT> & matrix, ElemT hx, ElemT hy, cons
 }
 
 template <class ElemT>
-void writeMatrixToFile(const GpuMatrix<GasState<ElemT>> & matrix, const GasParameters<ElemT> &gasParameters, ElemT hx, ElemT hy,
+void writeMatrixToFile(const GpuMatrix<GasState<ElemT>> & matrix, const GasParameters<ElemT> &gasParameters, const PhysicalPropertiesData<ElemT> &physcialProperties, ElemT hx, ElemT hy,
                        const std::string & pPath,
                        const std::string & uxPath,
                        const std::string & uyPath,
@@ -56,11 +56,11 @@ void writeMatrixToFile(const GpuMatrix<GasState<ElemT>> & matrix, const GasParam
       ElemT y = j * hy;
 
       auto&& gasState = hostValues[j * matrix.nx() + i];
-      pFile    << x << ';' << y << ';' << gasState.p                 << '\n';
-      uxFile   << x << ';' << y << ';' << gasState.ux                << '\n';
-      uyFile   << x << ';' << y << ';' << gasState.uy                << '\n';
+      pFile    << x << ';' << y << ';' << gasState.p * physcialProperties.pScale << '\n';
+      uxFile   << x << ';' << y << ';' << gasState.ux * physcialProperties.uScale << '\n';
+      uyFile   << x << ';' << y << ';' << gasState.uy * physcialProperties.uScale << '\n';
       machFile << x << ';' << y << ';' << Mach::get(gasState, gasParameters)        << '\n';
-      tFile    << x << ';' << y << ';' << Temperature::get(gasState, gasParameters) << '\n';
+      tFile    << x << ';' << y << ';' << Temperature::get(gasState, gasParameters) * physcialProperties.TScale << '\n';
     }
   }
 }

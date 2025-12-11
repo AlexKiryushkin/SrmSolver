@@ -8,17 +8,17 @@
 
 namespace kae {
 
-template <class ElemT, class ShapeT>
-GpuLevelSetSolver<ElemT, ShapeT>::GpuLevelSetSolver(const GpuGridT<ElemType>& grid, ShapeT shape,
+template <class ElemT>
+GpuLevelSetSolver<ElemT>::GpuLevelSetSolver(const GpuGridT<ElemType>& grid, thrust::host_vector<ElemType> signedDistances, Shape<ElemType> shape,
     unsigned iterationCount,
     ETimeDiscretizationOrder timeOrder)
-    : m_grid{grid}, m_currState(m_grid.nx, m_grid.ny, shape), m_prevState(m_grid.nx, m_grid.ny, shape), m_firstState(m_grid.nx, m_grid.ny, shape), m_secondState(m_grid.nx, m_grid.ny, shape)
+    : m_grid{ grid }, m_currState(m_grid.nx, m_grid.ny, signedDistances), m_prevState(m_grid.nx, m_grid.ny, signedDistances), m_firstState(m_grid.nx, m_grid.ny, signedDistances), m_secondState(m_grid.nx, m_grid.ny, signedDistances), m_shape{shape}
 {
     reinitialize(iterationCount, timeOrder);
 }
 
-template <class ElemT, class ShapeT>
-auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTime(
+template <class ElemT>
+auto GpuLevelSetSolver<ElemT>::integrateInTime(
   const GpuMatrix<ElemType> & velocities,
   unsigned                              iterationCount,
   ETimeDiscretizationOrder              timeOrder) -> ElemType
@@ -36,33 +36,34 @@ auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTime(
   return t;
 }
 
-template <class ElemT, class ShapeT>
-auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTime(
-  const GpuMatrix<ElemType> & velocities,
-  ElemType                              deltaT,
-  ETimeDiscretizationOrder              timeOrder) -> ElemType
+template <class ElemT>
+void GpuLevelSetSolver<ElemT>::integrateInTime(
+    const GpuMatrix<ElemType>& velocities,
+    ElemType                              deltaT,
+    ETimeDiscretizationOrder              timeOrder)
 {
-  constexpr unsigned numOfReinitializeIterations{ 10U };
+    constexpr unsigned numOfReinitializeIterations{ 10U };
 
-  ElemType t{ 0 };
-  while (t < deltaT)
-  {
-    const auto maxBurningSpeed = getMaxVelocity(velocities.values());
-    const auto courant = static_cast<ElemType>(0.4);
-    const auto maxDt = courant * m_grid.hx * m_grid.hy / (m_grid.hx + m_grid.hy) / maxBurningSpeed;
-    const auto remainingTime = deltaT - t;
-    auto dt = std::min(maxDt, remainingTime);
-    dt = integrateInTimeStep(velocities, timeOrder, dt);
-    t += dt;
+    std::size_t i{};
+    ElemType t{ 0 };
+    while (t < deltaT)
+    {
+        const auto maxBurningSpeed = getMaxVelocity(velocities.values());
+        const auto courant = static_cast<ElemType>(0.4);
+        const auto maxDt = courant * m_grid.hx * m_grid.hy / (m_grid.hx + m_grid.hy) / maxBurningSpeed;
+        const auto remainingTime = deltaT - t;
+        auto dt = std::min(maxDt, remainingTime);
+        dt = integrateInTimeStep(velocities, timeOrder, dt);
+        t += dt;
+        ++i;
 
-    reinitialize(numOfReinitializeIterations, timeOrder);
-  }
-
-  return t;
+        reinitialize(numOfReinitializeIterations, timeOrder);
+    }
+    std::cout << "Integration is done in " << i << " iterations" << "\n";
 }
 
-template <class ElemT, class ShapeT>
-void GpuLevelSetSolver<ElemT, ShapeT>::reinitialize(unsigned iterationCount, ETimeDiscretizationOrder timeOrder)
+template <class ElemT>
+void GpuLevelSetSolver<ElemT>::reinitialize(unsigned iterationCount, ETimeDiscretizationOrder timeOrder)
 {
   for (unsigned i{ 0U }; i < iterationCount; ++i)
   {
@@ -70,8 +71,8 @@ void GpuLevelSetSolver<ElemT, ShapeT>::reinitialize(unsigned iterationCount, ETi
   }
 }
 
-template <class ElemT, class ShapeT>
-auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTimeStep(
+template <class ElemT>
+auto GpuLevelSetSolver<ElemT>::integrateInTimeStep(
   const GpuMatrix<ElemType> & velocities,
   ETimeDiscretizationOrder              timeOrder) -> ElemType
 {
@@ -81,8 +82,8 @@ auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTimeStep(
   return integrateInTimeStep(velocities, timeOrder, dt);
 }
 
-template <class ElemT, class ShapeT>
-auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTimeStep(
+template <class ElemT>
+auto GpuLevelSetSolver<ElemT>::integrateInTimeStep(
   const GpuMatrix<ElemType> & velocities,
   ETimeDiscretizationOrder               timeOrder,
   ElemType dt) -> ElemType
@@ -143,8 +144,8 @@ auto GpuLevelSetSolver<ElemT, ShapeT>::integrateInTimeStep(
   return dt;
 }
 
-template <class ElemT, class ShapeT>
-void GpuLevelSetSolver<ElemT, ShapeT>::reinitializeStep(ETimeDiscretizationOrder timeOrder)
+template <class ElemT>
+void GpuLevelSetSolver<ElemT>::reinitializeStep(ETimeDiscretizationOrder timeOrder)
 {
   const auto courant = static_cast<ElemType>(0.8);
   const auto dt = courant * m_grid.hx * m_grid.hy / (m_grid.hx + m_grid.hy);
@@ -153,42 +154,42 @@ void GpuLevelSetSolver<ElemT, ShapeT>::reinitializeStep(ETimeDiscretizationOrder
   switch (timeOrder)
   {
   case ETimeDiscretizationOrder::eOne:
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_prevState),
       thrust::device_ptr<const ElemType>{},
-      getDevicePtr(m_currState), m_grid,
+      getDevicePtr(m_currState), m_shape, m_grid,
       dt, static_cast<ElemType>(1.0));
     break;
   case ETimeDiscretizationOrder::eTwo:
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_prevState),
       thrust::device_ptr<const ElemType>{},
-      getDevicePtr(m_firstState), m_grid,
+      getDevicePtr(m_firstState), m_shape, m_grid,
       dt, static_cast<ElemType>(1.0));
 
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_firstState),
       getConstDevicePtr(m_prevState),
-      getDevicePtr(m_currState), m_grid,
+      getDevicePtr(m_currState), m_shape, m_grid,
       dt, static_cast<ElemType>(0.5));
     break;
   case ETimeDiscretizationOrder::eThree:
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_prevState),
       thrust::device_ptr<const ElemType>{},
-      getDevicePtr(m_firstState), m_grid,
+      getDevicePtr(m_firstState), m_shape, m_grid,
       dt, static_cast<ElemType>(1.0));
 
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_firstState),
       getConstDevicePtr(m_prevState),
-      getDevicePtr(m_secondState), m_grid,
+      getDevicePtr(m_secondState), m_shape, m_grid,
       dt, static_cast<ElemType>(0.25));
 
-    detail::reinitializeTVDSubStepWrapper<ShapeT>(
+    detail::reinitializeTVDSubStepWrapper(
       getConstDevicePtr(m_secondState),
       getConstDevicePtr(m_prevState),
-      getDevicePtr(m_currState), m_grid,
+      getDevicePtr(m_currState), m_shape, m_grid,
       dt, static_cast<ElemType>(2.0 / 3.0));
     break;
   default:
@@ -196,8 +197,8 @@ void GpuLevelSetSolver<ElemT, ShapeT>::reinitializeStep(ETimeDiscretizationOrder
   }
 }
 
-template <class ElemT, class ShapeT>
-auto GpuLevelSetSolver<ElemT, ShapeT>::getMaxVelocity(const thrust::device_vector<ElemType> & velocities)
+template <class ElemT>
+auto GpuLevelSetSolver<ElemT>::getMaxVelocity(const thrust::device_vector<ElemType> & velocities)
   -> ElemType
 {
   return thrust::reduce(std::begin(velocities),

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <gcem.hpp>
-
 #include "gas_state.h"
 #include "to_float.h"
 
@@ -13,7 +11,7 @@ struct PhysicalPropertiesData
     PhysicalPropertiesData(ElemT nu_, ElemT mt_, ElemT TBurn_, ElemT rhoP_, ElemT P0_, ElemT kappa_, ElemT Cp_, ElemT fCritical_, ElemT initialSBurn_)
     {
         ElemT kappaDim = kappa_;
-        ElemT gammaComplexDim = gcem::sqrt(kappaDim * gcem::pow(2 / (kappaDim + 1), (kappaDim + 1) / (kappaDim - 1)));
+        ElemT gammaComplexDim = std::sqrt(kappaDim * std::pow(2 / (kappaDim + 1), (kappaDim + 1) / (kappaDim - 1)));
         ElemT nuDim = nu_;
         ElemT mtDim = mt_;
         ElemT TBurnDim = TBurn_;
@@ -23,9 +21,9 @@ struct PhysicalPropertiesData
         ElemT RDim = (kappaDim - static_cast<ElemT>(1.0)) / kappaDim * CpDim;
         ElemT H0Dim = CpDim * TBurnDim;
 
-        uScale = gcem::sqrt((kappaDim - 1) / kappaDim * H0Dim);
+        uScale = std::sqrt((kappaDim - 1) / kappaDim * H0Dim);
         ElemT pComplex = -initialSBurn_ * mtDim * uScale / gammaComplexDim / fCritical_;
-        pScale = gcem::pow(pComplex, 1 / (1 - nuDim));
+        pScale = std::pow(pComplex, 1 / (1 - nuDim));
 
         rhoScale = pScale / uScale / uScale;
         TScale = TBurnDim;
@@ -78,17 +76,26 @@ struct BurningRate
 template <class ElemT>
 std::ostream& operator<<(std::ostream& os, PhysicalPropertiesData<ElemT> physicalParameters)
 {
-  os << "kappa: "         << physicalParameters.kappa        << "\n";
-  os << "gamma complex: " << physicalParameters.gammaComplex << "\n";
-  os << "nu: "            << physicalParameters.nu           << "\n";
-  os << "mt: "            << physicalParameters.mt           << "\n";
-  os << "TBurn: "         << physicalParameters.TBurn        << "\n";
-  os << "rhoP: "          << physicalParameters.rhoP         << "\n";
-  os << "P0: "            << physicalParameters.P0           << "\n";
-  os << "Cp: "            << physicalParameters.Cp           << "\n";
-  os << "R: "             << physicalParameters.R            << "\n";
-  os << "H0: "            << physicalParameters.H0           << "\n";
-  return os;
+    os << "******************************************\n";
+    os << "Scale values\n";
+    os << "Velocity Scale: " << physicalParameters.uScale << "\n";
+    os << "Pressure Scale: " << physicalParameters.pScale << "\n";
+    os << "Density Scale: " << physicalParameters.rhoScale << "\n";
+    os << "Temperature Scale: " << physicalParameters.TScale << "\n";
+    os << "******************************************\n";
+    os << "Dimensionless parameter values\n";
+    os << "kappa: " << physicalParameters.kappa << "\n";
+    os << "gamma complex: " << physicalParameters.gammaComplex << "\n";
+    os << "nu: " << physicalParameters.nu << "\n";
+    os << "mt: " << physicalParameters.mt << "\n";
+    os << "TBurn: " << physicalParameters.TBurn << "\n";
+    os << "rhoP: " << physicalParameters.rhoP << "\n";
+    os << "P0: " << physicalParameters.P0 << "\n";
+    os << "Cp: " << physicalParameters.Cp << "\n";
+    os << "R: " << physicalParameters.R << "\n";
+    os << "H0: " << physicalParameters.H0 << "\n";
+    os << "******************************************\n";
+    return os;
 }
 
 } // namespace kae

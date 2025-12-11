@@ -22,10 +22,14 @@ bool create_directories(const std::wstring & path)
   return fs::create_directories(path);
 }
 
-
 std::wstring append(const std::wstring & path, const std::wstring & source)
 {
   return fs::path{ path }.append(source);
+}
+
+std::wstring append(const std::wstring& path, const std::string& source)
+{
+    return fs::path{ path }.append(source);
 }
 
 std::size_t remove_all(const std::wstring & path)

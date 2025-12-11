@@ -19,8 +19,7 @@ void GnuPlotWrapper::display2dPlot(const std::vector<std::vector<std::tuple<floa
 
   gp << "set terminal wxt size 1280, 660\n";
   gp << "set title \"Pressure values\"\n";
-  gp << "plot '-' binary" << gp.binFmt2d(values, "record")
-    << " with image\n";
+  gp << "plot '-' binary" << gp.binFmt2d(values, "record") << " with image\n";
 
   gp.sendBinary2d(values);
 }

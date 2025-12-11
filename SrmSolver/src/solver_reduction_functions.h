@@ -58,33 +58,33 @@ CudaFloat4T<ElemT> getMaxEquationDerivatives(const thrust::device_vector<GasStat
   return (1 / dt) * thrust::transform_reduce(zipFirst, zipLast, toDerivatives, CudaFloat4T<ElemT>{}, ElemwiseAbsMax{});
 }
 
-template <class ShapeT, class ElemT>
-ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi, unsigned nx ,unsigned ny, ElemT hx, ElemT hy)
+template <class ElemT>
+ElemT getChamberVolume(const thrust::device_vector<ElemT> & currPhi, Shape<ElemT> shape, unsigned nx ,unsigned ny, ElemT hx, ElemT hy)
 {
   static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
   const auto zipFirst = thrust::make_zip_iterator(thrust::make_tuple(std::begin(indexVector), std::begin(currPhi)));
   const auto zipLast  = thrust::make_zip_iterator(thrust::make_tuple(std::end(indexVector), std::end(currPhi)));
 
-  const auto toVolume = [=] __host__ __device__ (const thrust::tuple<unsigned, ElemT> & tuple)
+  const auto toVolume = [=] __device__ (const thrust::tuple<unsigned, ElemT> & tuple) -> ElemT
   {
     const auto i         = thrust::get<0U>(tuple) % nx;
     const auto j         = thrust::get<0U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
+    if ((i >= nx) || (j >= ny) || !shape.isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
 
     return ((thrust::get<1U>(tuple) > 0) ? static_cast<ElemT>(0.0) : 
-      2 * static_cast<ElemT>(M_PI) * ShapeT::getRadius(i, j) * hx * hy);
+      2 * static_cast<ElemT>(M_PI) * shape.getRadius(i * hx, j * hy) * hx * hy);
   };
 
   return thrust::transform_reduce(zipFirst, zipLast, toVolume, static_cast<ElemT>(0.0), thrust::plus<ElemT>{});
 }
 
-template <class ShapeT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
-                          const thrust::device_vector<ElemT>& currPhi, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
+                          const thrust::device_vector<ElemT>& currPhi, Shape<ElemT> shape, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
   static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
@@ -93,25 +93,25 @@ ElemT getPressureIntegral(const thrust::device_vector<GasStateT>& gasValues,
   const auto zipLast = thrust::make_zip_iterator(
     thrust::make_tuple(std::end(gasValues), std::end(indexVector), std::end(currPhi)));
 
-  const auto toVolume = [=] __host__ __device__ (const thrust::tuple<GasStateT, unsigned, ElemT> & tuple)
+  const auto toVolume = [=] __device__ (const thrust::tuple<GasStateT, unsigned, ElemT> & tuple) -> ElemT
   {
     const auto i = thrust::get<1U>(tuple) % nx;
     const auto j = thrust::get<1U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
+    if ((i >= nx) || (j >= ny) || !shape.isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
 
     return ((thrust::get<2U>(tuple) > 0) ? static_cast<ElemT>(0.0) : 
-        2 * static_cast<ElemT>(M_PI) * ShapeT::getRadius(i, j) * P::get(thrust::get<0U>(tuple)) * hx * hy);
+        2 * static_cast<ElemT>(M_PI) * shape.getRadius(i * hx, j * hy) * P::get(thrust::get<0U>(tuple)) * hx * hy);
   };
 
   return thrust::transform_reduce(zipFirst, zipLast, toVolume, static_cast<ElemT>(0.0), thrust::plus<ElemT>{});
 }
 
-template <class ShapeT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
-                            const thrust::device_vector<ElemT>& currPhi, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
+                            const thrust::device_vector<ElemT>& currPhi, Shape<ElemT> shape, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
   static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
 
@@ -120,11 +120,11 @@ ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
   const auto zipLast = thrust::make_zip_iterator(
     thrust::make_tuple(std::end(gasValues), std::end(indexVector), std::end(currPhi)));
 
-  const auto toPressure = [=] __host__ __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple)
+  const auto toPressure = [=] __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple) -> ElemT
   {
     const auto i = thrust::get<1U>(tuple) % nx;
     const auto j = thrust::get<1U>(tuple) / nx;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isChamber(i * hx, j * hy, hx))
+    if ((i >= nx) || (j >= ny) || !shape.isChamber(i * hx, j * hy, hx))
     {
       return static_cast<ElemT>(0.0);
     }
@@ -135,16 +135,16 @@ ElemT getMaxChamberPressure(const thrust::device_vector<GasStateT>& gasValues,
   return thrust::transform_reduce(zipFirst, zipLast, toPressure, static_cast<ElemT>(0.0), thrust::maximum<ElemT>{});
 }
 
-template <class ShapeT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 ElemT getCalculatedBoriPressure(const thrust::device_vector<GasStateT>& gasValues,
-                                const thrust::device_vector<ElemT>& currPhi, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
+                                const thrust::device_vector<ElemT>& currPhi, Shape<ElemT> shape, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
-  return getPressureIntegral<ShapeT>(gasValues, currPhi, nx, ny, hx, hy) / getChamberVolume<ShapeT>(currPhi, nx, ny, hx, hy);
+  return getPressureIntegral(gasValues, currPhi, shape, nx, ny, hx, hy) / getChamberVolume(currPhi, shape, nx, ny, hx, hy);
 }
 
-template <class ShapeT, class ElemT>
+template <class ElemT>
 ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
-                        const thrust::device_vector<CudaFloat2T<ElemT>>& normals,
+                        const thrust::device_vector<CudaFloat2T<ElemT>>& normals, Shape<ElemT> shape,
                         unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
   static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
@@ -154,7 +154,7 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
   const auto zipLast = thrust::make_zip_iterator(
     thrust::make_tuple(std::end(indexVector), std::end(currPhi), std::end(normals)));
 
-  const auto toVolume = [=] __host__ __device__(const thrust::tuple<unsigned, ElemT, CudaFloat2T<ElemT>> & tuple)
+  const auto toVolume = [=] __device__(const thrust::tuple<unsigned, ElemT, CudaFloat2T<ElemT>> & tuple) -> ElemT
   {
     const auto level   = thrust::get<1U>(tuple);
     const auto normals = thrust::get<2U>(tuple);
@@ -163,37 +163,35 @@ ElemT getBurningSurface(const thrust::device_vector<ElemT>& currPhi,
     const auto j = thrust::get<0U>(tuple) / nx;
     const auto xSurface = i * hx - level * normals.x;
     const auto ySurface = j * hy - level * normals.y;
-    if ((i >= nx) || (j >= ny) || !ShapeT::isBurningSurface(xSurface, ySurface, hx))
+    if ((i >= nx) || (j >= ny) || !shape.isPointOnGrain(xSurface, ySurface, hx))
     {
       return static_cast<ElemT>(0.0);
     }
 
-    const auto y = ShapeT::getRadius(i, j);
+    const auto y = shape.getRadius(i * hx, j * hy);
     return 2 * static_cast<ElemT>(M_PI) * y * deltaDiracFunction(level, hx) * hx * hy;
   };
 
   return thrust::transform_reduce(zipFirst, zipLast, toVolume, static_cast<ElemT>(0.0), thrust::plus<ElemT>{});
 }
 
-template <class ShapeT,
-          class ElemT>
+template <class ElemT>
 ElemT getTheoreticalBoriPressure(const thrust::device_vector<ElemT>& currPhi,
-    const thrust::device_vector<CudaFloat2T<ElemT>>& normals,
+    const thrust::device_vector<CudaFloat2T<ElemT>>& normals, Shape<ElemT> shape,
     unsigned nx, unsigned ny, ElemT hx, ElemT hy, ElemT kappa, ElemT mt, ElemT nu, ElemT H0, ElemT gammaComplex)
 {
-  const auto burningSurface = getBurningSurface<ShapeT>(currPhi, normals, nx, ny, hx, hy);
+  const auto burningSurface = getBurningSurface(currPhi, normals, shape, nx, ny, hx, hy);
   const auto boriPressure = std::pow(
-      burningSurface * mt * std::sqrt((kappa - 1) / kappa * H0) /
-      gammaComplex / ShapeT::getFCritical(), 1 / (1 - nu));
+      -burningSurface * mt * std::sqrt((kappa - 1) / kappa * H0) /
+      gammaComplex / shape.getFCritical(), 1 / (1 - nu));
   return boriPressure;
 }
 
-template <class ShapeT,
-          class GasStateT,
+template <class GasStateT,
           class ElemT,
           class ReturnType = thrust::tuple<ElemT, ElemT, ElemT, ElemT>>
 ReturnType getMotorThrust(const thrust::device_vector<GasStateT> & gasValues,
-    const thrust::device_vector<ElemT>& currPhi,
+    const thrust::device_vector<ElemT>& currPhi, Shape<ElemT> shape,
     unsigned nx, unsigned ny, ElemT hx, ElemT hy)
 {
   static thread_local auto indexVector = generateIndexMatrix<unsigned>(static_cast<unsigned>(currPhi.size()));
@@ -203,13 +201,13 @@ ReturnType getMotorThrust(const thrust::device_vector<GasStateT> & gasValues,
   const auto zipLast = thrust::make_zip_iterator(
     thrust::make_tuple(std::end(gasValues), std::end(indexVector), std::end(currPhi)));
 
-  const auto toThrust = [=] __host__ __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple) -> ReturnType
+  const auto toThrust = [=] __device__(const thrust::tuple<GasStateT, unsigned, ElemT> & tuple) -> ReturnType
   {
     const auto i = thrust::get<1U>(tuple) % nx;
     const auto j = thrust::get<1U>(tuple) / nx;
-    const auto r = ShapeT::getRadius(i, j);
+    const auto r = shape.getRadius(i * hx, j * hy);
     const auto isInside = thrust::get<2U>(tuple) < static_cast<ElemT>(0.0);
-    const auto isNearOutlet = ShapeT::getOutletCoordinate() - i * hx <= hx;
+    const auto isNearOutlet = shape.getOutletCoordinate() - i * hx <= hx;
     if (!isInside || !isNearOutlet)
     {
       return ReturnType{};

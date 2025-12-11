@@ -47,7 +47,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "src")
 # -------------------------------------------------------------------------------------------------
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PROJECT_SOURCES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PRIVATE SYSTEM
     ${Boost_INCLUDE_DIRS}
     ${gcem_INCLUDE_DIRS}
     ${CUDAToolkit_INCLUDE_DIRS}

@@ -14,6 +14,7 @@ public:
   using Type        = T;
 
   GpuMatrix(unsigned nx, unsigned ny, Type value = {});
+  GpuMatrix(unsigned nx, unsigned ny, thrust::host_vector<T> values);
   template <class ShapeT, class = std::void_t<decltype(std::declval<ShapeT>().values())>, class = void>
   GpuMatrix(unsigned nx, unsigned ny, ShapeT shape);
 
@@ -51,6 +52,13 @@ template <class T>
 GpuMatrix<T>::GpuMatrix(unsigned nx, unsigned ny, T value)
     : m_nx{ nx }, m_ny{ ny }, m_devValues(m_nx * m_ny, value)
 {
+}
+
+template <class T>
+GpuMatrix<T>::GpuMatrix(unsigned nx, unsigned ny, thrust::host_vector<T> values)
+    : m_nx{ nx }, m_ny{ ny }, m_devValues(m_nx* m_ny)
+{
+    thrust::copy(std::begin(values), std::end(values), std::begin(m_devValues));
 }
 
 template <class T>

@@ -1,25 +1,27 @@
 #pragma once
 
 #include "discretization_order.h"
+#include "gpu_grid.h"
 #include "gpu_matrix.h"
+#include "shape/shape.h"
 
 namespace kae {
 
-template <class ElemT, class ShapeT>
+template <class ElemT>
 class GpuLevelSetSolver
 {
 public:
 
     using ElemType = typename ElemT;
 
-    explicit GpuLevelSetSolver(const GpuGridT<ElemType> &grid, ShapeT shape = ShapeT{},
+    explicit GpuLevelSetSolver(const GpuGridT<ElemType>& grid, thrust::host_vector<ElemType> signedDistances, Shape<ElemType> shape,
         unsigned iterationCount = 0,
         ETimeDiscretizationOrder timeOrder = ETimeDiscretizationOrder::eThree);
 
     ElemType integrateInTime(const GpuMatrix<ElemType>& velocities,
         unsigned                              iterationCount,
         ETimeDiscretizationOrder              timeOrder = ETimeDiscretizationOrder::eThree);
-    ElemType integrateInTime(const GpuMatrix<ElemType>& velocities,
+    void integrateInTime(const GpuMatrix<ElemType>& velocities,
         ElemType                              deltaT,
         ETimeDiscretizationOrder              timeOrder = ETimeDiscretizationOrder::eThree);
 
@@ -45,6 +47,7 @@ private:
     GpuMatrix<ElemType> m_prevState;
     GpuMatrix<ElemType> m_firstState;
     GpuMatrix<ElemType> m_secondState;
+    Shape<ElemType> m_shape;
 };
 
 } // namespace kae

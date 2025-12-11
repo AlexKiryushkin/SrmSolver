@@ -11,6 +11,8 @@ bool create_directories(const std::wstring & path);
 
 std::wstring append(const std::wstring & path, const std::wstring & source);
 
+std::wstring append(const std::wstring& path, const std::string& source);
+
 std::size_t remove_all(const std::wstring & path);
 
 } // namespace kae

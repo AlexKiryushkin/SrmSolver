@@ -5,6 +5,7 @@
 #include "cuda_float_types.h"
 #include "gas_dynamic_flux.h"
 #include "gas_state.h"
+#include "shape/shape.h"
 
 constexpr unsigned maxSizeX = 120U;
 constexpr unsigned maxSizeY = 200U;
@@ -14,13 +15,13 @@ namespace kae {
 
 namespace detail {
 
-template <class ShapeT, class GasStateT, class ElemT = typename GasStateT::ElemType>
+template <class GasStateT, class ElemT = typename GasStateT::ElemType>
 __global__ void
 /*__launch_bounds__ (256, 5)*/
 gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
                                               const GasStateT * __restrict__ pFirstValue,
                                               GasStateT *       __restrict__ pCurrValue,
-                                              const ElemT *     __restrict__ pCurrPhi, GasParameters<ElemT> gasParameters,
+                                              const ElemT *     __restrict__ pCurrPhi, Shape<ElemT> shape, GasParameters<ElemT> gasParameters,
                                               ElemT dt, CudaFloat2T<ElemT> lambda, ElemT prevWeight, unsigned nx, unsigned ny, ElemT hx, ElemT hy, unsigned smx, unsigned smy, unsigned smExtension)
 {
   const auto levelThreshold = 4 * hx;
@@ -131,7 +132,7 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
   const bool schemeShouldBeApplied = (levelValue < 0);
   if (schemeShouldBeApplied)
   {
-    const ElemT rReciprocal = 1 / ShapeT::getRadius(i * hx, j * hy);
+    const ElemT rReciprocal = 1 / shape.getRadius(i * hx, j * hy);
 
     GasStateT calculatedGasState = prevMatrix[sharedIdx];
     CudaFloat4T<ElemT> newConservativeVariables =
@@ -166,11 +167,11 @@ gasDynamicIntegrateTVDSubStep(const GasStateT * __restrict__ pPrevValue,
   }
 }
 
-template <class ShapeT, class GasStateT, class ElemT>
+template <class GasStateT, class ElemT>
 void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pPrevValue,
                                           thrust::device_ptr<const GasStateT> pFirstValue,
                                           thrust::device_ptr<GasStateT> pCurrValue,
-                                          thrust::device_ptr<const ElemT> pCurrPhi, GasParameters<ElemT> gasParameters, GpuGridT<ElemT> grid,
+                                          thrust::device_ptr<const ElemT> pCurrPhi, Shape<ElemT> shape, GasParameters<ElemT> gasParameters, GpuGridT<ElemT> grid,
                                           ElemT dt, CudaFloat2T<ElemT> lambda, ElemT pPrevWeight)
 {
     const unsigned fluxSmx = grid.blockSize.x + 1U;
@@ -178,8 +179,8 @@ void gasDynamicIntegrateTVDSubStepWrapper(thrust::device_ptr<const GasStateT> pP
     const unsigned fluxSmSize = fluxSmx * fluxSmy;
 
     const auto smSize = grid.smSize * sizeof(GasStateT) + 8U * fluxSmSize * sizeof(ElemT);
-    gasDynamicIntegrateTVDSubStep<ShapeT, GasStateT> << <grid.gridSize, grid.blockSize, smSize >> >
-        (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), gasParameters, dt, lambda, pPrevWeight, grid.nx, grid.ny, grid.hx, grid.hy, grid.sharedMemory.x, grid.sharedMemory.y, grid.smExtension);
+    gasDynamicIntegrateTVDSubStep<GasStateT> << <grid.gridSize, grid.blockSize, smSize >> >
+        (pPrevValue.get(), pFirstValue.get(), pCurrValue.get(), pCurrPhi.get(), shape, gasParameters, dt, lambda, pPrevWeight, grid.nx, grid.ny, grid.hx, grid.hy, grid.sharedMemory.x, grid.sharedMemory.y, grid.smExtension);
 }
 
 } // namespace detail

@@ -6,10 +6,11 @@
 #include "gas_state.h"
 #include "gpu_level_set_solver.h"
 #include "gpu_matrix.h"
+#include "shape/shape.h"
 
 namespace kae {
 
-template <class ShapeT, class GasStateT>
+template <class GasStateT>
 class GpuSrmSolver
 {
 public:
@@ -17,22 +18,23 @@ public:
   using GasStateType             = GasStateT;
   using ElemType                 = typename GasStateType::ElemType;
 
-  GpuSrmSolver(GpuGridT<ElemType> grid, PhysicalPropertiesData<ElemType> physicalProperties, ShapeT    shape,
+  GpuSrmSolver(GpuGridT<ElemType> grid, PhysicalPropertiesData<ElemType> physicalProperties, GpuLevelSetSolver<ElemType> levelSetSolver, Shape<ElemType> shape,
                GasStateT initialState,
                GasParameters<ElemType> gasParameters,
-               unsigned  iterationCount = 0U, 
                ElemType  courant = static_cast<ElemType>(0.8));
 
   template <class CallbackT = detail::EmptyCallback>
-  void quasiStationaryDynamicIntegrate(unsigned                 iterationCount, 
-                                       ElemType                 deltaT,
-                                       ETimeDiscretizationOrder timeOrder, 
+  void quasiStationaryDynamicIntegrate(unsigned                 iterationCount,
+      ElemType                 deltaT,
+      ElemType writeDt,
+                                       ETimeDiscretizationOrder timeOrder,
                                        CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
-  void dynamicIntegrate(unsigned                 iterationCount, 
-                        ElemType                 deltaT, 
-                        ETimeDiscretizationOrder timeOrder, 
+  void dynamicIntegrate(unsigned                 iterationCount,
+                        ElemType                 deltaT,
+                        ElemType writeDt,
+                        ETimeDiscretizationOrder timeOrder,
                         CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
@@ -41,9 +43,9 @@ public:
                            CallbackT &&             callback = CallbackT{});
 
   template <class CallbackT = detail::EmptyCallback>
-  ElemType staticIntegrate(ElemType                 deltaT, 
-                           ETimeDiscretizationOrder timeOrder, 
-                           CallbackT &&             callback = CallbackT{});
+  void staticIntegrate(ElemType                 deltaT,
+      ETimeDiscretizationOrder timeOrder,
+      CallbackT&& callback = CallbackT{});
 
   const GpuMatrix<GasStateType> & currState() const { return m_currState; }
   const GpuMatrix<ElemType>     & currPhi()   const { return m_levelSetSolver.currState(); }
@@ -51,7 +53,7 @@ public:
 private:
 
   ElemType staticIntegrateStep(ETimeDiscretizationOrder timeOrder, ElemType dt, CudaFloat2T<ElemType> lambdas);
-  ElemType integrateInTime(ElemType deltaT);
+  void integrateInTime(ElemType deltaT);
   CudaFloat4T<ElemType> getMaxEquationDerivatives() const;
   void findClosestIndices();
   void fillCalculateBlockMatrix();
@@ -72,7 +74,8 @@ private:
   GpuMatrix<GasStateType>             m_prevState;
   GpuMatrix<GasStateType>             m_firstState;
   GpuMatrix<GasStateType>             m_secondState;
-  GpuLevelSetSolver<ElemType, ShapeT>           m_levelSetSolver;
+  GpuLevelSetSolver<ElemType> m_levelSetSolver;
+  Shape<ElemType> m_shape;
 
   GasParameters<ElemType> m_gasParameters;
 

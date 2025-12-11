@@ -2,10 +2,6 @@
 
 #include "cuda_includes.h"
 
-#pragma warning(push, 0)
-#include <gcem.hpp>
-#pragma warning(pop)
-
 #include "cuda_float_types.h"
 #include "math_utilities.h"
 #include "matrix/matrix.h"

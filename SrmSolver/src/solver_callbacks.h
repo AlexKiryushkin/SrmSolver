@@ -26,7 +26,14 @@ public:
         {
           std::unique_lock<std::mutex> locker(m_mutex);
           m_conditionVariable.wait(locker, [this]() { return m_bReady; });
-          m_function();
+          try
+          {
+              m_function();
+          }
+          catch (std::exception &e)
+          {
+              std::cerr << "Function writing failed. Reason: " << e.what() << "\n";
+          }
           m_bReady = false;
         }
       })
@@ -34,6 +41,7 @@ public:
 
   ~ThreadWorker()
   {
+      m_thread.detach();
     m_bContinue = false;
     m_bReady = true;
     m_function = []() {};
@@ -78,62 +86,88 @@ public:
     : m_folderPath(std::move(folderPath)),
       m_gnuPlotTemperature(pathToGnuPlot)
   {
-    kae::remove_all(m_folderPath);
-    kae::create_directories(m_folderPath);
-    kae::current_path(m_folderPath);
+      bool succeeded = false;
+      for (std::size_t i{} ; i < 10; ++i)
+      {
+          try
+          {
+              kae::remove_all(m_folderPath);
+              kae::create_directories(m_folderPath);
+              kae::current_path(m_folderPath);
+              succeeded = true;
+              break;
+          }
+          catch (std::exception & e)
+          {
+              std::cout << "Preparing output folder failed. Reason: " << e.what() << "\n";
+          }
+
+          m_folderPath += L"_1";
+      }
+      if (!succeeded)
+      {
+          throw std::runtime_error{"Failed to prepare folder for output."};
+      }
   }
 
-  template <class ShapeT, class GasStateT>
-  void operator()(const GpuMatrix<GasStateT> & gasValues, const GasParameters<ElemT>& gasParameters,
-
-                  const GpuMatrix<ElemT> & currPhi,
+  template <class GasStateT>
+  void operator()(const GpuMatrix<GasStateT> & gasValues, const GasParameters<ElemT>& gasParameters, PhysicalPropertiesData<ElemT> physcialProperties,
+                  const GpuMatrix<ElemT> & currPhi, Shape<ElemT> shape,
                   unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives, ElemT sBurn, unsigned nx, unsigned ny, ElemT hx, ElemT hy)
   {
-    const auto meanPressure   = detail::getCalculatedBoriPressure<ShapeT>(gasValues.values(), currPhi.values(), nx, ny, hx, hy);
-    const auto maxPressure    = detail::getMaxChamberPressure<ShapeT>(gasValues.values(), currPhi.values(), nx, ny, hx, hy);
-    const auto thrustData     = detail::getMotorThrust<ShapeT>(gasValues.values(), currPhi.values(), nx, ny, hx, hy);
+    const auto meanPressure   = detail::getCalculatedBoriPressure(gasValues.values(), currPhi.values(), shape, nx, ny, hx, hy);
+    const auto maxPressure    = detail::getMaxChamberPressure(gasValues.values(), currPhi.values(), shape, nx, ny, hx, hy);
+    const auto thrustData     = detail::getMotorThrust(gasValues.values(), currPhi.values(), shape, nx, ny, hx, hy);
     const auto massFlowRate   = thrust::get<2U>(thrustData);
-    const auto velocity       = thrust::get<1U>(thrustData) / thrust::get<0U>(thrustData);
+    const auto velocity       =  thrust::get<1U>(thrustData) / thrust::get<0U>(thrustData);
     const auto thrust         = massFlowRate * velocity + thrust::get<3U>(thrustData);
-    const auto specificThrust = thrust / massFlowRate;
+    const auto specificThrust = massFlowRate == static_cast<ElemT>(0.0) ? 0.0 : thrust / massFlowRate;
     m_meanPressureValues.emplace_back(t, meanPressure, maxPressure, sBurn, thrust, specificThrust, velocity);
 
-    const auto writeToFile = [this, gasParameters, hx, hy](std::vector<IntegralDataT> meanPressureValues,
+    const auto writeToFile = [this, gasParameters, physcialProperties, hx, hy](std::vector<IntegralDataT> meanPressureValues,
       GpuMatrix<GasStateT> gasValues,
       GpuMatrix<ElemT> currPhi,
       unsigned i, ElemT t, CudaFloat4T<ElemT> maxDerivatives)
     {
-      std::cout << "Iteration: " << i << ". Time: " << t << '\n';
-      std::cout << "Mean chamber pressure: " << std::get<1U>(meanPressureValues.back()) << '\n';
-      std::cout << "Max derivatives: d(rho)/dt = " << maxDerivatives.x
-        << "; d(rho * ux)/dt = " << maxDerivatives.y
-        << "; d(rho * uy)/dt = " << maxDerivatives.z
-        << "; d(rho * E)/dt = " << maxDerivatives.w << "\n\n";
+            try
+            {
+                std::cout << "*********************************************************************************************\n";
+                std::cout << "*********************************************************************************************\n";
+                std::cout << "Writing simulation results...\n";
+                std::cout << "Iteration: " << i << ". Time: " << t / physcialProperties.uScale << " s\n";
+                std::cout << "Mean chamber pressure: " << std::get<1U>(meanPressureValues.back()) * physcialProperties.pScale << '\n';
+                std::cout << "*********************************************************************************************\n";
+                std::cout << "*********************************************************************************************\n";
 
-      const std::wstring tString = std::to_wstring(t);
-      const std::wstring newCurrentPath = kae::append(m_folderPath, tString);
-      kae::create_directories(newCurrentPath);
-      kae::current_path(newCurrentPath);
+                const std::wstring tString = std::to_wstring(t / physcialProperties.uScale);
+                const std::wstring newCurrentPath = kae::append(m_folderPath, tString);
+                kae::create_directories(newCurrentPath);
+                kae::current_path(newCurrentPath);
 
-      std::ofstream meanPressureFile{ "mean_pressure_values.dat" };
-      meanPressureFile << "t;P_av;P_max;S;Thrust;specThrust;velocity\n";
-      for (const auto& elem : meanPressureValues)
-      {
-        meanPressureFile << std::get<0U>(elem) << ';' << std::get<1U>(elem) << ';'
-                         << std::get<2U>(elem) << ';' << std::get<3U>(elem) << ';'
-                         << std::get<4U>(elem) << ';' << std::get<5U>(elem) << ';'
-                         << std::get<6U>(elem) <<'\n';
-      }
-      writeMatrixToFile(currPhi, hx, hy, "sgd.dat");
-      writeMatrixToFile(gasValues, gasParameters, hx, hy, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
+                std::ofstream meanPressureFile{ "integral_values.dat" };
+                meanPressureFile << "t(s);P_av(Pa);P_max(Pa);SBurn(m^2);Thrust((rho * u^2 + p) * S);specificThrust(thrust / (rho * u * S));velocity(average velocity in outlet coordinate, m/s)\n";
+                for (const auto& elem : meanPressureValues)
+                {
+                    meanPressureFile << std::get<0U>(elem) / physcialProperties.uScale << ';' << std::get<1U>(elem) * physcialProperties.pScale << ';'
+                        << std::get<2U>(elem) * physcialProperties.pScale << ';' << std::get<3U>(elem) << ';'
+                        << std::get<4U>(elem) * physcialProperties.pScale << ';' << std::get<5U>(elem) * physcialProperties.uScale << ';'
+                        << std::get<6U>(elem) * physcialProperties.uScale << '\n';
+                }
+                writeMatrixToFile(currPhi, hx, hy, "sgd.dat");
+                writeMatrixToFile(gasValues, gasParameters, physcialProperties, hx, hy, "p.dat", "ux.dat", "uy.dat", "mach.dat", "T.dat");
+            }
+            catch (std::exception &e)
+            {
+                std::cerr << "writing data failed. Reason: " << e.what() << "\n";
+            }
     };
     std::thread writeAsync{ writeToFile, m_meanPressureValues, gasValues, currPhi, i, t, maxDerivatives };
     writeAsync.detach();
   }
 
   template <class GasStateT>
-  void operator()(const GpuMatrix<GasStateT> & gasValues,
-    const GpuMatrix<ElemT> & phiValues, ElemT hx, ElemT hy)
+  void operator()(const GpuMatrix<GasStateT> gasValues,
+    const GpuMatrix<ElemT> phiValues, ElemT hx, ElemT hy)
   {
     const auto func = [=]()
     {
